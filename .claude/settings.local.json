@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npx eslint . 2>&1 | Select-Object -First 200)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 200)",
+      "PowerShell(Test-Path .\\\\.env.local; Get-Content .\\\\.env.local | ForEach-Object { \\($_ -split '='\\)[0] })",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)",
+      "PowerShell(npx next build 2>&1 | Select-Object -Last 60)"
+    ]
+  }
+}

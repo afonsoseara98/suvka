@@ -1,0 +1,327 @@
+# NOCTRA CONSTITUTION
+
+Version: 1.1
+
+---
+
+# Mission
+
+Build the world's best AI platform for generating landing pages that maximize conversions.
+
+Noctra does not compete on speed.
+
+Noctra competes on intelligence, quality, and measurable conversion performance.
+
+Every landing page should feel as if it was created by a senior conversion strategist, senior copywriter, senior UX designer, and senior front-end engineer working together.
+
+---
+
+# Vision
+
+Noctra is not an AI website builder.
+
+Noctra is an AI Conversion System.
+
+The landing page is the final output of a structured reasoning process.
+
+Our competitive advantage is not generation.
+
+Our competitive advantage is decision-making.
+
+---
+
+# Product Philosophy
+
+The AI must think before it generates.
+
+Generation is the final step.
+
+Planning is the product.
+
+Every decision must increase one or more of the following:
+
+- Conversion
+- Clarity
+- Trust
+- Maintainability
+- Scalability
+
+---
+
+# Engineering Principles
+
+1. Quality over speed.
+2. Strong typing everywhere.
+3. Modular architecture.
+4. One responsibility per module.
+5. Data-driven decisions.
+6. No duplicated logic.
+7. AI plans first.
+8. AI generates second.
+9. AI validates third.
+10. Everything must be replaceable.
+11. Every module must be independently testable.
+12. Business logic never belongs inside UI components.
+13. Structured data always comes before prompting an LLM.
+14. Every architectural decision must improve either conversion or maintainability.
+
+---
+
+# AI Principles
+
+The LLM is not the product.
+
+The pipeline is the product.
+
+The AI should never improvise information when structured knowledge exists.
+
+The AI reasons using structured objects—not raw prompts.
+
+Every module enriches the business understanding before generation.
+
+---
+
+# AI Pipeline
+
+```
+User Prompt
+        │
+        ▼
+Business Analysis
+        │
+        ▼
+Industry Analysis
+        │
+        ▼
+Audience Analysis
+        │
+        ▼
+Psychology Analysis
+        │
+        ▼
+Knowledge Resolution
+        │
+        ▼
+Market Analysis
+        │
+        ▼
+Offer Planning
+        │
+        ▼
+Conversion Planning
+        │
+        ▼
+Copy Planning
+        │
+        ▼
+Design Planning
+        │
+        ▼
+Component Planning
+        │
+        ▼
+Prompt Builder
+        │
+        ▼
+LLM Generation
+        │
+        ▼
+Landing JSON
+        │
+        ▼
+React Rendering
+        │
+        ▼
+Validation
+        │
+        ▼
+Quality Scoring
+```
+
+---
+
+# Core Engines
+
+The Noctra architecture is divided into independent engines.
+
+## Business Intelligence Engine
+
+Responsible for understanding:
+
+- Industry
+- Business model
+- Target audience
+- Goals
+- Pricing
+- Positioning
+- Tone
+
+---
+
+## Psychology Engine
+
+Responsible for identifying:
+
+- Pain points
+- Desires
+- Objections
+- Trust factors
+- Emotional triggers
+- Buying motivations
+
+---
+
+## Knowledge Engine
+
+Responsible for enriching the business with industry-specific knowledge.
+
+Examples:
+
+- Medical
+- Legal
+- SaaS
+- Restaurant
+- Fitness
+- Finance
+
+---
+
+## Conversion Engine
+
+Responsible for defining:
+
+- Offer
+- CTA strategy
+- Urgency
+- Social proof
+- Guarantees
+- Section ordering
+- Conversion flow
+
+---
+
+## Copy Engine
+
+Responsible only for writing.
+
+It never decides strategy.
+
+It executes the strategy produced by previous engines.
+
+---
+
+## Design Engine
+
+Responsible for:
+
+- Theme
+- Colors
+- Typography
+- Layout
+- Spacing
+- Visual hierarchy
+- Component styling
+
+---
+
+## Component Engine
+
+Responsible for selecting and composing UI components.
+
+It chooses the best component based on business context rather than fixed templates.
+
+---
+
+## Rendering Engine
+
+Responsible for transforming structured JSON into React components.
+
+Rendering must remain deterministic.
+
+---
+
+## Validation Engine
+
+Responsible for validating:
+
+- Accessibility
+- Consistency
+- Missing sections
+- Broken hierarchy
+- Design issues
+- Copy quality
+
+---
+
+## Scoring Engine
+
+Responsible for assigning measurable scores:
+
+- Conversion
+- UX
+- SEO
+- Accessibility
+- Performance
+- Readability
+- Trust
+
+It must also generate improvement suggestions.
+
+---
+
+# Architectural Rules
+
+Never generate HTML directly.
+
+Never hardcode industries.
+
+Never duplicate prompts.
+
+Never duplicate business logic.
+
+Never place business logic inside React components.
+
+Never allow modules to have multiple responsibilities.
+
+Prefer composition over inheritance.
+
+Prefer configuration over hardcoded logic.
+
+Every module must have a single responsibility.
+
+Every module must have typed inputs and outputs.
+
+Every decision must be reproducible.
+
+---
+
+# Definition of Done
+
+A feature is considered complete only if it:
+
+- Has a clear responsibility.
+- Is strongly typed.
+- Is documented.
+- Is reusable.
+- Improves either conversion or architecture.
+- Does not introduce duplicated logic.
+- Integrates cleanly into the AI pipeline.
+
+---
+
+# Long-Term Goal
+
+Create the most intelligent landing page generation platform in the world.
+
+Noctra should consistently produce landing pages that outperform manually created pages in:
+
+- Conversion
+- Design quality
+- Copy quality
+- UX
+- SEO
+- Maintainability
+
+The objective is not to generate pages faster.
+
+The objective is to generate pages that convert better.

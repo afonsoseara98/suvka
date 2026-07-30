@@ -1,0 +1,323 @@
+# PROJECT CONTEXT
+
+Version: 1.1
+
+---
+
+# Project
+
+Name: Noctra
+
+Purpose:
+
+Build the world's most intelligent AI platform for generating high-converting landing pages.
+
+The product is not an AI website builder.
+
+The product is an AI Conversion System.
+
+---
+
+# Technology Stack
+
+Frontend
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS
+
+Backend
+- Next.js API Routes
+- OpenAI SDK
+
+Architecture
+- Modular AI Engine
+- Strongly Typed
+- Data-Driven
+- Component-Based
+- JSON First
+
+---
+
+# High-Level Architecture
+
+```
+User Prompt
+        │
+        ▼
+AI Engine
+        │
+        ▼
+Structured Landing JSON
+        │
+        ▼
+React Renderer
+        │
+        ▼
+Landing Page
+```
+
+React is responsible only for rendering.
+
+All business intelligence lives inside the AI Engine.
+
+---
+
+# AI Pipeline
+
+```
+User Prompt
+
+↓
+
+Business Analysis
+
+↓
+
+Industry Analysis
+
+↓
+
+Audience Analysis
+
+↓
+
+Psychology Analysis
+
+↓
+
+Knowledge Resolution
+
+↓
+
+Market Analysis
+
+↓
+
+Offer Planning
+
+↓
+
+Conversion Planning
+
+↓
+
+Copy Planning
+
+↓
+
+Design Planning
+
+↓
+
+Component Planning
+
+↓
+
+Prompt Builder
+
+↓
+
+LLM Generation
+
+↓
+
+Landing JSON
+
+↓
+
+React Rendering
+
+↓
+
+Validation
+
+↓
+
+Quality Scoring
+```
+
+---
+
+# Folder Structure
+
+```
+app/
+    ai/
+        analyzers/
+        builders/
+        components/
+        design/
+        generators/
+        knowledge/
+        prompts/
+        types/
+
+    api/
+
+docs/
+
+knowledge/
+
+prompts/
+
+public/
+```
+
+---
+
+# Module Responsibilities
+
+## Business Intelligence
+
+Understands:
+
+- Industry
+- Business Model
+- Audience
+- Goal
+- Positioning
+- Pricing
+- Tone
+
+---
+
+## Psychology Engine
+
+Determines:
+
+- Pain points
+- Desires
+- Objections
+- Trust factors
+- Emotional triggers
+
+---
+
+## Knowledge Engine
+
+Provides structured industry knowledge.
+
+No business-specific knowledge should be hardcoded.
+
+---
+
+## Conversion Engine
+
+Plans:
+
+- Offer
+- CTA strategy
+- Guarantees
+- Social proof
+- Urgency
+- Section order
+
+---
+
+## Copy Engine
+
+Produces copy only.
+
+It does not make strategic decisions.
+
+---
+
+## Design Engine
+
+Creates:
+
+- Layout
+- Colors
+- Typography
+- Visual hierarchy
+- Component styling
+
+---
+
+## Component Engine
+
+Chooses React components based on business context.
+
+---
+
+## Rendering Engine
+
+Transforms Landing JSON into React.
+
+Rendering must remain deterministic.
+
+---
+
+## Validation Engine
+
+Checks:
+
+- Accessibility
+- Structure
+- Copy consistency
+- Missing sections
+- Quality
+
+---
+
+# Development Rules
+
+- TypeScript everywhere.
+- No duplicated logic.
+- No business logic inside React.
+- Prefer composition over inheritance.
+- Prefer configuration over hardcoded logic.
+- Every module must have one responsibility.
+- Every module must expose typed inputs and outputs.
+- AI reasons using structured objects.
+
+---
+
+# Current Status
+
+Completed
+
+- Business Intelligence Engine
+- Industry Registry
+- Typed AI Pipeline
+- Knowledge Registry
+- Prompt System
+- Modular Architecture
+
+In Progress
+
+- Psychology Engine
+
+Planned
+
+- Market Engine
+- Offer Planner
+- Conversion Planner
+- Copy Planner
+- Design Planner
+- Validation Engine
+- Quality Scoring Engine
+
+---
+
+# Current Sprint
+
+Sprint 1
+
+Goal:
+
+Build the complete AI Core before introducing product features.
+
+Until the AI Core is production-ready, do not implement:
+
+- Authentication
+- Payments
+- Database
+- User Dashboard
+- Teams
+- Analytics
+
+The AI Engine is the product.
+
+Everything else depends on it.

@@ -1,0 +1,222 @@
+# CLAUDE.md
+
+# Noctra AI Conversion System
+
+## Mission
+
+Noctra is not a website builder.
+
+It is an AI Conversion System that generates landing pages designed to maximize conversions using marketing psychology, UX, persuasion and modern design.
+
+Every architectural decision should prioritize:
+
+- conversion
+- maintainability
+- scalability
+- clean architecture
+- strong typing
+
+---
+
+# Tech Stack
+
+- Next.js App Router
+- React
+- TypeScript
+- Tailwind CSS
+
+Always use modern TypeScript.
+
+Never use `any`.
+
+Prefer interfaces over loose objects.
+
+---
+
+# Code Style
+
+Keep functions small.
+
+Prefer composition.
+
+Avoid duplicated logic.
+
+Always use explicit types.
+
+Never introduce technical debt to solve a short-term problem.
+
+If a refactor improves architecture without breaking functionality, prefer the refactor.
+
+---
+
+# Folder Structure
+
+app/
+
+    ai/
+        analyzers/
+        builders/
+        components/
+        design/
+        generators/
+        knowledge/
+        prompts/
+        types/
+
+Never create random folders.
+
+Respect this structure.
+
+---
+
+# AI Pipeline
+
+The AI system follows this order:
+
+User Prompt
+
+↓
+
+Business Analysis
+
+↓
+
+Psychology Analysis
+
+↓
+
+Market Analysis
+
+↓
+
+Offer Analysis
+
+↓
+
+Messaging
+
+↓
+
+Copywriting
+
+↓
+
+Layout Strategy
+
+↓
+
+Component Selection
+
+↓
+
+Design System
+
+↓
+
+Landing Page Generation
+
+Never skip stages.
+
+---
+
+# Business Analysis
+
+Business analysis identifies:
+
+- industry
+- audience
+- business model
+- goal
+- pricing
+- competitors
+- positioning
+- tone
+
+---
+
+# Psychology Analysis
+
+Psychology identifies:
+
+- pains
+- desires
+- objections
+- trust factors
+- emotional triggers
+
+---
+
+# Rules
+
+Before modifying code:
+
+Understand the existing architecture.
+
+Prefer improving existing files instead of creating new ones.
+
+Do not duplicate functionality.
+
+Do not rename files unless necessary.
+
+Do not move files unless architecture improves.
+
+---
+
+# TypeScript
+
+Always fix TypeScript errors correctly.
+
+Never hide errors.
+
+Never disable strict mode.
+
+Never ignore types.
+
+---
+
+# Imports
+
+Keep imports clean.
+
+Remove unused imports.
+
+Prefer relative imports inside modules.
+
+---
+
+# Refactoring
+
+When refactoring:
+
+1. Preserve functionality.
+2. Improve readability.
+3. Improve maintainability.
+4. Keep naming consistent.
+5. Update imports automatically.
+
+---
+
+# Before finishing any task
+
+Claude must verify:
+
+- Project builds.
+- TypeScript passes.
+- Imports are valid.
+- No duplicated code.
+- No dead code.
+- No unused variables.
+
+---
+
+# Communication
+
+When asked to change code:
+
+1. Explain the plan.
+2. List affected files.
+3. Make the edits.
+4. Explain why.
+5. Warn about possible side effects.
+
+Never make hidden changes.
