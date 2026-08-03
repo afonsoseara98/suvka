@@ -8,19 +8,37 @@ export type Theme =
   | "restaurant"
   | "fitness";
 
+// "logoCloud" and "cta" are rendered entirely from data the pipeline already produces
+// (LogoCloud's content is static placeholder logos; CTABanner reuses hero.primaryCTA/
+// secondaryCTA) - deliberately so LandingComposition can place them without any change
+// to schema.ts or the copy the LLM generates. New roles that DO need their own
+// generated copy (gallery, story, doctors, ...) are a schema change and out of scope
+// until that's explicitly decided - this union is where they'd be added.
 export type SectionType =
   | "hero"
+  | "logoCloud"
   | "stats"
   | "features"
   | "benefits"
   | "testimonials"
   | "pricing"
   | "faq"
+  | "cta"
   | "footer";
+
+// How much visual weight LandingComposition gives this section - drives both variant
+// selection (SectionPlanner.ts) and spacing (resolveSectionSpacing in styles/layout.ts).
+export type SectionProminence = "primary" | "standard" | "compact";
+
+// The vertical pacing around this section - "dense" sections sit close to their
+// neighbors, "breather" sections get extra room, "standard" uses the theme's default.
+export type SectionRhythm = "dense" | "standard" | "breather";
 
 export interface Section {
   type: SectionType;
   variant: string;
+  prominence: SectionProminence;
+  rhythm: SectionRhythm;
 }
 
 export type HeroVariant =

@@ -3,10 +3,6 @@ import type { BusinessKnowledge } from "../types/knowledge"
 export const medicalKnowledge: BusinessKnowledge = {
   industry: "medical",
 
-  tone: "Professional, reassuring, trustworthy",
-
-  audience: "Patients and families",
-
   primaryCTA: "Book Appointment",
 
   heroStyle: "Doctor with patient",
@@ -44,10 +40,5 @@ export const medicalKnowledge: BusinessKnowledge = {
     "Doctor",
     "Healthcare",
     "Medical",
-  ],
-
-  colors: [
-    "#2563EB",
-    "#FFFFFF",
   ],
 };

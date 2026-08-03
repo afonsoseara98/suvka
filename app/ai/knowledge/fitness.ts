@@ -3,10 +3,6 @@ import type { BusinessKnowledge } from "../types/knowledge";
 export const fitnessKnowledge: BusinessKnowledge = {
   industry: "fitness",
 
-  tone: "Energetic, motivational",
-
-  audience: "People wanting better health and performance",
-
   primaryCTA: "Join Today",
 
   heroStyle: "Athlete training",
@@ -44,10 +40,5 @@ export const fitnessKnowledge: BusinessKnowledge = {
     "Fitness",
     "Workout",
     "Training",
-  ],
-
-  colors: [
-    "#DC2626",
-    "#111827",
   ],
 };

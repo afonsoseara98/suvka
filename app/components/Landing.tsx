@@ -1,5 +1,6 @@
 import type { LandingPage } from "@/app/types/landing";
 import { getTheme } from "@/app/styles/theme";
+import { getLayoutPersonality } from "@/app/styles/layout";
 
 import SectionRenderer from "./renderers/SectionRenderer";
 
@@ -7,6 +8,7 @@ type LandingProps = LandingPage;
 
 export default function Landing(landing: LandingProps) {
   const currentTheme = getTheme(landing.theme);
+  const layout = getLayoutPersonality(landing.theme);
 
   return (
     <section
@@ -24,6 +26,8 @@ export default function Landing(landing: LandingProps) {
           key={`${section.type}-${index}`}
           section={section}
           landing={landing}
+          theme={currentTheme}
+          layout={layout}
         />
       ))}
     </section>

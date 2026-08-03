@@ -1,69 +1,106 @@
-import type { LandingPage } from "@/app/types/landing";
+import type { LandingPage, SectionRhythm } from "@/app/types/landing";
+import type { ThemeConfig } from "@/app/styles/theme";
+import type { LayoutPersonality } from "@/app/styles/layout";
+import { resolveSectionSpacing } from "@/app/styles/layout";
+import GlowBackground from "./ui/GlowBackground";
+import SectionHeader from "./ui/SectionHeader";
 
 type BenefitsProps = {
   items: LandingPage["benefits"];
+  theme: ThemeConfig;
+  layout: LayoutPersonality;
+  rhythm: SectionRhythm;
+  variant?: string;
 };
 
-export default function Benefits({
-  items,
-}: BenefitsProps) {
+type ListProps = { items: LandingPage["benefits"]; theme: ThemeConfig; layout: LayoutPersonality };
+
+function BenefitsCards({ items, theme, layout }: ListProps) {
   return (
-    <section className="relative mt-32 overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute right-1/2 top-0 -z-10 h-96 w-96 translate-x-1/2 rounded-full bg-violet-600/10 blur-[120px]" />
+    <div className={`mt-20 grid gap-8 ${layout.gridColumns}`}>
+      {items.map((benefit, index) => (
+        <div
+          key={index}
+          className={`group relative overflow-hidden ${layout.cardRadius} border ${layout.cardPadding} backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl`}
+          style={{ borderColor: theme.colors.border, background: theme.colors.card, color: theme.colors.primary }}
+        >
+          {/* Glow */}
+          <div
+            className="absolute -left-10 -top-10 h-32 w-32 rounded-full blur-3xl opacity-0 transition duration-500 group-hover:opacity-100"
+            style={{ background: theme.gradients.glow }}
+          />
 
-      <div className="mx-auto max-w-7xl">
-        <div className="text-center">
-          <span className="inline-flex rounded-full border border-zinc-800 bg-zinc-900/70 px-4 py-2 text-sm text-zinc-400 backdrop-blur">
-            Why choose us
-          </span>
-
-          <h2 className="mt-6 text-5xl font-bold tracking-tight">
-            Benefits that make
-            <br />
-            the difference
-          </h2>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-zinc-400">
-            Designed to help businesses build trust, increase conversions
-            and deliver a better experience to every visitor.
-          </p>
-        </div>
-
-        <div className="mt-20 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((benefit, index) => (
+          <div className="relative">
             <div
-              key={index}
-              className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:border-zinc-600 hover:shadow-2xl"
+              className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl text-white shadow-lg"
+              style={{ backgroundImage: theme.gradients.button }}
             >
-              {/* Glow */}
-              <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl opacity-0 transition duration-500 group-hover:opacity-100" />
-
-              <div className="relative">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl text-black shadow-lg">
-                  {benefit.icon}
-                </div>
-
-                <h3 className="mt-8 text-2xl font-bold">
-                  {benefit.title}
-                </h3>
-
-                <p className="mt-4 leading-7 text-zinc-400">
-                  {benefit.description}
-                </p>
-
-                <div className="mt-8 flex items-center gap-2 text-sm font-medium text-white">
-                  Discover more
-
-                  <span className="transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
-                </div>
-              </div>
+              {benefit.icon}
             </div>
-          ))}
+
+            <h3 className="mt-8 text-2xl font-bold">{benefit.title}</h3>
+
+            <p className="mt-4 leading-7" style={{ color: theme.colors.secondary }}>{benefit.description}</p>
+
+            <div className="mt-8 flex items-center gap-2 text-sm font-medium" style={{ color: theme.colors.accent }}>
+              Discover more
+              <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
+    </div>
+  );
+}
+
+function BenefitsList({ items, theme }: ListProps) {
+  return (
+    <div className="mt-20 divide-y border-t" style={{ borderColor: theme.colors.border }}>
+      {items.map((benefit, index) => (
+        <div key={index} className="flex items-start gap-6 py-8">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl text-white"
+            style={{ backgroundImage: theme.gradients.button }}
+          >
+            {benefit.icon}
+          </div>
+
+          <div>
+            <h3 className="text-xl font-bold">{benefit.title}</h3>
+            <p className="mt-2 leading-7" style={{ color: theme.colors.secondary }}>{benefit.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function Benefits({ items, theme, layout, rhythm, variant }: BenefitsProps) {
+  return (
+    <section className={`relative ${resolveSectionSpacing(layout.sectionSpacing, rhythm)} overflow-hidden`}>
+      <GlowBackground theme={theme} decorative={layout.decorative}>
+        <div className={`mx-auto ${layout.sectionWidth}`}>
+          <SectionHeader
+            theme={theme}
+            layout={layout}
+            eyebrow="Why choose us"
+            title={
+              <>
+                Benefits that make
+                <br />
+                the difference
+              </>
+            }
+            description="Designed to help businesses build trust, increase conversions and deliver a better experience to every visitor."
+          />
+
+          {variant === "list" ? (
+            <BenefitsList items={items} theme={theme} layout={layout} />
+          ) : (
+            <BenefitsCards items={items} theme={theme} layout={layout} />
+          )}
+        </div>
+      </GlowBackground>
     </section>
   );
 }

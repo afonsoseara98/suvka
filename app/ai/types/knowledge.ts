@@ -1,10 +1,6 @@
 export interface BusinessKnowledge {
   industry: string;
 
-  tone: string;
-
-  audience: string;
-
   primaryCTA: string;
 
   heroStyle: string;
@@ -18,6 +14,4 @@ export interface BusinessKnowledge {
   faqTopics: string[];
 
   keywords: string[];
-
-  colors: string[];
 }

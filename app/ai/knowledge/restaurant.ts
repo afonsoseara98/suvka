@@ -3,10 +3,6 @@ import type { BusinessKnowledge } from "../types/knowledge";
 export const restaurantKnowledge: BusinessKnowledge = {
   industry: "restaurant",
 
-  tone: "Friendly, welcoming, delicious",
-
-  audience: "Families, couples and tourists",
-
   primaryCTA: "Reserve a Table",
 
   heroStyle: "High quality food photography",
@@ -44,10 +40,5 @@ export const restaurantKnowledge: BusinessKnowledge = {
     "Food",
     "Dinner",
     "Reservation",
-  ],
-
-  colors: [
-    "#EA580C",
-    "#111827",
   ],
 };

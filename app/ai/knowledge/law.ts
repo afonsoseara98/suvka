@@ -3,10 +3,6 @@ import type { BusinessKnowledge } from "../types/knowledge";
 export const lawKnowledge: BusinessKnowledge = {
   industry: "law",
 
-  tone: "Professional, authoritative, trustworthy",
-
-  audience: "Individuals and businesses",
-
   primaryCTA: "Book Consultation",
 
   heroStyle: "Law office",
@@ -44,10 +40,5 @@ export const lawKnowledge: BusinessKnowledge = {
     "Legal",
     "Attorney",
     "Law Firm",
-  ],
-
-  colors: [
-    "#1E3A8A",
-    "#FFFFFF",
   ],
 };

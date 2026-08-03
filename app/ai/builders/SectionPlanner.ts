@@ -1,62 +1,63 @@
-import type { Section } from "@/app/types/landing";
+import type { Section, SectionType, SectionProminence } from "@/app/types/landing";
+import type { LandingComposition, CompositionSection } from "../types/composition";
 
-export function buildSections(
-  industry: string
-): Section[] {
+// Translates LandingComposition's structural intent (role + prominence) into the
+// concrete variant string each component already understands. This is the only place
+// prominence maps to a rendering choice - components themselves stay ignorant of
+// "why", they just receive a variant like before. Section types with only one existing
+// treatment (logoCloud, stats, faq, cta, footer) ignore prominence for variant purposes;
+// it still reaches the renderer via Section.prominence for spacing/emphasis.
+//
+// Compact prominence deliberately resolves to the variants that had no archetype
+// pointing at them before this file existed (Features/Benefits "list", Testimonials
+// "minimal") - LandingComposition marking a section "compact" is what finally makes
+// picking those variants a real, reachable decision instead of dead code.
+function deriveVariant(
+  role: SectionType,
+  prominence: SectionProminence,
+  heroVariant: LandingComposition["heroVariant"]
+): string {
+  switch (role) {
+    case "hero":
+      return heroVariant;
 
-  switch (industry) {
+    case "features":
+      return prominence === "compact" ? "list" : "grid";
 
-    case "restaurant":
-      return [
-        { type: "hero", variant: "split" },
-        { type: "features", variant: "grid" },
-        { type: "testimonials", variant: "cards" },
-        { type: "benefits", variant: "list" },
-        { type: "faq", variant: "accordion" },
-        { type: "footer", variant: "simple" },
-      ];
+    case "benefits":
+      return prominence === "compact" ? "list" : "cards";
 
-    case "medical":
-      return [
-        { type: "hero", variant: "centered" },
-        { type: "benefits", variant: "list" },
-        { type: "features", variant: "grid" },
-        { type: "testimonials", variant: "cards" },
-        { type: "faq", variant: "accordion" },
-        { type: "footer", variant: "simple" },
-      ];
+    case "testimonials":
+      return prominence === "compact" ? "minimal" : "cards";
 
-    case "fitness":
-      return [
-        { type: "hero", variant: "split" },
-        { type: "stats", variant: "cards" },
-        { type: "benefits", variant: "list" },
-        { type: "pricing", variant: "premium" },
-        { type: "faq", variant: "accordion" },
-        { type: "footer", variant: "simple" },
-      ];
+    case "pricing":
+      return prominence === "primary" ? "premium" : "simple";
 
-    case "law":
-      return [
-        { type: "hero", variant: "centered" },
-        { type: "benefits", variant: "list" },
-        { type: "testimonials", variant: "cards" },
-        { type: "faq", variant: "accordion" },
-        { type: "footer", variant: "simple" },
-      ];
+    case "stats":
+      return "cards";
 
-    case "startup":
+    case "faq":
+      return "accordion";
+
+    case "footer":
+      return "simple";
+
+    case "logoCloud":
+    case "cta":
     default:
-      return [
-        { type: "hero", variant: "centered" },
-        { type: "stats", variant: "cards" },
-        { type: "features", variant: "grid" },
-        { type: "benefits", variant: "list" },
-        { type: "testimonials", variant: "cards" },
-        { type: "pricing", variant: "premium" },
-        { type: "faq", variant: "accordion" },
-        { type: "footer", variant: "simple" },
-      ];
+      return "default";
   }
+}
 
+function toSection(composition: LandingComposition, entry: CompositionSection): Section {
+  return {
+    type: entry.role,
+    variant: deriveVariant(entry.role, entry.prominence, composition.heroVariant),
+    prominence: entry.prominence,
+    rhythm: entry.rhythm,
+  };
+}
+
+export function buildSections(composition: LandingComposition): readonly Section[] {
+  return composition.sections.map((entry) => toSection(composition, entry));
 }

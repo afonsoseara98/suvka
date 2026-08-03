@@ -9,12 +9,14 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [landing, setLanding] = useState<LandingPage | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function generateLandingPage() {
     if (!prompt.trim()) return;
 
     setLanding(null);
-setLoading(true);
+    setError(null);
+    setLoading(true);
 
     try {
       const response = await fetch("/api/generate", {
@@ -28,14 +30,14 @@ setLoading(true);
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Something went wrong.");
+        setError(data.message || "Something went wrong.");
         return;
       }
 
       setLanding(data);
-    } catch (error) {
-      console.error(error);
-      alert("Unable to contact the server.");
+    } catch (err) {
+      console.error(err);
+      setError("Unable to contact the server.");
     } finally {
       setLoading(false);
     }
@@ -70,6 +72,7 @@ setLoading(true);
         type="text"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
+        aria-label="Describe your business"
         placeholder="Describe your business..."
         className="flex-1 bg-transparent px-6 py-5 text-lg outline-none placeholder:text-zinc-500"
         onKeyDown={(e) => {
@@ -88,6 +91,15 @@ setLoading(true);
       </button>
 
     </div>
+
+    {error && (
+      <p
+        role="alert"
+        className="mx-auto mt-4 max-w-4xl rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-3 text-sm text-red-400"
+      >
+        {error}
+      </p>
+    )}
 
     <div className="mt-10 flex justify-center gap-8 text-sm text-zinc-500">
 

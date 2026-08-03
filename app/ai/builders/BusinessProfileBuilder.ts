@@ -211,16 +211,5 @@ export function buildBusinessProfile(prompt: string): BusinessProfile {
   return {
     industry,
     ...facts,
-
-    // TECH DEBT: BusinessProfile still declares these four fields as required, but
-    // nothing in the live pipeline reads them anymore (confirmed: PromptBuilder now
-    // sources trust signals from PsychologyAnalysis and CTA from OfferStrategy; theme/
-    // hero-variant decisions come from DesignSystem). They exist here only to satisfy
-    // the type. Remove these lines and the four fields from BusinessProfile together
-    // in the dead-field cleanup stage.
-    trustSignals: [],
-    recommendedTheme: "startup",
-    recommendedHeroVariant: "centered",
-    recommendedCTA: "",
   };
 }

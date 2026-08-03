@@ -39,22 +39,5 @@ export interface BusinessProfile {
   tone: Tone;
 
   priceLevel: "low" | "medium" | "high" | "premium";
-
-  trustSignals: string[];
-
-  recommendedTheme:
-    | "startup"
-    | "luxury"
-    | "agency"
-    | "medical"
-    | "restaurant"
-    | "fitness";
-
-  recommendedHeroVariant:
-    | "centered"
-    | "split"
-    | "minimal";
-
-  recommendedCTA: string;
 }
 

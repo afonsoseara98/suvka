@@ -1,26 +1,32 @@
+import type { ThemeConfig } from "@/app/styles/theme";
+
 type Props = {
   children: React.ReactNode;
+  theme: ThemeConfig;
 };
 
 export default function SecondaryButton({
   children,
+  theme,
 }: Props) {
   return (
     <button
-      className="
+      className={`
         rounded-xl
         border
-        border-white/10
-        bg-white/5
         px-8
         py-4
-        font-semibold
         backdrop-blur-xl
 
         transition
 
-        hover:bg-white/10
-      "
+        ${theme.typography.button}
+      `}
+      style={{
+        borderColor: theme.colors.border,
+        background: theme.colors.card,
+        color: theme.colors.primary,
+      }}
     >
       {children}
     </button>

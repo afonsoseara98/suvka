@@ -3,10 +3,6 @@ import type { BusinessKnowledge } from "../types/knowledge";
 export const startupKnowledge: BusinessKnowledge = {
   industry: "startup",
 
-  tone: "Modern, ambitious, innovative",
-
-  audience: "Founders, startups, SaaS buyers and investors",
-
   primaryCTA: "Start Free Trial",
 
   heroStyle: "Dashboard with analytics",
@@ -44,10 +40,5 @@ export const startupKnowledge: BusinessKnowledge = {
     "Automation",
     "SaaS",
     "Analytics",
-  ],
-
-  colors: [
-    "#3B82F6",
-    "#111827",
   ],
 };

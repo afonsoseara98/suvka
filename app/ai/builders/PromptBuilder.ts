@@ -1,21 +1,39 @@
 import { SYSTEM_PROMPT } from "../prompts/system";
 import { CONVERSION_PROMPT } from "../prompts/conversion";
 import { SCHEMA_PROMPT } from "../prompts/schema";
+import { describeSignalsForPrompt } from "./CompositionIntelligence";
 
 import type { BusinessProfile } from "../types";
 import type { BusinessKnowledge } from "../types/knowledge";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
+import type { CompositionSignals } from "../types/signals";
 import type { DesignSystem } from "@/app/types/design";
+import type { Section } from "@/app/types/landing";
 
+// Copy Intelligence: psychology.pains/desires/objections/emotionalTriggers and
+// offer.valueProposition/offerFraming/riskReductionAngle were computed by every
+// pipeline run but never reached this prompt before - only trustFactors and
+// primaryCTA did. The LLM was writing copy blind to most of the psychological work
+// already done for it. Fixed here, not by adding new pipeline stages: the data
+// already existed, it just never travelled the last few feet into the prompt.
 export function buildPrompt(
   userPrompt: string,
   profile: BusinessProfile,
   knowledge: BusinessKnowledge,
   psychology: PsychologyProfile,
   offer: OfferStrategy,
-  design: DesignSystem
+  design: DesignSystem,
+  sections: readonly Section[],
+  signals: CompositionSignals
 ): string {
+  // knowledge.trustSignals and psychology.trustFactors both exist to answer the same
+  // question ("why should this reader trust this business") from two different
+  // angles (generic industry knowledge vs. this specific business's profile) - merged
+  // into one deduplicated list instead of two separately-labeled ones the model would
+  // otherwise have to reconcile itself.
+  const trustSignals = Array.from(new Set([...psychology.trustFactors, ...knowledge.trustSignals]));
+
   return [
     SYSTEM_PROMPT,
 
@@ -31,13 +49,59 @@ export function buildPrompt(
     `Audience: ${profile.audience}`,
     `Tone: ${profile.tone}`,
     `Price Level: ${profile.priceLevel}`,
-    `Recommended CTA: ${offer.primaryCTA}`,
+
+    "",
+
+    "==============================",
+    "PSYCHOLOGY & OFFER STRATEGY",
+    "==============================",
+
+    `Value Proposition: ${offer.valueProposition}`,
+    `Primary CTA: ${offer.primaryCTA}`,
+    `Offer Framing: ${offer.offerFraming}`,
+    `Risk Reversal: ${offer.riskReductionAngle}`,
+
+    "",
+
+    "Pain Points:",
+
+    ...psychology.pains,
+
+    "",
+
+    "Desires:",
+
+    ...psychology.desires,
+
+    "",
+
+    "Objections to Defeat:",
+
+    ...psychology.objections,
+
+    "",
+
+    "Emotional Triggers:",
+
+    ...psychology.emotionalTriggers,
 
     "",
 
     "Trust Signals:",
 
-    ...psychology.trustFactors,
+    ...trustSignals,
+
+    "",
+
+    "==============================",
+    "CONVERSION SIGNALS",
+    "==============================",
+
+    "How strongly each factor should shape the copy (derived from this business's profile):",
+
+    "",
+
+    ...describeSignalsForPrompt(signals),
 
     "",
 
@@ -46,15 +110,6 @@ export function buildPrompt(
     "==============================",
 
     `Hero Style: ${knowledge.heroStyle}`,
-    `Primary CTA: ${knowledge.primaryCTA}`,
-    `Audience: ${knowledge.audience}`,
-    `Tone: ${knowledge.tone}`,
-
-    "",
-
-    "Trust Signals:",
-
-    ...knowledge.trustSignals,
 
     "",
 
@@ -82,12 +137,6 @@ export function buildPrompt(
 
     "",
 
-    "Recommended Colors:",
-
-    ...knowledge.colors,
-
-    "",
-
     "==============================",
     "DESIGN SYSTEM",
     "==============================",
@@ -101,6 +150,18 @@ export function buildPrompt(
     `Primary Color: ${design.primaryColor}`,
     `Background: ${design.background}`,
     `Border Radius: ${design.borderRadius}`,
+
+    "",
+
+    "==============================",
+    "PAGE STRUCTURE",
+    "==============================",
+
+    "Generate the page using exactly this section structure, in this exact order. Do not add, remove, or reorder sections. \"emphasis\" tells you how much space/weight that section's copy should carry relative to the others:",
+
+    "",
+
+    ...sections.map((section) => `- ${section.type} (variant: ${section.variant}, emphasis: ${section.prominence})`),
 
     "",
 

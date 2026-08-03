@@ -89,9 +89,35 @@ export function buildDesignSystem(
         borderRadius: "2xl",
       };
 
+    // Matches the "luxury" PageArchetype ArchetypeResolver.ts now gives real_estate:
+    // a minimal hero and restrained, no-pricing composition. Before this case existed,
+    // real_estate fell into the default "saas" bucket below, so a page described as
+    // "luxury" in its section composition still rendered with the startup theme's
+    // indigo/violet identity - same bug class as an unreachable archetype, just one
+    // layer down (composition and visual identity silently disagreeing).
+    case "real_estate":
+      return {
+        style: "luxury",
+
+        heroVariant: "minimal",
+
+        featureVariant: "outline",
+
+        benefitVariant: "outline",
+
+        testimonialVariant: "outline",
+
+        pricingVariant: "simple",
+
+        primaryColor: "#D4AF37",
+
+        background: "dark",
+
+        borderRadius: "lg",
+      };
+
     case "startup":
     case "law":
-    case "real_estate":
     case "ecommerce":
     case "education":
     case "generic":

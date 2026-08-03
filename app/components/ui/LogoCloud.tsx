@@ -1,3 +1,5 @@
+import type { ThemeConfig } from "@/app/styles/theme";
+
 const logos = [
   "OpenAI",
   "Stripe",
@@ -6,9 +8,16 @@ const logos = [
   "Framer",
 ];
 
-export default function LogoCloud() {
+type Props = {
+  theme: ThemeConfig;
+};
+
+export default function LogoCloud({ theme }: Props) {
   return (
-    <div className="mt-16 flex flex-wrap justify-center gap-10 text-zinc-500">
+    <div
+      className="mt-16 flex flex-wrap justify-center gap-10"
+      style={{ color: theme.colors.secondary }}
+    >
       {logos.map((logo) => (
         <span
           key={logo}
