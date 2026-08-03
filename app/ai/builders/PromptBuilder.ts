@@ -2,12 +2,14 @@ import { SYSTEM_PROMPT } from "../prompts/system";
 import { CONVERSION_PROMPT } from "../prompts/conversion";
 import { SCHEMA_PROMPT } from "../prompts/schema";
 import { describeSignalsForPrompt } from "./CompositionIntelligence";
+import { describeBusinessIntelligenceForPrompt } from "./BusinessIntelligence";
 
 import type { BusinessProfile } from "../types";
 import type { BusinessKnowledge } from "../types/knowledge";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { CompositionSignals } from "../types/signals";
+import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { DesignSystem } from "@/app/types/design";
 import type { Section } from "@/app/types/landing";
 
@@ -25,7 +27,8 @@ export function buildPrompt(
   offer: OfferStrategy,
   design: DesignSystem,
   sections: readonly Section[],
-  signals: CompositionSignals
+  signals: CompositionSignals,
+  businessIntelligence: BusinessIntelligenceProfile
 ): string {
   // knowledge.trustSignals and psychology.trustFactors both exist to answer the same
   // question ("why should this reader trust this business") from two different
@@ -49,6 +52,18 @@ export function buildPrompt(
     `Audience: ${profile.audience}`,
     `Tone: ${profile.tone}`,
     `Price Level: ${profile.priceLevel}`,
+
+    "",
+
+    "==============================",
+    "BUSINESS INTELLIGENCE",
+    "==============================",
+
+    "Strategic read of this specific business, inferred from the prompt itself - not just its industry. Let this shape tone, pacing, and how hard the page pushes toward a decision:",
+
+    "",
+
+    ...describeBusinessIntelligenceForPrompt(businessIntelligence),
 
     "",
 

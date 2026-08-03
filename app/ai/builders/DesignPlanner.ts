@@ -1,8 +1,38 @@
 import type { DesignSystem } from "@/app/types/design";
 import type { Industry } from "../types";
 
+// Shared with the pricePositioning tie-breaker below - a business is either luxury
+// because its industry says so (real_estate) or because BusinessIntelligence read that
+// language from the prompt itself (e.g. a "boutique/exclusive/white-glove" startup or
+// agency). Either path lands on the exact same visual identity: one design, two ways
+// in, never a second parallel definition of "what luxury looks like" to drift from it.
+const LUXURY_DESIGN: DesignSystem = {
+  style: "luxury",
+
+  heroVariant: "minimal",
+
+  featureVariant: "outline",
+
+  benefitVariant: "outline",
+
+  testimonialVariant: "outline",
+
+  pricingVariant: "simple",
+
+  primaryColor: "#D4AF37",
+
+  background: "dark",
+
+  borderRadius: "lg",
+};
+
+// pricePositioning (0-1, from BusinessIntelligence) is optional so every existing
+// caller/test that only ever cared about industry keeps working unchanged - it only
+// ever pushes the *default* bucket toward luxury; industries with their own explicit
+// case above already declare their identity and are never overridden by it.
 export function buildDesignSystem(
-  industry: Industry
+  industry: Industry,
+  pricePositioning?: number
 ): DesignSystem {
   switch (industry) {
     case "medical":
@@ -96,25 +126,7 @@ export function buildDesignSystem(
     // indigo/violet identity - same bug class as an unreachable archetype, just one
     // layer down (composition and visual identity silently disagreeing).
     case "real_estate":
-      return {
-        style: "luxury",
-
-        heroVariant: "minimal",
-
-        featureVariant: "outline",
-
-        benefitVariant: "outline",
-
-        testimonialVariant: "outline",
-
-        pricingVariant: "simple",
-
-        primaryColor: "#D4AF37",
-
-        background: "dark",
-
-        borderRadius: "lg",
-      };
+      return LUXURY_DESIGN;
 
     case "startup":
     case "law":
@@ -122,6 +134,10 @@ export function buildDesignSystem(
     case "education":
     case "generic":
     default:
+      if ((pricePositioning ?? 0) >= 0.75) {
+        return LUXURY_DESIGN;
+      }
+
       return {
         style: "saas",
 

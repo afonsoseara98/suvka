@@ -2,6 +2,7 @@ import type { BusinessProfile, BusinessGoal } from "../types";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { CompositionSignals } from "../types/signals";
+import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 
 // Owns the read of "who this business is" as CompositionSignals - both how the page is
 // structured (LayoutIntelligence.ts consumes these signals to generate a
@@ -60,25 +61,43 @@ const BUSINESS_MODEL_COMPLEXITY: Record<string, number> = {
 
 // Deterministic, explainable scoring - every weight table above is the single place a
 // score can be tuned, and every score is a pure function of data the pipeline already
-// computes (BusinessProfileBuilder/PsychologyAnalyzer/OfferBuilder). No LLM call, no
-// randomness: the same business always produces the same signals.
+// computes (BusinessProfileBuilder/PsychologyAnalyzer/OfferBuilder/BusinessIntelligence).
+// No LLM call, no randomness: the same business always produces the same signals.
+//
+// bi blends in alongside the original industry-table-driven reads rather than
+// replacing them: business.priceLevel/businessModel/primaryGoal still carry real
+// signal (they're the coarse, always-available prior), and bi supplies the part that
+// actually reads the prompt's own words. Blending at 0.5 means neither source can be
+// silently ignored by the other - a business intelligence read of "very premium" can
+// still only pull priceSensitivity halfway from where priceLevel alone would put it.
+const BI_BLEND = 0.5;
+
+function blend(base: number, bi: number, weight = BI_BLEND): number {
+  return clamp01(base * (1 - weight) + bi * weight);
+}
+
 export function deriveCompositionSignals(
   business: BusinessProfile,
   psychology: PsychologyProfile,
-  offer: OfferStrategy
+  offer: OfferStrategy,
+  bi: BusinessIntelligenceProfile
 ): CompositionSignals {
   const trustBase = PRICE_LEVEL_TRUST_WEIGHT[business.priceLevel];
   const trustFromFactors = psychology.trustFactors.length * 0.08;
   const trustFromGoal = business.primaryGoal === "book_consultation" || business.primaryGoal === "schedule_call" ? 0.15 : 0;
+  const trustFromBi = (bi.trustDifficulty + bi.authorityRequirement + bi.riskPerception) / 3;
 
   const complexityBase = BUSINESS_MODEL_COMPLEXITY[business.businessModel] ?? 0.5;
+  const complexityFromBi = (bi.offerComplexity + bi.decisionComplexity) / 2;
 
   const urgencyBase = GOAL_URGENCY[business.primaryGoal];
   const urgencyFromTone = business.tone === "bold" ? 0.1 : 0;
 
   const socialProofBase = 0.25 + psychology.trustFactors.length * 0.12 + trustBase * 0.25;
+  const socialProofFromBi = (bi.riskPerception + bi.buyerSophistication) / 2;
 
   const objectionBase = GOAL_OBJECTION_WEIGHT[business.primaryGoal] * 0.6 + trustBase * 0.4;
+  const objectionFromBi = (bi.riskPerception + bi.decisionComplexity) / 2;
 
   // offer.riskReductionAngle always exists (OfferBuilder.ts derives one for every
   // goal), but a longer, more specific angle correlates with there being more to
@@ -86,12 +105,12 @@ export function deriveCompositionSignals(
   const objectionFromRiskAngle = offer.riskReductionAngle.length > 80 ? 0.1 : 0;
 
   return {
-    trustNeed: clamp01(trustBase + trustFromFactors + trustFromGoal),
-    urgency: clamp01(urgencyBase + urgencyFromTone),
-    complexity: clamp01(complexityBase),
-    socialProofNeed: clamp01(socialProofBase),
-    objectionPressure: clamp01(objectionBase + objectionFromRiskAngle),
-    priceSensitivity: PRICE_LEVEL_SENSITIVITY[business.priceLevel],
+    trustNeed: blend(clamp01(trustBase + trustFromFactors + trustFromGoal), trustFromBi),
+    urgency: blend(clamp01(urgencyBase + urgencyFromTone), bi.purchaseUrgency),
+    complexity: blend(complexityBase, complexityFromBi),
+    socialProofNeed: blend(clamp01(socialProofBase), socialProofFromBi),
+    objectionPressure: blend(clamp01(objectionBase + objectionFromRiskAngle), objectionFromBi),
+    priceSensitivity: blend(PRICE_LEVEL_SENSITIVITY[business.priceLevel], 1 - bi.pricePositioning),
   };
 }
 

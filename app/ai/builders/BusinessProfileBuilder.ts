@@ -1,4 +1,5 @@
 import type { Industry, BusinessGoal, Tone, BusinessProfile } from "../types";
+import { matchesWord } from "../utils/textMatching";
 
 interface IndustryProfile {
   businessModel: string;
@@ -167,14 +168,6 @@ const PRIMARY_WEIGHT = 5;
 const SECONDARY_WEIGHT = 2;
 const NEGATIVE_WEIGHT = -4;
 const CONFIDENCE_THRESHOLD = 4;
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function matchesWord(text: string, keyword: string): boolean {
-  return new RegExp(`\\b${escapeRegExp(keyword)}\\b`).test(text);
-}
 
 function scoreEntry(text: string, keywords: IndustryKeywords): number {
   const primaryHits = keywords.primary.filter((keyword) => matchesWord(text, keyword));

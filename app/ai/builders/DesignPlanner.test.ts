@@ -45,4 +45,31 @@ describe("DesignPlanner", () => {
     expect(buildDesignSystem("agency").style).not.toBe(defaultStyle);
     expect(buildDesignSystem("real_estate").style).not.toBe(defaultStyle);
   });
+
+  // BusinessIntelligence tie-breaker: a default-bucket industry whose prompt reads as
+  // genuinely premium (pricePositioning >= 0.75, e.g. a "boutique/exclusive" startup
+  // or agency) should get the same luxury identity real_estate gets by industry alone,
+  // rather than being forced into the generic "saas" look purely because of its
+  // industry classification.
+  describe("pricePositioning tie-breaker", () => {
+    it("routes a default-bucket industry to the luxury style once pricePositioning clears 0.75", () => {
+      const design = buildDesignSystem("startup", 0.9);
+      expect(design.style).toBe("luxury");
+      expect(design.heroVariant).toBe("minimal");
+    });
+
+    it("leaves a default-bucket industry on its normal style below the 0.75 threshold", () => {
+      expect(buildDesignSystem("startup", 0.5).style).toBe("saas");
+      expect(buildDesignSystem("startup", 0.74).style).toBe("saas");
+    });
+
+    it("stays on the default style when pricePositioning is omitted (backward compatible)", () => {
+      expect(buildDesignSystem("startup").style).toBe("saas");
+    });
+
+    it("never overrides an industry that already has its own explicit style", () => {
+      const design = buildDesignSystem("medical", 0.95);
+      expect(design.style).toBe("medical");
+    });
+  });
 });

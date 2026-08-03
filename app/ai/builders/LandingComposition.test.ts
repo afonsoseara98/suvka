@@ -6,6 +6,7 @@ import type { BusinessProfile } from "../types";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { CompositionSignals } from "../types/signals";
+import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { SectionType, HeroVariant } from "@/app/types/landing";
 
 const ALL_ARCHETYPES: PageArchetype[] = [
@@ -57,6 +58,32 @@ const offer: OfferStrategy = {
   valueProposition: "value",
   offerFraming: "framing",
   riskReductionAngle: "No risk",
+};
+
+// Neutral on every dimension - these tests exercise LandingComposition's own
+// structural behavior, not the BusinessIntelligence blend (see
+// CompositionIntelligence.test.ts for that).
+const businessIntelligence: BusinessIntelligenceProfile = {
+  pricePositioning: 0.5,
+  competitionLevel: 0.5,
+  visualImportance: 0.5,
+  buyerSophistication: 0.5,
+  emotionalVsRational: 0.5,
+  decisionComplexity: 0.5,
+  purchaseUrgency: 0.5,
+  offerComplexity: 0.5,
+  riskPerception: 0.5,
+  trustDifficulty: 0.5,
+  authorityRequirement: 0.5,
+  marketPosition: "established",
+  brandPersonality: "authoritative",
+  buyerAwareness: "solution-aware",
+  visitorTemperature: "warm",
+  salesCycle: "medium",
+  conversionStyle: "direct",
+  lifetimeValue: "one-time",
+  trafficSourceSuitability: ["search"],
+  funnelType: "lead-generation",
 };
 
 function business(overrides: Partial<BusinessProfile> = {}): BusinessProfile {
@@ -121,7 +148,8 @@ describe("LandingComposition - coverage and structural invariants", () => {
     const signals = deriveCompositionSignals(
       business({ priceLevel: "high", primaryGoal: "schedule_call", businessModel: "service" }),
       { ...psychology, trustFactors: ["a"] },
-      offer
+      offer,
+      businessIntelligence
     );
     const roles = composition("luxury", signals).sections.map((s) => s.role);
     expect(roles).not.toContain("stats");
@@ -134,7 +162,7 @@ describe("LandingComposition - coverage and structural invariants", () => {
   // measurably less pull toward them under luxury than under an archetype with a
   // neutral or positive bias.
   it("gives luxury a measurably lower pull toward stats/pricing than a neutral-bias archetype", () => {
-    const signals = deriveCompositionSignals(business(), psychology, offer);
+    const signals = deriveCompositionSignals(business(), psychology, offer, businessIntelligence);
     const luxuryRoles = composition("luxury", signals).sections.map((s) => s.role);
     const leadGenRoles = composition("lead_generation", signals).sections.map((s) => s.role);
     const luxuryWeight = luxuryRoles.includes("pricing") ? 1 : 0;
