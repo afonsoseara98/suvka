@@ -4,7 +4,6 @@ import type { LandingComposition } from "../types/composition";
 
 function composition(overrides: Partial<LandingComposition>): LandingComposition {
   return {
-    archetype: "lead_generation",
     heroVariant: "centered",
     sections: [],
     ...overrides,

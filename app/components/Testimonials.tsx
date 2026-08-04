@@ -1,7 +1,7 @@
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
-import { resolveSectionSpacing } from "@/app/styles/layout";
 import type { SectionRhythm } from "@/app/types/landing";
+import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 
 type Testimonial = {
@@ -26,8 +26,14 @@ function TestimonialsCards({ items, theme, layout }: ListProps) {
       {items.map((item, index) => (
         <div
           key={index}
-          className={`${layout.cardRadius} border ${layout.cardPadding}`}
-          style={{ borderColor: theme.colors.border, background: theme.colors.card, color: theme.colors.primary }}
+          className="border"
+          style={{
+            borderColor: theme.colors.border,
+            background: theme.colors.card,
+            color: theme.colors.primary,
+            borderRadius: theme.radius.xl,
+            padding: theme.spacing.lg,
+          }}
         >
           <p className="leading-8" style={{ color: theme.colors.secondary }}>
             &ldquo;{item.text}&rdquo;
@@ -63,18 +69,16 @@ function TestimonialsMinimal({ items, theme }: ListProps) {
 
 export default function Testimonials({ items, theme, layout, rhythm, variant }: TestimonialsProps) {
   return (
-    <section className={resolveSectionSpacing(layout.sectionSpacing, rhythm)}>
-      <div className={`mx-auto ${layout.sectionWidth}`}>
-        <SectionHeader theme={theme} layout={layout} title="Testimonials" />
+    <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
+      <SectionHeader theme={theme} layout={layout} title="Testimonials" />
 
-        <div className="mt-10">
-          {variant === "minimal" ? (
-            <TestimonialsMinimal items={items} theme={theme} layout={layout} />
-          ) : (
-            <TestimonialsCards items={items} theme={theme} layout={layout} />
-          )}
-        </div>
+      <div className="mt-10">
+        {variant === "minimal" ? (
+          <TestimonialsMinimal items={items} theme={theme} layout={layout} />
+        ) : (
+          <TestimonialsCards items={items} theme={theme} layout={layout} />
+        )}
       </div>
-    </section>
+    </SectionShell>
   );
 }

@@ -22,8 +22,8 @@ export default function HeroTextBlock({ data, theme, layout, align = "left" }: P
       <Badge theme={theme}>✨ {data.badge}</Badge>
 
       <h1
-        className={`mt-8 leading-none ${theme.typography.hero}`}
-        style={{ color: theme.colors.primary }}
+        className="mt-8 leading-none"
+        style={{ ...theme.typography.hero, color: theme.colors.primary }}
       >
         {data.title}
         <span
@@ -35,8 +35,8 @@ export default function HeroTextBlock({ data, theme, layout, align = "left" }: P
       </h1>
 
       <p
-        className={`mt-8 ${theme.typography.subtitle} ${isCentered ? "max-w-2xl" : "max-w-xl"}`}
-        style={{ color: theme.colors.secondary }}
+        className={`mt-8 ${isCentered ? "max-w-2xl" : "max-w-xl"}`}
+        style={{ ...theme.typography.subtitle, color: theme.colors.secondary }}
       >
         {data.subtitle}
       </p>

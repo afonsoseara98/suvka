@@ -21,10 +21,10 @@ export default function Footer({
   rhythm,
 }: FooterProps) {
   return (
-    <footer className={resolveSectionSpacing(layout.sectionSpacing, rhythm)}>
+    <footer style={{ marginTop: resolveSectionSpacing(layout.sectionSpacingPx, rhythm) }}>
       <div
-        className={`mx-auto border-t py-12 text-center ${layout.sectionWidth}`}
-        style={{ borderColor: theme.colors.border, color: theme.colors.secondary }}
+        className="mx-auto border-t py-12 text-center"
+        style={{ maxWidth: layout.sectionWidthPx, borderColor: theme.colors.border, color: theme.colors.secondary }}
       >
 
         <div className="font-bold">

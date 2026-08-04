@@ -1,95 +1,50 @@
 import { describe, it, expect } from "vitest";
-import { resolvePricingStrategy, describePricingStrategyForPrompt } from "./PricingEngine";
+import { resolvePricingDNA } from "./PricingEngine";
 import { neutralBusinessIntelligence as bi, neutralCompositionSignals as signals } from "../testFixtures";
 
-describe("resolvePricingStrategy", () => {
-  it("is deterministic - identical inputs always produce the same strategy", () => {
-    expect(resolvePricingStrategy(bi(), signals())).toEqual(resolvePricingStrategy(bi(), signals()));
+describe("resolvePricingDNA", () => {
+  it("is deterministic - identical inputs always produce the same DNA", () => {
+    expect(resolvePricingDNA(bi(), signals())).toEqual(resolvePricingDNA(bi(), signals()));
   });
 
-  describe("presentation", () => {
-    it("goes custom-quote for a complex offer or decision", () => {
-      expect(resolvePricingStrategy(bi({ offerComplexity: 0.7 }), signals()).presentation).toBe("custom-quote");
-      expect(resolvePricingStrategy(bi({ decisionComplexity: 0.7 }), signals()).presentation).toBe("custom-quote");
-    });
-
-    it("goes tiered-comparison for a premium offer with low price sensitivity", () => {
-      expect(
-        resolvePricingStrategy(
-          bi({ pricePositioning: 0.7, offerComplexity: 0.3, decisionComplexity: 0.3 }),
-          signals({ priceSensitivity: 0.2 })
-        ).presentation
-      ).toBe("tiered-comparison");
-    });
-
-    it("falls back to exact-numbers otherwise", () => {
-      expect(
-        resolvePricingStrategy(
-          bi({ pricePositioning: 0.4, offerComplexity: 0.3, decisionComplexity: 0.3 }),
-          signals({ priceSensitivity: 0.5 })
-        ).presentation
-      ).toBe("exact-numbers");
-    });
-  });
-
-  describe("anchoring", () => {
-    it("is true for a premium offer presented with exact numbers or tiers", () => {
-      expect(
-        resolvePricingStrategy(bi({ pricePositioning: 0.6, offerComplexity: 0.3, decisionComplexity: 0.3 }), signals())
-          .anchoring
-      ).toBe(true);
-    });
-
-    it("is false once presentation is custom-quote, even at high pricePositioning", () => {
-      expect(
-        resolvePricingStrategy(bi({ pricePositioning: 0.9, offerComplexity: 0.7 }), signals()).anchoring
-      ).toBe(false);
-    });
-
-    it("is false below the pricePositioning threshold", () => {
-      expect(
-        resolvePricingStrategy(bi({ pricePositioning: 0.3, offerComplexity: 0.3, decisionComplexity: 0.3 }), signals())
-          .anchoring
-      ).toBe(false);
-    });
-  });
-
-  describe("emphasis", () => {
-    it("goes understated for high pricePositioning", () => {
-      expect(resolvePricingStrategy(bi({ pricePositioning: 0.75 }), signals()).emphasis).toBe("understated");
-    });
-
-    it("goes prominent for high priceSensitivity below the pricePositioning threshold", () => {
-      expect(resolvePricingStrategy(bi({ pricePositioning: 0.3 }), signals({ priceSensitivity: 0.7 })).emphasis).toBe(
-        "prominent"
-      );
-    });
-
-    it("falls back to standard otherwise", () => {
-      expect(resolvePricingStrategy(bi({ pricePositioning: 0.4 }), signals({ priceSensitivity: 0.4 })).emphasis).toBe(
-        "standard"
-      );
-    });
-  });
-});
-
-describe("describePricingStrategyForPrompt", () => {
-  it("includes presentation and emphasis as readable lines", () => {
-    const strategy = resolvePricingStrategy(bi(), signals());
-    const lines = describePricingStrategyForPrompt(strategy).join("\n");
-
-    expect(lines).toContain(`Pricing presentation: ${strategy.presentation}`);
-    expect(lines).toContain(`Pricing emphasis: ${strategy.emphasis}`);
-  });
-
-  it("adds an anchoring directive only when anchoring is true", () => {
-    const anchored = resolvePricingStrategy(
-      bi({ pricePositioning: 0.6, offerComplexity: 0.3, decisionComplexity: 0.3 }),
-      signals()
+  it("every field stays within [0, 1] at the extremes", () => {
+    const dna = resolvePricingDNA(
+      bi({ pricePositioning: 1, offerComplexity: 1, decisionComplexity: 1 }),
+      signals({ priceSensitivity: 1 })
     );
-    const notAnchored = resolvePricingStrategy(bi({ pricePositioning: 0.3 }), signals());
+    for (const value of Object.values(dna)) {
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+  });
 
-    expect(describePricingStrategyForPrompt(anchored).join("\n")).toMatch(/higher-tier anchor/);
-    expect(describePricingStrategyForPrompt(notAnchored).join("\n")).not.toMatch(/higher-tier anchor/);
+  describe("priceComplexityLean", () => {
+    it("rises with offerComplexity and decisionComplexity", () => {
+      const simple = resolvePricingDNA(bi({ offerComplexity: 0.1, decisionComplexity: 0.1 }), signals());
+      const complex = resolvePricingDNA(bi({ offerComplexity: 0.9, decisionComplexity: 0.9 }), signals());
+      expect(complex.priceComplexityLean).toBeGreaterThan(simple.priceComplexityLean);
+    });
+  });
+
+  describe("priceAnchoring", () => {
+    it("rises with pricePositioning when the offer stays simple", () => {
+      const budget = resolvePricingDNA(bi({ pricePositioning: 0.1, offerComplexity: 0.1, decisionComplexity: 0.1 }), signals());
+      const premium = resolvePricingDNA(bi({ pricePositioning: 0.9, offerComplexity: 0.1, decisionComplexity: 0.1 }), signals());
+      expect(premium.priceAnchoring).toBeGreaterThan(budget.priceAnchoring);
+    });
+
+    it("is scaled down once the offer leans toward a custom quote, even at high pricePositioning", () => {
+      const simpleOffer = resolvePricingDNA(bi({ pricePositioning: 0.9, offerComplexity: 0.1, decisionComplexity: 0.1 }), signals());
+      const complexOffer = resolvePricingDNA(bi({ pricePositioning: 0.9, offerComplexity: 0.9, decisionComplexity: 0.9 }), signals());
+      expect(complexOffer.priceAnchoring).toBeLessThan(simpleOffer.priceAnchoring);
+    });
+  });
+
+  describe("priceEmphasis", () => {
+    it("rises with priceSensitivity and falls with pricePositioning", () => {
+      const sensitive = resolvePricingDNA(bi({ pricePositioning: 0.1 }), signals({ priceSensitivity: 0.9 }));
+      const premium = resolvePricingDNA(bi({ pricePositioning: 0.9 }), signals({ priceSensitivity: 0.1 }));
+      expect(sensitive.priceEmphasis).toBeGreaterThan(premium.priceEmphasis);
+    });
   });
 });

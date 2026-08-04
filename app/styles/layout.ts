@@ -1,154 +1,73 @@
-import type { Theme, SectionRhythm } from "@/app/types/landing";
+import type { SectionRhythm } from "@/app/types/landing";
+import type { StrategyDNA } from "@/app/ai/types/dna";
+import { clamp01 } from "@/app/ai/utils/math";
 
-// Design System v2: a second, purely-rendering axis alongside ThemeConfig. ThemeConfig
-// answers "what colors/gradients/typography" - this answers "how is space, structure and
-// emphasis handled". Every field here is consumed by section components as Tailwind
-// classes/flags, never by the pipeline - resolveArchetype/SectionPlanner/DesignPlanner/
-// PromptBuilder/schema.ts are untouched. This exists because most archetypes currently
-// share the same Section.variant (grid features, cards benefits) and, for 5 of 9
-// archetypes, the same Theme too (DesignPlanner's "saas" default) - without a second
-// differentiating axis, those pages would only ever differ by copy. Keyed by Theme
-// (already reaching every component) rather than PageArchetype (never serialized onto
-// LandingPage) so no new data has to flow through the pipeline.
+// LAYOUT COMPILER
+//
+// Used to be `Record<Theme, LayoutPersonality>` - 6 hand-authored spacing/structure
+// personalities, picked by a discrete Theme enum. Now computed continuously from
+// StrategyDNA's density/contentWidth fields. cardRadius/cardPadding were removed
+// entirely rather than kept as a parallel scale - they were always answering the exact
+// same question ThemeConfig.radius/spacing (compiled in theme.ts from the same
+// roundedness/density DNA) already answers, so components now read those directly
+// instead of maintaining two overlapping continuous scales that could drift apart.
+//
+// Two genuinely structural choices remain, both still DNA-derived, neither an
+// industry/archetype lookup:
+// - `decorative`: WHICH decorative technique (glow vs grid-lines) - two different
+//   rendering approaches that can't be blended into one continuous parameter without a
+//   much deeper generative-graphics system. Chosen from colorTemperature (warm -> glow,
+//   cool -> grid-lines); intensity is `decorationOpacity`, fully continuous.
+// - `headerAlign` / `ctaLayout`: text-align and flex-direction are inherently binary
+//   CSS properties, not interpolable - derived from contentWidth via threshold.
 export type SectionAlignment = "left" | "center";
 export type CTALayout = "row" | "stacked";
 export type DecorativeStyle = "glow" | "grid-lines" | "none";
 
 export interface LayoutPersonality {
-  sectionWidth: string;
-  sectionSpacing: string;
-  heroPadding: string;
+  sectionWidthPx: number;
+  sectionSpacingPx: number;
+  heroPaddingPx: number;
   headerAlign: SectionAlignment;
   gridColumns: string;
-  cardRadius: string;
-  cardPadding: string;
   decorative: DecorativeStyle;
+  decorationOpacity: number;
   ctaLayout: CTALayout;
 }
 
-export const layoutPersonalities: Record<Theme, LayoutPersonality> = {
-  // Dense, centered, tech-marketing default - the template every other personality is
-  // deliberately built to feel different from.
-  startup: {
-    sectionWidth: "max-w-7xl",
-    sectionSpacing: "mt-28",
-    heroPadding: "py-28",
-    headerAlign: "center",
-    gridColumns: "md:grid-cols-2 xl:grid-cols-3",
-    cardRadius: "rounded-3xl",
-    cardPadding: "p-8",
-    decorative: "glow",
-    ctaLayout: "row",
-  },
-
-  // Editorial and restrained: narrow column, the most vertical breathing room of any
-  // personality, left-aligned headers (a marketing block centered on the page reads as
-  // trying too hard; luxury copy reads like a magazine spread), no glow, a single CTA
-  // is given more weight than a dashboard-style has this row layout.
-  luxury: {
-    // Every card grid in this codebase holds exactly 3 items (schema.ts fixes
-    // features/benefits/testimonials/pricing at 3 each), so "md:grid-cols-2" would
-    // strand a lone third card alone on its own row. A single column instead - full-
-    // width, stacked cards - reads as a deliberate editorial layout, not a mistake,
-    // and is the most different this grid can look from every other personality.
-    sectionWidth: "max-w-4xl",
-    sectionSpacing: "mt-40",
-    heroPadding: "py-36",
-    headerAlign: "left",
-    gridColumns: "",
-    cardRadius: "rounded-lg",
-    cardPadding: "p-10",
-    decorative: "none",
-    ctaLayout: "stacked",
-  },
-
-  // Structured and confident: fixed 3-column grid (no responsive column growth - it
-  // always looks deliberately composed, never like it just ran out of room), left-
-  // aligned headers for a case-study feel, subtle grid-line texture instead of a blur.
-  agency: {
-    sectionWidth: "max-w-6xl",
-    sectionSpacing: "mt-24",
-    heroPadding: "py-24",
-    headerAlign: "left",
-    gridColumns: "md:grid-cols-3",
-    cardRadius: "rounded-2xl",
-    cardPadding: "p-8",
-    decorative: "grid-lines",
-    ctaLayout: "row",
-  },
-
-  // Clean and airy: no decoration at all, generous but not extreme spacing, narrower
-  // column for readability - the calm, clinical opposite of fitness's intensity.
-  medical: {
-    sectionWidth: "max-w-5xl",
-    sectionSpacing: "mt-32",
-    heroPadding: "py-32",
-    headerAlign: "center",
-    gridColumns: "md:grid-cols-2 xl:grid-cols-3",
-    cardRadius: "rounded-2xl",
-    cardPadding: "p-8",
-    decorative: "none",
-    ctaLayout: "row",
-  },
-
-  // Warm and inviting: soft, rounded cards and a glow treatment (reused, not
-  // reinvented) to keep the organic, welcoming feel.
-  restaurant: {
-    sectionWidth: "max-w-6xl",
-    sectionSpacing: "mt-24",
-    heroPadding: "py-24",
-    headerAlign: "center",
-    gridColumns: "md:grid-cols-2 xl:grid-cols-3",
-    cardRadius: "rounded-3xl",
-    cardPadding: "p-8",
-    decorative: "glow",
-    ctaLayout: "row",
-  },
-
-  // Bold and energetic: the tightest spacing and padding of any personality (intensity
-  // over air), sharper/less-bubbly corners, a fixed 3-column grid for a dense, high-
-  // energy wall of content.
-  fitness: {
-    sectionWidth: "max-w-7xl",
-    sectionSpacing: "mt-20",
-    heroPadding: "py-20",
-    headerAlign: "center",
-    gridColumns: "md:grid-cols-3",
-    cardRadius: "rounded-xl",
-    cardPadding: "p-6",
-    decorative: "grid-lines",
-    ctaLayout: "row",
-  },
-};
-
-export function getLayoutPersonality(theme: Theme): LayoutPersonality {
-  return layoutPersonalities[theme];
+function lerp(min: number, max: number, t: number): number {
+  return min + (max - min) * clamp01(t);
 }
 
-// Ordered so a theme's base sectionSpacing can be shifted up/down a couple of steps by
-// LandingComposition's per-section `rhythm` - this is what turns "zonas densas / zonas
-// vazias" into an actual rendered difference instead of a concept that only lives in
-// the composition data. Every LayoutPersonality.sectionSpacing value above must be a
-// member of this scale (guarded by LandingComposition.test.ts) - a dense/breather
-// shift silently no-ops for any value that falls outside it.
-const SPACING_SCALE = [
-  "mt-8", "mt-12", "mt-16", "mt-20", "mt-24", "mt-28", "mt-32", "mt-36", "mt-40", "mt-44", "mt-48",
-] as const;
+export function compileLayout(dna: StrategyDNA): LayoutPersonality {
+  const width = clamp01(dna.contentWidth);
+  const density = clamp01(dna.density);
 
-const RHYTHM_SHIFT: Record<SectionRhythm, number> = {
-  dense: -2,
+  return {
+    sectionWidthPx: Math.round(lerp(720, 1280, width)),
+    sectionSpacingPx: Math.round(lerp(160, 80, density)),
+    heroPaddingPx: Math.round(lerp(144, 80, density)),
+    headerAlign: width <= 0.4 ? "left" : "center",
+    // Grid column count is a genuinely discrete DOM fact (2 columns or 3, nothing in
+    // between) - kept as a small Tailwind responsive fragment since viewport-based
+    // breakpoints are a different concern from the business's own DNA and Tailwind's
+    // responsive utilities are the right tool for that, not something the DNA should
+    // encode. width<=0.4 (the narrow/editorial case) drops to a single column, matching
+    // every card grid in this codebase holding exactly 3 items (a 2-column grid would
+    // strand a lone third card).
+    gridColumns: width <= 0.4 ? "" : density >= 0.55 ? "md:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3",
+    decorative: dna.decorationDensity <= 0.12 ? "none" : dna.colorTemperature >= 0.5 ? "glow" : "grid-lines",
+    decorationOpacity: clamp01(dna.decorationDensity),
+    ctaLayout: width <= 0.4 ? "stacked" : "row",
+  };
+}
+
+const RHYTHM_SHIFT_PX: Record<SectionRhythm, number> = {
+  dense: -32,
   standard: 0,
-  breather: 2,
+  breather: 32,
 };
 
-export function resolveSectionSpacing(base: string, rhythm: SectionRhythm): string {
-  const index = SPACING_SCALE.indexOf(base as (typeof SPACING_SCALE)[number]);
-
-  if (index === -1) {
-    return base;
-  }
-
-  const nextIndex = Math.min(SPACING_SCALE.length - 1, Math.max(0, index + RHYTHM_SHIFT[rhythm]));
-
-  return SPACING_SCALE[nextIndex];
+export function resolveSectionSpacing(basePx: number, rhythm: SectionRhythm): number {
+  return Math.max(32, basePx + RHYTHM_SHIFT_PX[rhythm]);
 }

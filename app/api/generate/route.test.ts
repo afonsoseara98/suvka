@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { buildPipeline } from "@/app/ai/builders/PipelineBuilder";
 
 const mockCreate = vi.fn();
 
@@ -59,17 +60,18 @@ describe("POST /api/generate - validation", () => {
 });
 
 describe("POST /api/generate - success path", () => {
-  it("returns 200 and overrides theme/sections deterministically for a valid prompt", async () => {
-    const res = await POST(
-      requestWith({ prompt: "A dental clinic offering checkups for the whole family." }, "2.2.2.1")
-    );
+  it("returns 200 and overrides dna/sections deterministically for a valid prompt", async () => {
+    const prompt = "A dental clinic offering checkups for the whole family.";
+    const res = await POST(requestWith({ prompt }, "2.2.2.1"));
     const data = await res.json();
 
     expect(res.status).toBe(200);
-    // "medical" gets its own DesignPlanner style ("medical" -> theme "medical"), not
-    // whatever the mocked LLM content said ("startup") - proves the deterministic
-    // override in route.ts still runs against the real pipeline, not the LLM's output.
-    expect(data.theme).toBe("medical");
+
+    // The real pipeline's own StrategyDNA, not whatever the mocked LLM content implied
+    // (it had no dna field at all) - proves the deterministic override in route.ts
+    // still runs against the real pipeline, not the LLM's output.
+    const expected = buildPipeline(prompt);
+    expect(data.dna).toEqual(expected.dna);
     expect(Array.isArray(data.sections)).toBe(true);
     expect(data.sections.length).toBeGreaterThan(0);
   });

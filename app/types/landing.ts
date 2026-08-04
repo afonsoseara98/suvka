@@ -1,12 +1,4 @@
-import type { DesignSystem } from "./design";
-
-export type Theme =
-  | "startup"
-  | "luxury"
-  | "agency"
-  | "medical"
-  | "restaurant"
-  | "fitness";
+import type { StrategyDNA } from "../ai/types/dna";
 
 // "logoCloud" and "cta" are rendered entirely from data the pipeline already produces
 // (LogoCloud's content is static placeholder logos; CTABanner reuses hero.primaryCTA/
@@ -142,9 +134,7 @@ export interface SiteData {
 }
 
 export interface LandingPage {
-  theme: Theme;
-
-  design: DesignSystem;
+  dna: StrategyDNA;
 
   site: SiteData;
 

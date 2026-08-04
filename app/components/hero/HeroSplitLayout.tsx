@@ -20,8 +20,11 @@ export default function HeroSplitLayout({ data, theme, layout }: Props) {
   const Scene = heroRegistry[data.imageStyle] ?? heroRegistry.dashboard;
 
   return (
-    <GlowBackground theme={theme} decorative={layout.decorative}>
-      <section className={`relative overflow-hidden ${layout.heroPadding}`}>
+    <GlowBackground theme={theme} decorative={layout.decorative} opacity={layout.decorationOpacity}>
+      <section
+        className="relative overflow-hidden"
+        style={{ paddingTop: layout.heroPaddingPx, paddingBottom: layout.heroPaddingPx }}
+      >
         <div className="mx-auto grid max-w-7xl items-center gap-20 lg:grid-cols-2">
           <HeroTextBlock data={data} theme={theme} layout={layout} />
           <Scene data={data} theme={theme} />

@@ -1,14 +1,19 @@
 import type { LandingPage } from "@/app/types/landing";
-import { getTheme } from "@/app/styles/theme";
-import { getLayoutPersonality } from "@/app/styles/layout";
+import { compileTheme } from "@/app/styles/theme";
+import { compileLayout } from "@/app/styles/layout";
 
 import SectionRenderer from "./renderers/SectionRenderer";
 
 type LandingProps = LandingPage;
 
+// The renderer's compiler entry point: landing.dna is a continuous StrategyDNA object,
+// never a Theme/DesignStyle label - compileTheme/compileLayout turn it into concrete
+// CSS values every component downstream already knew how to consume (they read
+// theme.colors.X / layout.sectionWidthPx exactly as before), so no component further
+// down the tree needs to know DNA exists at all.
 export default function Landing(landing: LandingProps) {
-  const currentTheme = getTheme(landing.theme);
-  const layout = getLayoutPersonality(landing.theme);
+  const currentTheme = compileTheme(landing.dna);
+  const layout = compileLayout(landing.dna);
 
   return (
     <section

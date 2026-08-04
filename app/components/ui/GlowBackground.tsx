@@ -5,16 +5,22 @@ type Props = {
   children: React.ReactNode;
   theme: ThemeConfig;
   decorative?: DecorativeStyle;
+  opacity?: number;
 };
 
 // Renders the LayoutPersonality "decorative" treatment behind its children. Started
 // as a hero-only radial glow; generalized so Features/Benefits/Hero all share one
 // implementation of "glow | grid-lines | none" instead of each hand-rolling its own
-// background div.
+// background div. WHICH treatment is still a small structural choice (glow and
+// grid-lines are different rendering techniques, not interpolable into each other) -
+// `opacity` (StrategyDNA.decorationDensity, compiled through) is the continuous part,
+// replacing what used to be a fixed 0.4 constant for grid-lines and no control at all
+// for glow.
 export default function GlowBackground({
   children,
   theme,
   decorative = "glow",
+  opacity = 1,
 }: Props) {
   return (
     <div className="relative overflow-hidden">
@@ -32,6 +38,7 @@ export default function GlowBackground({
           "
           style={{
             background: theme.gradients.glow,
+            opacity,
           }}
         />
       )}
@@ -46,7 +53,7 @@ export default function GlowBackground({
             `,
             backgroundSize: "64px 64px",
             maskImage: "linear-gradient(to bottom, black, transparent)",
-            opacity: 0.4,
+            opacity: opacity * 0.4,
           }}
         />
       )}

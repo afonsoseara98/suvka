@@ -29,12 +29,8 @@ export default function SectionHeader({ theme, layout, title, eyebrow, descripti
       )}
 
       <h2
-        className={
-          isIntro
-            ? `${eyebrow ? "mt-6" : ""} text-5xl font-bold tracking-tight`
-            : theme.typography.title
-        }
-        style={{ color: theme.colors.primary }}
+        className={isIntro ? `${eyebrow ? "mt-6" : ""} text-5xl font-bold tracking-tight` : undefined}
+        style={isIntro ? { color: theme.colors.primary } : { ...theme.typography.title, color: theme.colors.primary }}
       >
         {title}
       </h2>

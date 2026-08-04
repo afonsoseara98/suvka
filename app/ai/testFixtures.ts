@@ -7,6 +7,8 @@
 // just for test fixtures instead of production code.
 import type { BusinessIntelligenceProfile } from "./types/businessIntelligence";
 import type { CompositionSignals } from "./types/signals";
+import type { StrategyDNA } from "./types/dna";
+import type { GatedRole } from "./builders/LayoutIntelligence";
 
 export function neutralBusinessIntelligence(
   overrides: Partial<BusinessIntelligenceProfile> = {}
@@ -44,6 +46,48 @@ export function neutralCompositionSignals(overrides: Partial<CompositionSignals>
     socialProofNeed: 0.5,
     objectionPressure: 0.5,
     priceSensitivity: 0.5,
+    ...overrides,
+  };
+}
+
+const NEUTRAL_SECTION_WEIGHT: Record<GatedRole, number> = {
+  logoCloud: 0.5,
+  features: 0.5,
+  benefits: 0.5,
+  stats: 0.5,
+  testimonials: 0.5,
+  pricing: 0.5,
+  faq: 0.5,
+};
+
+export function neutralStrategyDna(overrides: Partial<StrategyDNA> = {}): StrategyDNA {
+  return {
+    sectionWeight: NEUTRAL_SECTION_WEIGHT,
+    urgency: 0.5,
+    complexity: 0.5,
+    colorTemperature: 0.5,
+    saturation: 0.5,
+    brightness: 0.3,
+    accentIntensity: 0.5,
+    roundedness: 0.5,
+    elevation: 0.5,
+    decorationDensity: 0.5,
+    density: 0.5,
+    contentWidth: 0.5,
+    typeScale: 0.5,
+    typeWeight: 0.5,
+    heroSplitLean: 0.5,
+    heroImageryProminence: 0.5,
+    emotionalIntensity: 0.5,
+    credibilityRationalLean: 0.5,
+    proofDensity: 0.5,
+    authorityEmphasis: 0.5,
+    objectionProactivity: 0.5,
+    ctaUrgency: 0.5,
+    ctaCommitmentWeight: 0.5,
+    priceEmphasis: 0.5,
+    priceAnchoring: 0.5,
+    priceComplexityLean: 0.5,
     ...overrides,
   };
 }

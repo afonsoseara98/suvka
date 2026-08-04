@@ -1,5 +1,5 @@
 import type { CompositionSignals } from "../types/signals";
-import type { PageArchetype } from "../types/archetype";
+import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { LandingComposition, CompositionSection } from "../types/composition";
 import type { SectionType, SectionProminence, SectionRhythm, HeroVariant } from "@/app/types/landing";
 import { clamp01 } from "../utils/math";
@@ -7,16 +7,15 @@ import { clamp01 } from "../utils/math";
 // LAYOUT INTELLIGENCE
 //
 // What this replaces: a Record<PageArchetype, LandingComposition> - nine hand-authored
-// full-page structures. That is a lookup table wearing an "intelligence" label: two
-// businesses landing on the same archetype got the exact same page shape, forever,
-// because the shape was the key's *value*, not something computed.
-//
-// What this is instead: order, count, repetition, rhythm and CTA placement are each
-// their own small computation over CompositionSignals - none of them read from a table
-// keyed by archetype. The only archetype-specific data left is BIAS_BY_ARCHETYPE below,
-// a handful of nudge values (not a structure), because an archetype is still a real,
-// useful signal about *tendency* ("luxury tends to want less pricing pressure") - it
-// just no longer gets to dictate the page outright.
+// full-page structures, and later, a PageArchetype classification step with a small
+// per-archetype nudge table (BIAS_BY_ARCHETYPE). Both were categorical: two businesses
+// landing on the same archetype/bucket got the exact same treatment, because the shape
+// was a lookup table's *value*, not something computed. PageArchetype has been removed
+// entirely - every role's "pull" is now a direct, continuous function of
+// BusinessIntelligenceProfile + CompositionSignals. What used to be "luxury archetype
+// suppresses pricing/stats by a fixed amount" is now "pricing/stats weight falls off
+// smoothly as pricePositioning rises" - the same compositional reasoning, expressed as
+// a formula instead of a label lookup.
 //
 // The generative core is a narrative grammar of PHASES (hook -> context -> value ->
 // proof -> decision -> objection -> close). Every SectionType belongs to exactly one
@@ -24,13 +23,15 @@ import { clamp01 } from "../utils/math";
 // For each phase, in order: every role in that phase is scored by a per-role weight
 // function of the signals, gated by a per-role inclusion threshold, and the surviving
 // roles are emitted sorted by weight. That's the entire ordering algorithm - one loop
-// over phases, one filter, one sort. Nothing here special-cases an archetype or a
-// specific role by name inside the sequencing logic itself.
+// over phases, one filter, one sort. Nothing here special-cases a specific role by name
+// inside the sequencing logic itself. Section presence in the final array is still a
+// discrete fact (the DOM has no "60% of a pricing section") - but that's a threshold
+// applied at the very last step, never a category chosen upstream.
 //
-// The result space is combinatorial, not enumerated: 6 continuous signals x 7 gated
-// roles x 2 CTA-repetition tiers x 3 hero variants x continuous rhythm/prominence
-// bands means the reachable set of distinct (order, count, repetition, rhythm) page
-// shapes is in the thousands, without a single one of them having been written down.
+// The result space is combinatorial, not enumerated: 11 continuous BI dimensions x 6
+// composition signals x 7 gated roles x continuous CTA/rhythm/prominence bands means
+// the reachable set of distinct (order, count, repetition, rhythm) page shapes is
+// effectively unbounded, without a single one of them having been written down.
 
 type NarrativePhase = "hook" | "context" | "value" | "proof" | "decision" | "objection" | "close";
 
@@ -62,63 +63,63 @@ export const GATED_ROLES: readonly GatedRole[] = [
 ];
 
 interface RoleModel {
-  weight(signals: CompositionSignals, bias: number): number;
+  weight(signals: CompositionSignals, bi: BusinessIntelligenceProfile): number;
   threshold: number;
 }
 
-// Every role's narrative "pull" as a function of the business's own psychology - never
-// of which archetype it is. threshold is the bar its weight has to clear to be included
-// at all: this is what makes section COUNT a real per-business decision instead of a
-// fixed list minus a couple of manual exceptions.
+// Every role's narrative "pull" as a direct function of the business's own signals -
+// never a lookup keyed by a classification. threshold is the bar its weight has to
+// clear to be included at all: this is what makes section COUNT a real per-business
+// decision instead of a fixed list minus a couple of manual exceptions. The BI-driven
+// terms below (second addend in most formulas) are what used to live in
+// BIAS_BY_ARCHETYPE as a per-archetype nudge table - the same compositional reasoning
+// (e.g. "a very premium business wants pricing/stats out of sight"), now expressed as a
+// continuous term instead of nine hardcoded exceptions.
 const ROLE_MODEL: Record<GatedRole, RoleModel> = {
   features: {
-    weight: (s, bias) => clamp01(0.55 + s.complexity * 0.35 + bias),
+    weight: (s, bi) => clamp01(0.55 + s.complexity * 0.35 + bi.emotionalVsRational * 0.1 + bi.visualImportance * 0.15),
     threshold: 0.15, // near-universal: a page explaining nothing about the offer is broken
   },
   testimonials: {
-    weight: (s, bias) => clamp01(0.55 + s.socialProofNeed * 0.4 + bias),
+    weight: (s, bi) =>
+      clamp01(0.55 + s.socialProofNeed * 0.4 + bi.authorityRequirement * 0.2 + bi.emotionalVsRational * 0.15),
     threshold: 0.2, // near-universal: almost every business benefits from some proof
   },
   benefits: {
     // Base deliberately sits below its own threshold - unlike features/testimonials,
     // benefits earns its place from trustNeed, not by default.
-    weight: (s, bias) => clamp01(0.25 + s.trustNeed * 0.5 + bias),
+    weight: (s) => clamp01(0.25 + s.trustNeed * 0.5),
     threshold: 0.35,
   },
   stats: {
-    weight: (s, bias) => clamp01(s.trustNeed * 0.5 + s.socialProofNeed * 0.35 + bias),
+    weight: (s, bi) => clamp01(s.trustNeed * 0.5 + s.socialProofNeed * 0.35 + bi.trustDifficulty * 0.15 - bi.pricePositioning * 0.3),
     threshold: 0.4,
   },
   logoCloud: {
-    weight: (s, bias) => clamp01(s.trustNeed * 0.6 + (1 - s.complexity) * 0.25 + bias),
+    weight: (s, bi) =>
+      clamp01(
+        s.trustNeed * 0.6 +
+          (1 - s.complexity) * 0.25 +
+          bi.offerComplexity * 0.1 +
+          bi.buyerSophistication * 0.1 +
+          bi.competitionLevel * 0.15 -
+          bi.pricePositioning * 0.25 -
+          bi.visualImportance * 0.15 -
+          bi.emotionalVsRational * 0.1
+      ),
     threshold: 0.5, // the most conditional role: a quick trust flash only earns its place
   },
   pricing: {
     // Base deliberately sits below its own threshold so a genuinely price-sensitive
     // audience can result in real exclusion (a "talk to us" ask instead of a visible
-    // price table) without needing an archetype bias to make that happen.
-    weight: (s, bias) => clamp01(0.25 + (1 - s.priceSensitivity) * 0.5 + bias),
+    // price table) without needing a special case to make that happen.
+    weight: (s, bi) => clamp01(0.25 + (1 - s.priceSensitivity) * 0.5 + bi.buyerSophistication * 0.15 - bi.pricePositioning * 0.4),
     threshold: 0.35,
   },
   faq: {
-    weight: (s, bias) => clamp01(0.2 + s.objectionPressure * 0.6 + bias),
+    weight: (s, bi) => clamp01(0.2 + s.objectionPressure * 0.6 + bi.riskPerception * 0.15 - bi.pricePositioning * 0.1),
     threshold: 0.3,
   },
-};
-
-// Small nudges, not structures: a handful of nudge values for a subset of roles, keyed
-// by archetype. This is the only place PageArchetype touches this file. Deleting an
-// entry here changes a tendency; it can never remove hero/footer or break the grammar.
-const BIAS_BY_ARCHETYPE: Record<PageArchetype, Partial<Record<GatedRole, number>>> = {
-  lead_generation: { logoCloud: 0.15, pricing: 0.1 },
-  authority: { testimonials: 0.15, stats: 0.1 },
-  booking: { faq: 0.1 },
-  local_business: { stats: 0.15 },
-  hospitality: { features: 0.1, logoCloud: -0.2 },
-  product_showcase: { logoCloud: 0.15 },
-  luxury: { pricing: -0.35, stats: -0.3, logoCloud: -0.25, faq: -0.1 },
-  personal_brand: { testimonials: 0.2, logoCloud: -0.2 },
-  portfolio: { features: 0.15, logoCloud: -0.15 },
 };
 
 // Exported alongside generateLayout (its only real "public API" for the rest of the
@@ -126,13 +127,22 @@ const BIAS_BY_ARCHETYPE: Record<PageArchetype, Partial<Record<GatedRole, number>
 // weight/threshold/CTA-count/hero-variant are all meaningfully assertable in isolation,
 // and testing them that way catches a regression far more precisely than only ever
 // observing generateLayout's aggregate output.
-export function weightOf(role: GatedRole, signals: CompositionSignals, archetype: PageArchetype): number {
-  const bias = BIAS_BY_ARCHETYPE[archetype][role] ?? 0;
-  return ROLE_MODEL[role].weight(signals, bias);
+export function weightOf(role: GatedRole, signals: CompositionSignals, bi: BusinessIntelligenceProfile): number {
+  return ROLE_MODEL[role].weight(signals, bi);
 }
 
 export function thresholdFor(role: GatedRole): number {
   return ROLE_MODEL[role].threshold;
+}
+
+// Every gated role's continuous weight, keyed by role - this IS StrategyDNA.sectionWeight.
+// PageArchetype used to be an intermediate label standing in for "which combination of
+// these weights"; now the combination is the only thing that exists.
+export function sectionWeightsFor(
+  signals: CompositionSignals,
+  bi: BusinessIntelligenceProfile
+): Record<GatedRole, number> {
+  return Object.fromEntries(GATED_ROLES.map((role) => [role, weightOf(role, signals, bi)])) as Record<GatedRole, number>;
 }
 
 export function prominenceFrom(weight: number): SectionProminence {
@@ -151,9 +161,13 @@ export function rhythmFrom(signals: CompositionSignals): SectionRhythm {
   return "standard";
 }
 
-export function heroVariantFor(signals: CompositionSignals): HeroVariant {
-  if (signals.priceSensitivity <= 0.35 && signals.complexity <= 0.35) return "minimal";
-  if (signals.complexity >= 0.6) return "split";
+// The one hero layout decision that stays genuinely structural (a literal different
+// React component tree, not a CSS value a compiler can interpolate) - still derived
+// from a continuous DNA field (heroSplitLean) via a single threshold at this boundary,
+// never stored as its own category upstream.
+export function heroVariantFor(heroSplitLean: number, priceEmphasis: number): HeroVariant {
+  if (priceEmphasis <= 0.35 && heroSplitLean <= 0.35) return "minimal";
+  if (heroSplitLean >= 0.6) return "split";
   return "centered";
 }
 
@@ -165,12 +179,12 @@ export function heroVariantFor(signals: CompositionSignals): HeroVariant {
 function resolvePhase(
   phase: NarrativePhase,
   signals: CompositionSignals,
-  archetype: PageArchetype
+  bi: BusinessIntelligenceProfile
 ): CompositionSection[] {
   const roles = (Object.keys(ROLE_PHASE) as GatedRole[]).filter((role) => ROLE_PHASE[role] === phase);
 
   return roles
-    .map((role) => ({ role, weight: weightOf(role, signals, archetype) }))
+    .map((role) => ({ role, weight: weightOf(role, signals, bi) }))
     .filter(({ role, weight }) => weight >= ROLE_MODEL[role].threshold)
     .sort((a, b) => b.weight - a.weight)
     .map(({ role, weight }) => ({
@@ -181,10 +195,10 @@ function resolvePhase(
 }
 
 // CTA repetition and placement, as a formula over urgency and the page's own resulting
-// length - not a fixed index, not a per-archetype flag. 0 CTAs below "give it a
-// low-pressure nudge" territory, 1 as the closing push once urgency clears that bar, a
-// second, earlier one only once urgency is high enough that relying on a single
-// end-of-page ask would leave real conversions on the table.
+// length - not a fixed index. 0 CTAs below "give it a low-pressure nudge" territory, 1
+// as the closing push once urgency clears that bar, a second, earlier one only once
+// urgency is high enough that relying on a single end-of-page ask would leave real
+// conversions on the table.
 export function ctaCountFor(signals: CompositionSignals): 0 | 1 | 2 {
   if (signals.urgency >= 0.8) return 2;
   if (signals.urgency >= 0.55) return 1;
@@ -247,10 +261,15 @@ function alternateRhythm(sections: CompositionSection[]): CompositionSection[] {
   return next;
 }
 
-export function generateLayout(archetype: PageArchetype, signals: CompositionSignals): LandingComposition {
+export function generateLayout(
+  bi: BusinessIntelligenceProfile,
+  signals: CompositionSignals,
+  heroSplitLean: number,
+  priceEmphasis: number
+): LandingComposition {
   const contentPhases = PHASE_ORDER.filter((p) => p !== "hook" && p !== "close");
 
-  const body = contentPhases.flatMap((phase) => resolvePhase(phase, signals, archetype));
+  const body = contentPhases.flatMap((phase) => resolvePhase(phase, signals, bi));
   const withCtas = insertCtas(body, signals);
 
   const sections = alternateRhythm([
@@ -260,8 +279,7 @@ export function generateLayout(archetype: PageArchetype, signals: CompositionSig
   ]);
 
   return {
-    archetype,
-    heroVariant: heroVariantFor(signals),
+    heroVariant: heroVariantFor(heroSplitLean, priceEmphasis),
     sections,
   };
 }

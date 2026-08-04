@@ -1,25 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { buildLandingComposition } from "./LandingComposition";
 import { deriveCompositionSignals } from "./CompositionIntelligence";
-import type { PageArchetype } from "../types/archetype";
+import { neutralBusinessIntelligence as bi } from "../testFixtures";
 import type { BusinessProfile } from "../types";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { CompositionSignals } from "../types/signals";
-import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { SectionType, HeroVariant } from "@/app/types/landing";
-
-const ALL_ARCHETYPES: PageArchetype[] = [
-  "authority",
-  "luxury",
-  "local_business",
-  "lead_generation",
-  "personal_brand",
-  "product_showcase",
-  "booking",
-  "portfolio",
-  "hospitality",
-];
 
 const VALID_ROLES: SectionType[] = [
   "hero",
@@ -60,32 +47,6 @@ const offer: OfferStrategy = {
   riskReductionAngle: "No risk",
 };
 
-// Neutral on every dimension - these tests exercise LandingComposition's own
-// structural behavior, not the BusinessIntelligence blend (see
-// CompositionIntelligence.test.ts for that).
-const businessIntelligence: BusinessIntelligenceProfile = {
-  pricePositioning: 0.5,
-  competitionLevel: 0.5,
-  visualImportance: 0.5,
-  buyerSophistication: 0.5,
-  emotionalVsRational: 0.5,
-  decisionComplexity: 0.5,
-  purchaseUrgency: 0.5,
-  offerComplexity: 0.5,
-  riskPerception: 0.5,
-  trustDifficulty: 0.5,
-  authorityRequirement: 0.5,
-  marketPosition: "established",
-  brandPersonality: "authoritative",
-  buyerAwareness: "solution-aware",
-  visitorTemperature: "warm",
-  salesCycle: "medium",
-  conversionStyle: "direct",
-  lifetimeValue: "one-time",
-  trafficSourceSuitability: ["search"],
-  funnelType: "lead-generation",
-};
-
 function business(overrides: Partial<BusinessProfile> = {}): BusinessProfile {
   return {
     industry: "startup",
@@ -98,81 +59,80 @@ function business(overrides: Partial<BusinessProfile> = {}): BusinessProfile {
   };
 }
 
-function composition(archetype: PageArchetype, signals: CompositionSignals = NEUTRAL) {
-  return buildLandingComposition(archetype, signals);
+function composition(
+  intelligence = bi(),
+  signals: CompositionSignals = NEUTRAL,
+  heroSplitLean = 0.5,
+  priceEmphasis = 0.5
+) {
+  return buildLandingComposition(intelligence, signals, heroSplitLean, priceEmphasis);
 }
 
 describe("LandingComposition - coverage and structural invariants", () => {
-  it("produces a composition for every declared archetype", () => {
-    for (const archetype of ALL_ARCHETYPES) {
-      expect(composition(archetype).archetype).toBe(archetype);
-    }
-  });
-
   it("always starts with hero and ends with footer", () => {
-    for (const archetype of ALL_ARCHETYPES) {
-      const { sections } = composition(archetype);
-      expect(sections[0]?.role).toBe("hero");
-      expect(sections[sections.length - 1]?.role).toBe("footer");
-    }
+    const { sections } = composition();
+    expect(sections[0]?.role).toBe("hero");
+    expect(sections[sections.length - 1]?.role).toBe("footer");
   });
 
   it("never repeats a role, except cta which may legitimately repeat", () => {
-    for (const archetype of ALL_ARCHETYPES) {
-      const { sections } = composition(archetype);
-      const nonCtaRoles = sections.filter((s) => s.role !== "cta").map((s) => s.role);
-      expect(new Set(nonCtaRoles).size).toBe(nonCtaRoles.length);
-    }
+    const { sections } = composition();
+    const nonCtaRoles = sections.filter((s) => s.role !== "cta").map((s) => s.role);
+    expect(new Set(nonCtaRoles).size).toBe(nonCtaRoles.length);
   });
 
   it("only uses declared SectionType roles and a valid heroVariant", () => {
-    for (const archetype of ALL_ARCHETYPES) {
-      const result = composition(archetype);
-      expect(VALID_HERO_VARIANTS).toContain(result.heroVariant);
-      for (const entry of result.sections) {
-        expect(VALID_ROLES).toContain(entry.role);
-      }
+    const result = composition();
+    expect(VALID_HERO_VARIANTS).toContain(result.heroVariant);
+    for (const entry of result.sections) {
+      expect(VALID_ROLES).toContain(entry.role);
     }
   });
 
-  it("is deterministic - the same archetype and signals always produce the same composition", () => {
-    const a = composition("lead_generation", NEUTRAL);
-    const b = composition("lead_generation", NEUTRAL);
+  it("is deterministic - the same BI and signals always produce the same composition", () => {
+    const a = composition();
+    const b = composition();
     expect(a).toEqual(b);
   });
 
-  // Realistic signals matching real_estate's actual BusinessProfileBuilder defaults
-  // (priceLevel "high", goal "schedule_call") - luxury's bias against pricing/stats
-  // should hold for the business that archetype actually resolves from in practice.
-  it("keeps luxury free of stats/pricing for real_estate's realistic profile", () => {
+  // Realistic signals matching real_estate's actual profile (priceLevel "high", goal
+  // "schedule_call") - high pricePositioning should suppress stats/pricing directly,
+  // the same compositional intent the old "luxury" archetype bias used to encode.
+  it("keeps a high-pricePositioning business free of stats/pricing for a realistic profile", () => {
+    const luxuryBi = bi({
+      pricePositioning: 0.97,
+      decisionComplexity: 0.7,
+      riskPerception: 0.65,
+      buyerSophistication: 0.2,
+      trustDifficulty: 0.2,
+    });
     const signals = deriveCompositionSignals(
       business({ priceLevel: "high", primaryGoal: "schedule_call", businessModel: "service" }),
       { ...psychology, trustFactors: ["a"] },
       offer,
-      businessIntelligence
+      luxuryBi
     );
-    const roles = composition("luxury", signals).sections.map((s) => s.role);
+    const roles = composition(luxuryBi, signals).sections.map((s) => s.role);
     expect(roles).not.toContain("stats");
     expect(roles).not.toContain("pricing");
   });
 
-  // What the redesign actually guarantees: not that luxury is absolutely incapable of
-  // ever showing stats/pricing (an extreme enough trust signal legitimately can still
-  // pull them in - that's honest, not a bug), but that the same signals produce
-  // measurably less pull toward them under luxury than under an archetype with a
-  // neutral or positive bias.
-  it("gives luxury a measurably lower pull toward stats/pricing than a neutral-bias archetype", () => {
-    const signals = deriveCompositionSignals(business(), psychology, offer, businessIntelligence);
-    const luxuryRoles = composition("luxury", signals).sections.map((s) => s.role);
-    const leadGenRoles = composition("lead_generation", signals).sections.map((s) => s.role);
+  // What the redesign actually guarantees: not that a premium business is absolutely
+  // incapable of ever showing stats/pricing (an extreme enough trust signal
+  // legitimately can still pull them in - that's honest, not a bug), but that the same
+  // signals produce measurably less pull toward them as pricePositioning rises.
+  it("gives a high-pricePositioning business a measurably lower pull toward pricing than a neutral one", () => {
+    const signals = deriveCompositionSignals(business(), psychology, offer, bi());
+    const luxuryRoles = composition(bi({ pricePositioning: 0.9 }), signals).sections.map((s) => s.role);
+    const neutralRoles = composition(bi(), signals).sections.map((s) => s.role);
     const luxuryWeight = luxuryRoles.includes("pricing") ? 1 : 0;
-    const leadGenWeight = leadGenRoles.includes("pricing") ? 1 : 0;
-    expect(luxuryWeight).toBeLessThanOrEqual(leadGenWeight);
+    const neutralWeight = neutralRoles.includes("pricing") ? 1 : 0;
+    expect(luxuryWeight).toBeLessThanOrEqual(neutralWeight);
   });
 });
 
 describe("LandingComposition - Layout Intelligence (structure is computed, not looked up)", () => {
-  it("produces a different composition for the same archetype under different signals", () => {
+  it("produces a different composition for the same BI under different signals", () => {
     const low: CompositionSignals = {
       trustNeed: 0.2,
       urgency: 0.2,
@@ -190,13 +150,12 @@ describe("LandingComposition - Layout Intelligence (structure is computed, not l
       priceSensitivity: 0.9,
     };
 
-    expect(composition("authority", low)).not.toEqual(composition("authority", high));
+    expect(composition(bi(), low)).not.toEqual(composition(bi(), high));
   });
 
-  // The actual deliverable: sampling a spread of the signal space for a single
-  // archetype produces many structurally distinct pages, not a small fixed set of
-  // pre-authored variants.
-  it("produces many distinct section-role sequences across the signal space for one archetype", () => {
+  // The actual deliverable: sampling a spread of the signal space produces many
+  // structurally distinct pages, not a small fixed set of pre-authored variants.
+  it("produces many distinct section-role sequences across the signal space", () => {
     const steps = [0.1, 0.3, 0.5, 0.7, 0.9];
     const sequences = new Set<string>();
 
@@ -211,7 +170,7 @@ describe("LandingComposition - Layout Intelligence (structure is computed, not l
             objectionPressure: 1 - complexity,
             priceSensitivity: 1 - urgency,
           };
-          sequences.add(composition("product_showcase", signals).sections.map((s) => s.role).join(">"));
+          sequences.add(composition(bi(), signals).sections.map((s) => s.role).join(">"));
         }
       }
     }

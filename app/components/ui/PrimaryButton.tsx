@@ -11,7 +11,7 @@ export default function PrimaryButton({
 }: Props) {
   return (
     <button
-      className={`
+      className="
         rounded-xl
         px-8
         py-4
@@ -22,11 +22,10 @@ export default function PrimaryButton({
 
         hover:scale-105
         hover:shadow-2xl
-
-        ${theme.typography.button}
-      `}
+      "
       style={{
         backgroundImage: theme.gradients.button,
+        ...theme.typography.button,
       }}
     >
       {children}

@@ -1,5 +1,16 @@
-import type { Theme } from "@/app/types/landing";
+import type { StrategyDNA } from "@/app/ai/types/dna";
+import { clamp01 } from "@/app/ai/utils/math";
 
+// THEME COMPILER
+//
+// Used to be `Record<Theme, ThemeConfig>` - 6 hand-authored palettes, picked by a
+// discrete Theme enum. There is no more picking: every value here is computed from
+// StrategyDNA's continuous colorTemperature/saturation/brightness/accentIntensity/
+// roundedness/elevation/density fields via HSL interpolation and lerp, so two
+// businesses with even slightly different DNA get visibly different (not just
+// differently-labeled) themes. compileTheme is the entire "renderer as compiler" - the
+// component tree downstream is unchanged, it just now receives continuously-computed
+// values instead of a lookup table's fixed entries.
 export interface ThemeConfig {
   colors: {
     background: string;
@@ -48,11 +59,11 @@ export interface ThemeConfig {
   };
 
   typography: {
-    hero: string;
-    title: string;
-    subtitle: string;
-    body: string;
-    button: string;
+    hero: React.CSSProperties;
+    title: React.CSSProperties;
+    subtitle: React.CSSProperties;
+    body: React.CSSProperties;
+    button: React.CSSProperties;
   };
 
   animation: {
@@ -62,214 +73,139 @@ export interface ThemeConfig {
   };
 }
 
-const base = {
-  radius: {
-    sm: "8px",
-    md: "16px",
-    lg: "24px",
-    xl: "32px",
-  },
+function lerp(min: number, max: number, t: number): number {
+  return min + (max - min) * clamp01(t);
+}
 
-  spacing: {
-    xs: "8px",
-    sm: "16px",
-    md: "24px",
-    lg: "48px",
-    xl: "80px",
-  },
+function hsl(h: number, s: number, l: number): string {
+  return `hsl(${Math.round(((h % 360) + 360) % 360)}, ${Math.round(clamp01(s / 100) * 100)}%, ${Math.round(clamp01(l / 100) * 100)}%)`;
+}
 
-  shadow: {
-    sm: "0 2px 8px rgba(0,0,0,.12)",
-    md: "0 10px 30px rgba(0,0,0,.20)",
-    lg: "0 30px 80px rgba(0,0,0,.35)",
-    glow: "0 0 60px rgba(99,102,241,.35)",
-  },
+function hsla(h: number, s: number, l: number, a: number): string {
+  return `hsla(${Math.round(((h % 360) + 360) % 360)}, ${Math.round(clamp01(s / 100) * 100)}%, ${Math.round(clamp01(l / 100) * 100)}%, ${clamp01(a)})`;
+}
 
-  typography: {
-    hero: "text-6xl md:text-7xl font-black tracking-tight",
-    title: "text-4xl font-bold",
-    subtitle: "text-xl leading-relaxed",
-    body: "text-base leading-7",
-    button: "font-semibold",
-  },
+// Blue (225) -> purple -> magenta -> red -> orange (30), deliberately going the "long
+// way" around the hue wheel rather than the short way through green/yellow - every
+// hand-authored palette this replaced (indigo, violet, gold, blue, orange, red) sat on
+// this same arc, never in green/yellow territory, which reads as off-brand for a
+// business accent color.
+function hueFromTemperature(colorTemperature: number): number {
+  return 225 + clamp01(colorTemperature) * 165;
+}
 
-  animation: {
-    fast: "transition-all duration-200",
-    normal: "transition-all duration-300",
-    slow: "transition-all duration-500",
-  },
-};
+export function compileTheme(dna: StrategyDNA): ThemeConfig {
+  const hue = hueFromTemperature(dna.colorTemperature);
+  const sat = clamp01(dna.saturation);
+  const bright = clamp01(dna.brightness);
+  const accent = clamp01(dna.accentIntensity);
+  const elevation = clamp01(dna.elevation);
+  const weight = 400 + Math.round(lerp(0, 500, dna.typeWeight) / 100) * 100;
 
-export const themes: Record<Theme, ThemeConfig> = {
-  startup: {
-    ...base,
+  const accentColor = hsl(hue, lerp(40, 90, sat), lerp(45, 62, accent));
+  const accentHoverColor = hsl(hue, lerp(45, 95, sat), lerp(55, 70, accent));
 
+  // Background lightness is continuous across the full [3, 92] range, but text
+  // lightness is deliberately NOT interpolated independently from the opposite fixed
+  // endpoint (97 -> 8) - at a mid-range brightness (~0.5) that produced two similarly
+  // mid-gray values with barely any contrast between them (a real bug found by
+  // rendering an actual page, not a hypothetical). Instead, text lightness is derived
+  // FROM the background's own lightness, always at least ~50 points away on the
+  // lightness scale - background stays fully continuous, but legibility is guaranteed
+  // at every point along that range, not just near the two extremes.
+  const bgLightness = lerp(3, 92, bright);
+  const isDarkBg = bgLightness < 50;
+  const textLightness = clamp01((isDarkBg ? bgLightness + 55 : bgLightness - 55) / 100) * 100;
+  const surfaceLightness = clamp01((isDarkBg ? bgLightness + 3 : bgLightness - 3) / 100) * 100;
+  const cardLightness = clamp01((isDarkBg ? bgLightness + 6 : bgLightness - 6) / 100) * 100;
+  const secondaryLightness = clamp01((isDarkBg ? textLightness - 25 : textLightness + 25) / 100) * 100;
+  const borderLightness = clamp01((isDarkBg ? bgLightness + 12 : bgLightness - 12) / 100) * 100;
+
+  return {
     colors: {
-      background: "#050505",
-      surface: "#111111",
-      card: "#18181b",
+      background: hsl(hue, lerp(4, 12, sat), bgLightness),
+      surface: hsl(hue, lerp(5, 14, sat), surfaceLightness),
+      card: hsl(hue, lerp(6, 16, sat), cardLightness),
 
-      primary: "#ffffff",
-      secondary: "#a1a1aa",
+      primary: hsl(hue, 5, textLightness),
+      secondary: hsl(hue, 8, secondaryLightness),
 
-      border: "#27272a",
+      border: hsl(hue, lerp(10, 30, sat), borderLightness),
 
-      accent: "#4f46e5",
-      accentHover: "#6366f1",
+      accent: accentColor,
+      accentHover: accentHoverColor,
 
-      success: "#22c55e",
-      warning: "#f59e0b",
-      danger: "#ef4444",
+      // Utility colors are conventional, not brand-personality-driven - success/warning/
+      // danger stay recognizable regardless of the business's own DNA, with only a light
+      // saturation nudge so they don't clash with a very muted or very vivid palette.
+      success: hsl(142, lerp(35, 65, sat), 45),
+      warning: hsl(38, lerp(50, 85, sat), 50),
+      danger: hsl(0, lerp(45, 75, sat), 50),
     },
 
     gradients: {
-      hero: "linear-gradient(135deg,#4f46e5,#7c3aed)",
-      button: "linear-gradient(135deg,#4f46e5,#6366f1)",
-      glow: "radial-gradient(circle,#6366f155,transparent)",
-    },
-  },
-
-  luxury: {
-    ...base,
-
-    colors: {
-      background: "#050505",
-      surface: "#111111",
-      card: "#1b1b1b",
-
-      primary: "#f5e6b3",
-      secondary: "#d6c68a",
-
-      border: "#5d4b1f",
-
-      accent: "#d4af37",
-      accentHover: "#e6c85c",
-
-      success: "#65a30d",
-      warning: "#ca8a04",
-      danger: "#dc2626",
+      hero: `linear-gradient(135deg, ${accentColor}, ${hsl(hue + 35, lerp(40, 90, sat), lerp(55, 72, accent))})`,
+      button: `linear-gradient(135deg, ${accentColor}, ${accentHoverColor})`,
+      glow: `radial-gradient(circle, ${hsla(hue, lerp(40, 90, sat), lerp(45, 62, accent), 0.35)}, transparent)`,
     },
 
-    gradients: {
-      hero: "linear-gradient(135deg,#d4af37,#f5e6b3)",
-      button: "linear-gradient(135deg,#d4af37,#fcd34d)",
-      glow: "radial-gradient(circle,#d4af3744,transparent)",
-    },
-  },
-
-  agency: {
-    ...base,
-
-    colors: {
-      background: "#07111f",
-      surface: "#0d1728",
-      card: "#132036",
-
-      primary: "#ffffff",
-      secondary: "#cbd5e1",
-
-      border: "#23314b",
-
-      accent: "#3b82f6",
-      accentHover: "#60a5fa",
-
-      success: "#10b981",
-      warning: "#f59e0b",
-      danger: "#ef4444",
+    radius: {
+      sm: `${Math.round(lerp(2, 10, dna.roundedness))}px`,
+      md: `${Math.round(lerp(6, 20, dna.roundedness))}px`,
+      lg: `${Math.round(lerp(10, 32, dna.roundedness))}px`,
+      xl: `${Math.round(lerp(14, 44, dna.roundedness))}px`,
     },
 
-    gradients: {
-      hero: "linear-gradient(135deg,#2563eb,#3b82f6)",
-      button: "linear-gradient(135deg,#2563eb,#60a5fa)",
-      glow: "radial-gradient(circle,#3b82f644,transparent)",
-    },
-  },
-
-  medical: {
-    ...base,
-
-    colors: {
-      background: "#f8fbff",
-      surface: "#ffffff",
-      card: "#ffffff",
-
-      primary: "#0f172a",
-      secondary: "#475569",
-
-      border: "#dbeafe",
-
-      accent: "#2563eb",
-      accentHover: "#1d4ed8",
-
-      success: "#16a34a",
-      warning: "#f59e0b",
-      danger: "#dc2626",
+    // Inverse of density: a denser page needs tighter spacing to still feel intentional
+    // rather than merely cramped by accident.
+    spacing: {
+      xs: `${Math.round(lerp(6, 10, 1 - dna.density))}px`,
+      sm: `${Math.round(lerp(10, 20, 1 - dna.density))}px`,
+      md: `${Math.round(lerp(16, 32, 1 - dna.density))}px`,
+      lg: `${Math.round(lerp(28, 64, 1 - dna.density))}px`,
+      xl: `${Math.round(lerp(48, 100, 1 - dna.density))}px`,
     },
 
-    gradients: {
-      hero: "linear-gradient(135deg,#2563eb,#38bdf8)",
-      button: "linear-gradient(135deg,#2563eb,#3b82f6)",
-      glow: "radial-gradient(circle,#3b82f633,transparent)",
-    },
-  },
-
-  restaurant: {
-    ...base,
-
-    colors: {
-      background: "#120b08",
-      surface: "#1b120d",
-      card: "#241812",
-
-      primary: "#fff7ed",
-      secondary: "#fdba74",
-
-      border: "#7c2d12",
-
-      accent: "#ea580c",
-      accentHover: "#f97316",
-
-      success: "#22c55e",
-      warning: "#facc15",
-      danger: "#dc2626",
+    shadow: {
+      sm: `0 ${lerp(1, 4, elevation).toFixed(1)}px ${lerp(4, 12, elevation).toFixed(1)}px rgba(0,0,0,${lerp(0.06, 0.18, elevation).toFixed(2)})`,
+      md: `0 ${lerp(6, 16, elevation).toFixed(1)}px ${lerp(20, 40, elevation).toFixed(1)}px rgba(0,0,0,${lerp(0.12, 0.28, elevation).toFixed(2)})`,
+      lg: `0 ${lerp(16, 40, elevation).toFixed(1)}px ${lerp(50, 100, elevation).toFixed(1)}px rgba(0,0,0,${lerp(0.2, 0.4, elevation).toFixed(2)})`,
+      glow: `0 0 ${Math.round(lerp(20, 90, elevation))}px ${hsla(hue, lerp(40, 90, sat), lerp(45, 62, accent), 0.35)}`,
     },
 
-    gradients: {
-      hero: "linear-gradient(135deg,#ea580c,#fb923c)",
-      button: "linear-gradient(135deg,#ea580c,#f97316)",
-      glow: "radial-gradient(circle,#ea580c44,transparent)",
+    typography: {
+      hero: {
+        fontSize: `${lerp(2.5, 5.5, dna.typeScale).toFixed(2)}rem`,
+        fontWeight: 700 + Math.round(lerp(0, 200, dna.typeWeight) / 100) * 100,
+        letterSpacing: `${lerp(-0.01, -0.03, dna.typeScale).toFixed(3)}em`,
+        lineHeight: 1,
+      },
+      title: {
+        fontSize: `${lerp(1.875, 3, dna.typeScale).toFixed(2)}rem`,
+        fontWeight: 600 + Math.round(lerp(0, 200, dna.typeWeight) / 100) * 100,
+        letterSpacing: `${lerp(-0.005, -0.02, dna.typeScale).toFixed(3)}em`,
+      },
+      subtitle: {
+        fontSize: `${lerp(1.125, 1.375, dna.typeScale).toFixed(3)}rem`,
+        fontWeight: 400,
+        lineHeight: 1.6,
+      },
+      body: {
+        fontSize: "1rem",
+        fontWeight: 400,
+        lineHeight: 1.75,
+      },
+      button: {
+        fontWeight: weight,
+      },
     },
-  },
 
-  fitness: {
-    ...base,
-
-    colors: {
-      background: "#050505",
-      surface: "#111111",
-      card: "#18181b",
-
-      primary: "#ffffff",
-      secondary: "#d4d4d8",
-
-      border: "#3f3f46",
-
-      accent: "#dc2626",
-      accentHover: "#ef4444",
-
-      success: "#22c55e",
-      warning: "#f59e0b",
-      danger: "#dc2626",
+    // Motion intensity is not yet part of StrategyDNA - kept fixed rather than
+    // continuous, tracked as remaining scope (see the final report).
+    animation: {
+      fast: "transition-all duration-200",
+      normal: "transition-all duration-300",
+      slow: "transition-all duration-500",
     },
-
-    gradients: {
-      hero: "linear-gradient(135deg,#dc2626,#ef4444)",
-      button: "linear-gradient(135deg,#dc2626,#ef4444)",
-      glow: "radial-gradient(circle,#dc262644,transparent)",
-    },
-  },
-};
-
-export function getTheme(theme: Theme): ThemeConfig {
-  return themes[theme];
+  };
 }

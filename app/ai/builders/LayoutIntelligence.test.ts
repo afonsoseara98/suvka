@@ -7,22 +7,11 @@ import {
   rhythmFrom,
   heroVariantFor,
   ctaCountFor,
+  sectionWeightsFor,
   GATED_ROLES,
 } from "./LayoutIntelligence";
-import type { PageArchetype } from "../types/archetype";
+import { neutralBusinessIntelligence as bi } from "../testFixtures";
 import type { CompositionSignals } from "../types/signals";
-
-const ALL_ARCHETYPES: PageArchetype[] = [
-  "authority",
-  "luxury",
-  "local_business",
-  "lead_generation",
-  "personal_brand",
-  "product_showcase",
-  "booking",
-  "portfolio",
-  "hospitality",
-];
 
 const NEUTRAL: CompositionSignals = {
   trustNeed: 0.5,
@@ -36,10 +25,8 @@ const NEUTRAL: CompositionSignals = {
 describe("ROLE_MODEL weights and thresholds", () => {
   it("keeps features and testimonials includable at almost every realistic signal value (near-universal)", () => {
     const worstCase: CompositionSignals = { ...NEUTRAL, complexity: 0, socialProofNeed: 0 };
-    for (const archetype of ALL_ARCHETYPES) {
-      expect(weightOf("features", worstCase, archetype)).toBeGreaterThanOrEqual(thresholdFor("features"));
-      expect(weightOf("testimonials", worstCase, archetype)).toBeGreaterThanOrEqual(thresholdFor("testimonials"));
-    }
+    expect(weightOf("features", worstCase, bi())).toBeGreaterThanOrEqual(thresholdFor("features"));
+    expect(weightOf("testimonials", worstCase, bi())).toBeGreaterThanOrEqual(thresholdFor("testimonials"));
   });
 
   it("can exclude logoCloud, stats, pricing, benefits and faq for the right signal values", () => {
@@ -51,8 +38,19 @@ describe("ROLE_MODEL weights and thresholds", () => {
       objectionPressure: 0.05,
       priceSensitivity: 0.9,
     };
+    const lowBi = bi({
+      trustDifficulty: 0.1,
+      authorityRequirement: 0.1,
+      riskPerception: 0.1,
+      pricePositioning: 0.9,
+      buyerSophistication: 0.1,
+      offerComplexity: 0.1,
+      competitionLevel: 0.1,
+      visualImportance: 0.9,
+      emotionalVsRational: 0.9,
+    });
     for (const role of ["logoCloud", "stats", "pricing", "benefits", "faq"] as const) {
-      expect(weightOf(role, low, "product_showcase")).toBeLessThan(thresholdFor(role));
+      expect(weightOf(role, low, lowBi)).toBeLessThan(thresholdFor(role));
     }
   });
 
@@ -65,12 +63,23 @@ describe("ROLE_MODEL weights and thresholds", () => {
       objectionPressure: 0.95,
       priceSensitivity: 0.05,
     };
+    const highBi = bi({
+      trustDifficulty: 0.95,
+      authorityRequirement: 0.6,
+      riskPerception: 0.9,
+      pricePositioning: 0.05,
+      buyerSophistication: 0.8,
+      offerComplexity: 0.6,
+      competitionLevel: 0.9,
+      visualImportance: 0.1,
+      emotionalVsRational: 0.1,
+    });
     for (const role of ["logoCloud", "stats", "pricing", "benefits", "faq"] as const) {
-      expect(weightOf(role, high, "product_showcase")).toBeGreaterThanOrEqual(thresholdFor(role));
+      expect(weightOf(role, high, highBi)).toBeGreaterThanOrEqual(thresholdFor(role));
     }
   });
 
-  it("every role weight always stays within [0, 1] regardless of archetype bias", () => {
+  it("every role weight always stays within [0, 1] regardless of BI extremes", () => {
     const extreme: CompositionSignals = {
       trustNeed: 1,
       urgency: 1,
@@ -79,12 +88,30 @@ describe("ROLE_MODEL weights and thresholds", () => {
       objectionPressure: 1,
       priceSensitivity: 0,
     };
-    for (const archetype of ALL_ARCHETYPES) {
-      for (const role of GATED_ROLES) {
-        const w = weightOf(role, extreme, archetype);
-        expect(w).toBeGreaterThanOrEqual(0);
-        expect(w).toBeLessThanOrEqual(1);
-      }
+    const extremeBi = bi({
+      pricePositioning: 1,
+      competitionLevel: 1,
+      visualImportance: 1,
+      buyerSophistication: 1,
+      emotionalVsRational: 1,
+      decisionComplexity: 1,
+      purchaseUrgency: 1,
+      offerComplexity: 1,
+      riskPerception: 1,
+      trustDifficulty: 1,
+      authorityRequirement: 1,
+    });
+    for (const role of GATED_ROLES) {
+      const w = weightOf(role, extreme, extremeBi);
+      expect(w).toBeGreaterThanOrEqual(0);
+      expect(w).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("sectionWeightsFor returns every gated role, matching weightOf for each", () => {
+    const weights = sectionWeightsFor(NEUTRAL, bi());
+    for (const role of GATED_ROLES) {
+      expect(weights[role]).toBe(weightOf(role, NEUTRAL, bi()));
     }
   });
 });
@@ -105,10 +132,10 @@ describe("prominenceFrom / rhythmFrom / heroVariantFor / ctaCountFor", () => {
     expect(rhythmFrom({ ...NEUTRAL, complexity: 0.1, urgency: 0.2 })).toBe("standard");
   });
 
-  it("picks minimal hero for low price sensitivity + low complexity, split for high complexity", () => {
-    expect(heroVariantFor({ ...NEUTRAL, priceSensitivity: 0.1, complexity: 0.1 })).toBe("minimal");
-    expect(heroVariantFor({ ...NEUTRAL, complexity: 0.8 })).toBe("split");
-    expect(heroVariantFor(NEUTRAL)).toBe("centered");
+  it("picks minimal hero for low price emphasis + low split lean, split for high split lean", () => {
+    expect(heroVariantFor(0.1, 0.1)).toBe("minimal");
+    expect(heroVariantFor(0.8, 0.5)).toBe("split");
+    expect(heroVariantFor(0.5, 0.5)).toBe("centered");
   });
 
   it("returns 0/1/2 CTAs at the documented urgency thresholds", () => {
@@ -122,32 +149,26 @@ describe("prominenceFrom / rhythmFrom / heroVariantFor / ctaCountFor", () => {
 describe("generateLayout - structural guarantees", () => {
   it("never places two cta sections adjacent to each other", () => {
     const veryUrgent: CompositionSignals = { ...NEUTRAL, urgency: 0.95 };
-    for (const archetype of ALL_ARCHETYPES) {
-      const { sections } = generateLayout(archetype, veryUrgent);
-      for (let i = 0; i < sections.length - 1; i++) {
-        if (sections[i].role === "cta") {
-          expect(sections[i + 1]?.role).not.toBe("cta");
-        }
+    const { sections } = generateLayout(bi(), veryUrgent, 0.5, 0.5);
+    for (let i = 0; i < sections.length - 1; i++) {
+      if (sections[i].role === "cta") {
+        expect(sections[i + 1]?.role).not.toBe("cta");
       }
     }
   });
 
-  it("never places a cta immediately after hero or immediately before footer's predecessor being hero", () => {
+  it("never places a cta immediately after hero", () => {
     const veryUrgent: CompositionSignals = { ...NEUTRAL, urgency: 0.95 };
-    for (const archetype of ALL_ARCHETYPES) {
-      const { sections } = generateLayout(archetype, veryUrgent);
-      expect(sections[1]?.role).not.toBe("cta");
-    }
+    const { sections } = generateLayout(bi(), veryUrgent, 0.5, 0.5);
+    expect(sections[1]?.role).not.toBe("cta");
   });
 
   it("never produces 3+ consecutive sections with identical rhythm", () => {
-    for (const archetype of ALL_ARCHETYPES) {
-      const { sections } = generateLayout(archetype, NEUTRAL);
-      let run = 1;
-      for (let i = 1; i < sections.length; i++) {
-        run = sections[i].rhythm === sections[i - 1].rhythm ? run + 1 : 1;
-        expect(run).toBeLessThan(3);
-      }
+    const { sections } = generateLayout(bi(), NEUTRAL, 0.5, 0.5);
+    let run = 1;
+    for (let i = 1; i < sections.length; i++) {
+      run = sections[i].rhythm === sections[i - 1].rhythm ? run + 1 : 1;
+      expect(run).toBeLessThan(3);
     }
   });
 
@@ -160,7 +181,10 @@ describe("generateLayout - structural guarantees", () => {
       socialProofNeed: 0.9,
       complexity: 0.1,
     };
-    const { sections } = generateLayout("local_business", statsFirst);
+    // trustDifficulty pulls stats up further and visualImportance pulls features up -
+    // pushed apart explicitly so the ordering claim doesn't rest on a coincidental tie.
+    const statsFirstBi = bi({ trustDifficulty: 0.9, visualImportance: 0.1, emotionalVsRational: 0.1 });
+    const { sections } = generateLayout(statsFirstBi, statsFirst, 0.5, 0.5);
     const statsIndex = sections.findIndex((s) => s.role === "stats");
     const featuresIndex = sections.findIndex((s) => s.role === "features");
     expect(statsIndex).toBeGreaterThan(-1);
@@ -168,10 +192,8 @@ describe("generateLayout - structural guarantees", () => {
   });
 
   it("is fully deterministic", () => {
-    for (const archetype of ALL_ARCHETYPES) {
-      const a = generateLayout(archetype, NEUTRAL);
-      const b = generateLayout(archetype, NEUTRAL);
-      expect(a).toEqual(b);
-    }
+    const a = generateLayout(bi(), NEUTRAL, 0.5, 0.5);
+    const b = generateLayout(bi(), NEUTRAL, 0.5, 0.5);
+    expect(a).toEqual(b);
   });
 });

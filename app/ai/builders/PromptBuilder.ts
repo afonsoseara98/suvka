@@ -1,22 +1,71 @@
 import { SYSTEM_PROMPT } from "../prompts/system";
 import { CONVERSION_PROMPT } from "../prompts/conversion";
 import { SCHEMA_PROMPT } from "../prompts/schema";
-import { describeSignalsForPrompt } from "./CompositionIntelligence";
 import { describeBusinessIntelligenceForPrompt } from "./BusinessIntelligence";
-import { describeHeroStrategyForPrompt } from "../engines/HeroEngine";
-import { describeTrustStrategyForPrompt } from "../engines/TrustEngine";
-import { describeCtaStrategyForPrompt } from "../engines/CTAEngine";
-import { describePricingStrategyForPrompt } from "../engines/PricingEngine";
 
 import type { BusinessProfile } from "../types";
 import type { BusinessKnowledge } from "../types/knowledge";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
-import type { CompositionSignals } from "../types/signals";
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
-import type { HeroStrategy, TrustStrategy, CtaStrategy, PricingStrategy } from "../types/strategy";
-import type { DesignSystem } from "@/app/types/design";
+import type { StrategyDNA } from "../types/dna";
 import type { Section } from "@/app/types/landing";
+
+// Every DNA dimension paired with a short (lowMeaning / highMeaning) hint so the raw
+//0-1 number the LLM sees is legible without the pipeline pre-digesting it into a
+// curated sentence - that pre-digesting was itself a small reintroduction of
+// categorical thinking ("high trust: do X"). The model reads the number and the axis
+// it sits on, the same way it reads any other structured input.
+const DNA_HINTS: Record<Exclude<keyof StrategyDNA, "sectionWeight">, string> = {
+  urgency: "no rush / act now",
+  complexity: "self-explanatory / needs real room to explain",
+  colorTemperature: "cool / warm",
+  saturation: "muted / vivid",
+  brightness: "dark theme / light theme",
+  accentIntensity: "subtle accent / bold accent",
+  roundedness: "sharp corners / fully rounded",
+  elevation: "flat / deep shadow and glow",
+  decorationDensity: "no decoration / heavy glow-texture",
+  density: "spacious/editorial / dense/packed",
+  contentWidth: "narrow editorial column / full width",
+  typeScale: "restrained headlines / oversized dramatic headlines",
+  typeWeight: "light / black",
+  heroSplitLean: "centered/stacked hero / fully split hero with side panel",
+  heroImageryProminence: "minimal imagery / immersive imagery",
+  emotionalIntensity: "rational, concrete copy / emotionally driven copy",
+  credibilityRationalLean: "social-proof/emotional credibility / data/credentials-led credibility",
+  proofDensity: "minimal proof / heavy proof",
+  authorityEmphasis: "credentials don't matter / credentials are central",
+  objectionProactivity: "address objections reactively / defeat objections proactively",
+  ctaUrgency: "soft CTA / urgent CTA",
+  ctaCommitmentWeight: "low-commitment framing / considered, high-commitment framing",
+  priceEmphasis: "understated pricing / prominent pricing",
+  priceAnchoring: "no anchor tier / strong anchor-tier framing",
+  priceComplexityLean: "exact numbers / custom-quote framing",
+};
+
+function describeDnaForPrompt(dna: StrategyDNA): string[] {
+  const scalarLines = (Object.keys(DNA_HINTS) as (keyof typeof DNA_HINTS)[]).map(
+    (key) => `${key}: ${dna[key].toFixed(2)}  (0 = ${DNA_HINTS[key].split(" / ")[0]}, 1 = ${DNA_HINTS[key].split(" / ")[1]})`
+  );
+
+  const sectionWeightLines = Object.entries(dna.sectionWeight).map(
+    ([role, weight]) => `  ${role}: ${weight.toFixed(2)}`
+  );
+
+  return [
+    "Every value below is continuous (0-1), not a category - read it as a position on",
+    "that axis, not a label. Let these numbers shape word choice, pacing, how much",
+    "space copy takes, and how hard the page pushes toward a decision:",
+    "",
+    ...scalarLines,
+    "",
+    "Section prominence (how much narrative weight this business's own signals give",
+    "each optional section - already reflected in PAGE STRUCTURE below, shown here so",
+    "the reasoning behind emphasis is visible):",
+    ...sectionWeightLines,
+  ];
+}
 
 // Copy Intelligence: psychology.pains/desires/objections/emotionalTriggers and
 // offer.valueProposition/offerFraming/riskReductionAngle were computed by every
@@ -30,14 +79,9 @@ export function buildPrompt(
   knowledge: BusinessKnowledge,
   psychology: PsychologyProfile,
   offer: OfferStrategy,
-  design: DesignSystem,
   sections: readonly Section[],
-  signals: CompositionSignals,
   businessIntelligence: BusinessIntelligenceProfile,
-  heroStrategy: HeroStrategy,
-  trustStrategy: TrustStrategy,
-  ctaStrategy: CtaStrategy,
-  pricingStrategy: PricingStrategy
+  dna: StrategyDNA
 ): string {
   // knowledge.trustSignals and psychology.trustFactors both exist to answer the same
   // question ("why should this reader trust this business") from two different
@@ -68,7 +112,7 @@ export function buildPrompt(
     "BUSINESS INTELLIGENCE",
     "==============================",
 
-    "Strategic read of this specific business, inferred from the prompt itself - not just its industry. Let this shape tone, pacing, and how hard the page pushes toward a decision:",
+    "Strategic read of this specific business, inferred from the prompt itself - not just its industry:",
 
     "",
 
@@ -118,46 +162,10 @@ export function buildPrompt(
     "",
 
     "==============================",
-    "CONVERSION SIGNALS",
+    "STRATEGY DNA",
     "==============================",
 
-    "How strongly each factor should shape the copy (derived from this business's profile):",
-
-    "",
-
-    ...describeSignalsForPrompt(signals),
-
-    "",
-
-    "==============================",
-    "HERO STRATEGY",
-    "==============================",
-
-    ...describeHeroStrategyForPrompt(heroStrategy),
-
-    "",
-
-    "==============================",
-    "TRUST STRATEGY",
-    "==============================",
-
-    ...describeTrustStrategyForPrompt(trustStrategy),
-
-    "",
-
-    "==============================",
-    "CTA STRATEGY",
-    "==============================",
-
-    ...describeCtaStrategyForPrompt(ctaStrategy),
-
-    "",
-
-    "==============================",
-    "PRICING STRATEGY",
-    "==============================",
-
-    ...describePricingStrategyForPrompt(pricingStrategy),
+    ...describeDnaForPrompt(dna),
 
     "",
 
@@ -190,22 +198,6 @@ export function buildPrompt(
     "SEO Keywords:",
 
     ...knowledge.keywords,
-
-    "",
-
-    "==============================",
-    "DESIGN SYSTEM",
-    "==============================",
-
-    `Style: ${design.style}`,
-    `Hero Variant: ${design.heroVariant}`,
-    `Feature Variant: ${design.featureVariant}`,
-    `Benefit Variant: ${design.benefitVariant}`,
-    `Testimonial Variant: ${design.testimonialVariant}`,
-    `Pricing Variant: ${design.pricingVariant}`,
-    `Primary Color: ${design.primaryColor}`,
-    `Background: ${design.background}`,
-    `Border Radius: ${design.borderRadius}`,
 
     "",
 

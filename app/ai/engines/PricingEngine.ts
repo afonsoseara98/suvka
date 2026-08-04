@@ -1,47 +1,35 @@
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { CompositionSignals } from "../types/signals";
-import type { PricingStrategy, PricingPresentation, PricingEmphasis } from "../types/strategy";
+import type { StrategyDNA } from "../types/dna";
+import { clamp01 } from "../utils/math";
 
 // PRICING ENGINE
 //
-// Distinct from SectionPlanner.ts's pricing variant selection (featured vs simple,
-// driven by prominence) and LayoutIntelligence.ts's decision of whether a pricing
-// section appears at all - both structural/inclusion decisions, unchanged here. This
-// engine decides how price is PRESENTED within whichever pricing section already
-// exists: as exact numbers, a custom quote, or an anchored tier comparison - a copy/
-// framing decision, not a structural one.
+// Distinct from LayoutIntelligence.ts's decision of whether a pricing section appears
+// at all (structural, unchanged - see sectionWeight.pricing). This engine decides how
+// price is PRESENTED within whichever pricing section already exists - continuously
+// (exact numbers vs custom quote is now a lean, not a binary choice; anchoring is a
+// strength, not a boolean).
 
-function resolvePresentation(bi: BusinessIntelligenceProfile, signals: CompositionSignals): PricingPresentation {
-  if (bi.offerComplexity >= 0.6 || bi.decisionComplexity >= 0.6) return "custom-quote";
-  if (signals.priceSensitivity <= 0.35 && bi.pricePositioning >= 0.6) return "tiered-comparison";
-  return "exact-numbers";
-}
+export type PricingDNA = Pick<StrategyDNA, "priceEmphasis" | "priceAnchoring" | "priceComplexityLean">;
 
-function resolveEmphasis(bi: BusinessIntelligenceProfile, signals: CompositionSignals): PricingEmphasis {
-  if (bi.pricePositioning >= 0.7) return "understated";
-  if (signals.priceSensitivity >= 0.6) return "prominent";
-  return "standard";
-}
+export function resolvePricingDNA(bi: BusinessIntelligenceProfile, signals: CompositionSignals): PricingDNA {
+  const priceComplexityLean = clamp01(bi.offerComplexity * 0.5 + bi.decisionComplexity * 0.5);
 
-export function resolvePricingStrategy(bi: BusinessIntelligenceProfile, signals: CompositionSignals): PricingStrategy {
-  const presentation = resolvePresentation(bi, signals);
+  // Anchoring (showing a higher-tier comparison to make the target price look
+  // reasonable) is a premium-market tactic that stops making sense once the offer is
+  // presented as a custom quote rather than a fixed set of tiers - scaled down rather
+  // than switched off, so the lean itself stays legible in the DNA.
+  const priceAnchoring = clamp01(bi.pricePositioning * (1 - priceComplexityLean * 0.7));
+
+  // A continuous blend rather than a threshold: high price positioning pulls toward
+  // understated (0), high price sensitivity pulls toward prominent (1) - both
+  // contribute at once instead of one gating the other.
+  const priceEmphasis = clamp01(signals.priceSensitivity * 0.6 + (1 - bi.pricePositioning) * 0.4);
 
   return {
-    presentation,
-    // A higher-tier anchor to make the target price look reasonable is a premium-market
-    // tactic - not useful (and often actively confusing) once the offer is already
-    // presented as a custom quote rather than a fixed set of tiers.
-    anchoring: bi.pricePositioning >= 0.55 && presentation !== "custom-quote",
-    emphasis: resolveEmphasis(bi, signals),
+    priceEmphasis,
+    priceAnchoring,
+    priceComplexityLean,
   };
-}
-
-export function describePricingStrategyForPrompt(strategy: PricingStrategy): string[] {
-  const lines = [`Pricing presentation: ${strategy.presentation}`, `Pricing emphasis: ${strategy.emphasis}`];
-
-  if (strategy.anchoring) {
-    lines.push("Include a higher-tier anchor so the target price reads as reasonable by comparison.");
-  }
-
-  return lines;
 }

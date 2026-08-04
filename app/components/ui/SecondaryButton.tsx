@@ -11,7 +11,7 @@ export default function SecondaryButton({
 }: Props) {
   return (
     <button
-      className={`
+      className="
         rounded-xl
         border
         px-8
@@ -19,13 +19,12 @@ export default function SecondaryButton({
         backdrop-blur-xl
 
         transition
-
-        ${theme.typography.button}
-      `}
+      "
       style={{
         borderColor: theme.colors.border,
         background: theme.colors.card,
         color: theme.colors.primary,
+        ...theme.typography.button,
       }}
     >
       {children}

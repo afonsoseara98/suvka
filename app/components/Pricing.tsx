@@ -1,7 +1,7 @@
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
-import { resolveSectionSpacing } from "@/app/styles/layout";
 import type { SectionRhythm } from "@/app/types/landing";
+import SectionShell from "./ui/SectionShell";
 import Badge from "./ui/Badge";
 import SectionHeader from "./ui/SectionHeader";
 
@@ -27,8 +27,14 @@ function PricingSimple({ plans, theme, layout }: ListProps) {
       {plans.map((plan, index) => (
         <div
           key={index}
-          className={`${layout.cardRadius} border ${layout.cardPadding}`}
-          style={{ borderColor: theme.colors.border, background: theme.colors.card, color: theme.colors.primary }}
+          className="border"
+          style={{
+            borderColor: theme.colors.border,
+            background: theme.colors.card,
+            color: theme.colors.primary,
+            borderRadius: theme.radius.xl,
+            padding: theme.spacing.lg,
+          }}
         >
           <h3 className="text-3xl font-bold">{plan.name}</h3>
           <div className="mt-4 text-5xl font-bold">€{plan.price}</div>
@@ -55,21 +61,19 @@ function PricingPremium({ plans, theme, layout }: ListProps) {
         return (
           <div
             key={index}
-            className={
-              isFeatured
-                ? `relative ${layout.cardRadius} border-2 ${layout.cardPadding} shadow-2xl md:-translate-y-4`
-                : `${layout.cardRadius} border ${layout.cardPadding}`
-            }
-            style={
-              isFeatured
+            className={isFeatured ? "relative border-2 shadow-2xl md:-translate-y-4" : "border"}
+            style={{
+              borderRadius: theme.radius.xl,
+              padding: theme.spacing.lg,
+              ...(isFeatured
                 ? {
                     borderColor: theme.colors.accent,
                     background: theme.colors.card,
                     color: theme.colors.primary,
                     boxShadow: `0 25px 50px -12px ${theme.colors.accent}33`,
                   }
-                : { borderColor: theme.colors.border, background: theme.colors.card, color: theme.colors.primary }
-            }
+                : { borderColor: theme.colors.border, background: theme.colors.card, color: theme.colors.primary }),
+            }}
           >
             {isFeatured && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -94,18 +98,16 @@ function PricingPremium({ plans, theme, layout }: ListProps) {
 
 export default function Pricing({ plans, theme, layout, rhythm, variant }: PricingProps) {
   return (
-    <section className={resolveSectionSpacing(layout.sectionSpacing, rhythm)}>
-      <div className={`mx-auto ${layout.sectionWidth}`}>
-        <SectionHeader theme={theme} layout={layout} title="Pricing" />
+    <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
+      <SectionHeader theme={theme} layout={layout} title="Pricing" />
 
-        <div className="mt-10">
-          {variant === "premium" ? (
-            <PricingPremium plans={plans} theme={theme} layout={layout} />
-          ) : (
-            <PricingSimple plans={plans} theme={theme} layout={layout} />
-          )}
-        </div>
+      <div className="mt-10">
+        {variant === "premium" ? (
+          <PricingPremium plans={plans} theme={theme} layout={layout} />
+        ) : (
+          <PricingSimple plans={plans} theme={theme} layout={layout} />
+        )}
       </div>
-    </section>
+    </SectionShell>
   );
 }

@@ -1,95 +1,50 @@
 import { describe, it, expect } from "vitest";
-import { resolveHeroStrategy, describeHeroStrategyForPrompt } from "./HeroEngine";
-import { neutralBusinessIntelligence as bi, neutralCompositionSignals as signals } from "../testFixtures";
+import { resolveHeroDNA } from "./HeroEngine";
+import { neutralBusinessIntelligence as bi } from "../testFixtures";
 
-describe("resolveHeroStrategy", () => {
-  it("is deterministic - identical inputs always produce the same strategy", () => {
-    expect(resolveHeroStrategy(bi(), signals())).toEqual(resolveHeroStrategy(bi(), signals()));
+describe("resolveHeroDNA", () => {
+  it("is deterministic - identical inputs always produce the same DNA", () => {
+    expect(resolveHeroDNA(bi())).toEqual(resolveHeroDNA(bi()));
   });
 
   it("reuses emotionalVsRational directly as emotionalIntensity", () => {
-    expect(resolveHeroStrategy(bi({ emotionalVsRational: 0.82 }), signals()).emotionalIntensity).toBe(0.82);
+    expect(resolveHeroDNA(bi({ emotionalVsRational: 0.82 })).emotionalIntensity).toBe(0.82);
   });
 
-  describe("headlineLength", () => {
-    it("goes long when the decision is complex or trust is hard-won", () => {
-      expect(resolveHeroStrategy(bi({ decisionComplexity: 0.7 }), signals()).headlineLength).toBe("long");
-      expect(resolveHeroStrategy(bi({ trustDifficulty: 0.7 }), signals()).headlineLength).toBe("long");
+  it("every field stays within [0, 1] at the extremes", () => {
+    const extremeBi = bi({
+      pricePositioning: 1,
+      decisionComplexity: 1,
+      offerComplexity: 1,
+      visualImportance: 1,
+      emotionalVsRational: 1,
     });
-
-    it("goes short under high urgency once the decision is simple", () => {
-      expect(
-        resolveHeroStrategy(bi({ decisionComplexity: 0.3, trustDifficulty: 0.3 }), signals({ urgency: 0.7 })).headlineLength
-      ).toBe("short");
-    });
-
-    it("falls back to medium otherwise", () => {
-      expect(resolveHeroStrategy(bi(), signals()).headlineLength).toBe("medium");
-    });
+    const dna = resolveHeroDNA(extremeBi);
+    for (const value of Object.values(dna)) {
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
   });
 
-  describe("imagery", () => {
-    it("goes immersive when visual and emotional both run high", () => {
-      expect(resolveHeroStrategy(bi({ visualImportance: 0.7, emotionalVsRational: 0.6 }), signals()).imagery).toBe(
-        "immersive"
-      );
+  describe("heroSplitLean", () => {
+    it("rises with decisionComplexity and offerComplexity", () => {
+      const simple = resolveHeroDNA(bi({ decisionComplexity: 0.2, offerComplexity: 0.2 }));
+      const complex = resolveHeroDNA(bi({ decisionComplexity: 0.8, offerComplexity: 0.8 }));
+      expect(complex.heroSplitLean).toBeGreaterThan(simple.heroSplitLean);
     });
 
-    it("goes data-focused for a complex offer with low visual weight", () => {
-      expect(
-        resolveHeroStrategy(bi({ offerComplexity: 0.7, visualImportance: 0.3 }), signals()).imagery
-      ).toBe("data-focused");
-    });
-
-    it("goes minimal when nothing pulls toward visuals or complexity", () => {
-      expect(resolveHeroStrategy(bi({ visualImportance: 0.2 }), signals()).imagery).toBe("minimal");
+    it("falls as pricePositioning rises, pulling back toward restraint", () => {
+      const budget = resolveHeroDNA(bi({ pricePositioning: 0.1 }));
+      const premium = resolveHeroDNA(bi({ pricePositioning: 0.9 }));
+      expect(premium.heroSplitLean).toBeLessThan(budget.heroSplitLean);
     });
   });
 
-  describe("whitespace", () => {
-    it("goes airy for high price positioning", () => {
-      expect(resolveHeroStrategy(bi({ pricePositioning: 0.75 }), signals()).whitespace).toBe("airy");
+  describe("heroImageryProminence", () => {
+    it("rises with visualImportance and emotionalVsRational", () => {
+      const low = resolveHeroDNA(bi({ visualImportance: 0.1, emotionalVsRational: 0.1 }));
+      const high = resolveHeroDNA(bi({ visualImportance: 0.9, emotionalVsRational: 0.9 }));
+      expect(high.heroImageryProminence).toBeGreaterThan(low.heroImageryProminence);
     });
-
-    it("goes dense for high urgency with a simple decision", () => {
-      expect(
-        resolveHeroStrategy(bi({ pricePositioning: 0.3, decisionComplexity: 0.3 }), signals({ urgency: 0.7 })).whitespace
-      ).toBe("dense");
-    });
-  });
-
-  describe("proofPlacement", () => {
-    it("goes immediate when trust or social proof need is high", () => {
-      expect(resolveHeroStrategy(bi(), signals({ trustNeed: 0.75 })).proofPlacement).toBe("immediate");
-      expect(resolveHeroStrategy(bi(), signals({ trustNeed: 0.3, socialProofNeed: 0.75 })).proofPlacement).toBe(
-        "immediate"
-      );
-    });
-
-    it("goes deferred when trust need is low", () => {
-      expect(resolveHeroStrategy(bi(), signals({ trustNeed: 0.2, socialProofNeed: 0.2 })).proofPlacement).toBe(
-        "deferred"
-      );
-    });
-  });
-});
-
-describe("describeHeroStrategyForPrompt", () => {
-  it("includes every structural field as a readable line", () => {
-    const strategy = resolveHeroStrategy(bi(), signals());
-    const lines = describeHeroStrategyForPrompt(strategy).join("\n");
-
-    expect(lines).toContain(`Headline length: ${strategy.headlineLength}`);
-    expect(lines).toContain(`Hero imagery: ${strategy.imagery}`);
-    expect(lines).toContain(`Whitespace: ${strategy.whitespace}`);
-    expect(lines).toContain(`Proof placement: ${strategy.proofPlacement}`);
-  });
-
-  it("adds an emotional-pull directive only at high emotionalIntensity", () => {
-    const emotional = resolveHeroStrategy(bi({ emotionalVsRational: 0.8 }), signals());
-    const rational = resolveHeroStrategy(bi({ emotionalVsRational: 0.2 }), signals());
-
-    expect(describeHeroStrategyForPrompt(emotional).join("\n")).toMatch(/emotional pull/);
-    expect(describeHeroStrategyForPrompt(rational).join("\n")).toMatch(/rational and concrete/);
   });
 });

@@ -1,7 +1,7 @@
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
-import { resolveSectionSpacing } from "@/app/styles/layout";
 import type { SectionRhythm } from "@/app/types/landing";
+import SectionShell from "./ui/SectionShell";
 
 type StatsProps = {
   items: {
@@ -15,13 +15,18 @@ type StatsProps = {
 
 export default function Stats({ items, theme, layout, rhythm }: StatsProps) {
   return (
-    <section className={resolveSectionSpacing(layout.sectionSpacing, rhythm)}>
-      <div className={`mx-auto grid ${layout.sectionWidth} gap-6 ${layout.gridColumns}`}>
+    <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
+      <div className={`grid gap-6 ${layout.gridColumns}`}>
         {items.map((item, index) => (
           <div
             key={index}
-            className={`${layout.cardRadius} border ${layout.cardPadding} text-center`}
-            style={{ borderColor: theme.colors.border, background: theme.colors.card }}
+            className="border text-center"
+            style={{
+              borderColor: theme.colors.border,
+              background: theme.colors.card,
+              borderRadius: theme.radius.xl,
+              padding: theme.spacing.lg,
+            }}
           >
             <div className="text-5xl font-bold" style={{ color: theme.colors.primary }}>
               {item.value}
@@ -33,6 +38,6 @@ export default function Stats({ items, theme, layout, rhythm }: StatsProps) {
           </div>
         ))}
       </div>
-    </section>
+    </SectionShell>
   );
 }

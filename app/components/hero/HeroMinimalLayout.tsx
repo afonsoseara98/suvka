@@ -15,7 +15,10 @@ type Props = {
 // smaller version of the other two.
 export default function HeroMinimalLayout({ data, theme, layout }: Props) {
   return (
-    <section className={`relative overflow-hidden ${layout.heroPadding}`}>
+    <section
+      className="relative overflow-hidden"
+      style={{ paddingTop: layout.heroPaddingPx, paddingBottom: layout.heroPaddingPx }}
+    >
       <div className="mx-auto max-w-3xl">
         <HeroTextBlock data={data} theme={theme} layout={layout} align="center" />
       </div>

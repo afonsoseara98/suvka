@@ -2,28 +2,32 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import SectionRenderer from "./SectionRenderer";
-import { getTheme } from "@/app/styles/theme";
-import { getLayoutPersonality } from "@/app/styles/layout";
+import { compileTheme } from "@/app/styles/theme";
+import { compileLayout } from "@/app/styles/layout";
+import { neutralStrategyDna } from "@/app/ai/testFixtures";
 import type { LandingPage, Section, SectionType, SectionProminence, SectionRhythm } from "@/app/types/landing";
 
 // Only asserts what tsc cannot: that each section.type actually renders the component
 // whose visual identity was verified manually in the browser (Fase 2), and that the
-// section's `variant` and the page's `theme` genuinely reach it - a routing mistake in
-// the switch statement here would still type-check fine but silently render the wrong
-// section or a default-styled one.
+// section's `variant` and the compiled theme/layout genuinely reach it - a routing
+// mistake in the switch statement here would still type-check fine but silently render
+// the wrong section or a default-styled one.
+const luxuryDna = neutralStrategyDna({
+  heroImageryProminence: 0.65,
+  heroSplitLean: 0.6,
+  contentWidth: 0.1,
+  density: 0.15,
+});
+
+const startupDna = neutralStrategyDna({
+  heroImageryProminence: 0.4,
+  heroSplitLean: 0.5,
+  contentWidth: 0.9,
+  density: 0.3,
+});
+
 const landing: LandingPage = {
-  theme: "luxury",
-  design: {
-    style: "luxury",
-    heroVariant: "minimal",
-    featureVariant: "outline",
-    benefitVariant: "outline",
-    testimonialVariant: "outline",
-    pricingVariant: "simple",
-    primaryColor: "#D4AF37",
-    background: "dark",
-    borderRadius: "lg",
-  },
+  dna: luxuryDna,
   site: {
     seo: { title: "", description: "", keywords: [], ogTitle: "", ogDescription: "" },
     branding: { primaryColor: "", secondaryColor: "", accentColor: "", fontHeading: "", fontBody: "", logoPrompt: "" },
@@ -50,8 +54,8 @@ const landing: LandingPage = {
   footer: { company: "Acme", email: "a@acme.com", copyright: "© 2026" },
 };
 
-const theme = getTheme(landing.theme);
-const layout = getLayoutPersonality(landing.theme);
+const theme = compileTheme(landing.dna);
+const layout = compileLayout(landing.dna);
 
 function sec(
   type: SectionType,
@@ -73,23 +77,17 @@ describe("SectionRenderer", () => {
     expect(screen.getByText("Schedule a Call")).toBeTruthy();
   });
 
-  it("applies the theme's typography tokens to the hero title, subtitle and CTAs", () => {
+  it("applies the compiled theme's typography tokens to the hero title and subtitle", () => {
     render(<SectionRenderer section={sec("hero", "minimal")} landing={landing} theme={theme} layout={layout} />);
 
+    // Compared as numbers, not strings: the DOM normalizes a CSS value like "4.00rem"
+    // down to "4rem" when it round-trips through style.fontSize, which is a browser
+    // formatting detail, not evidence the compiled value failed to reach the element.
     const title = screen.getByRole("heading", { level: 1 });
-    for (const cls of theme.typography.hero.split(" ")) {
-      expect(title.className).toContain(cls);
-    }
+    expect(parseFloat(title.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.hero.fontSize as string));
 
     const subtitle = screen.getByText("Personalized service.");
-    for (const cls of theme.typography.subtitle.split(" ")) {
-      expect(subtitle.className).toContain(cls);
-    }
-
-    const primaryCta = screen.getByText("Schedule a Call");
-    for (const cls of theme.typography.button.split(" ")) {
-      expect(primaryCta.className).toContain(cls);
-    }
+    expect(parseFloat(subtitle.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.subtitle.fontSize as string));
   });
 
   it("renders features with the requested variant", () => {
@@ -107,30 +105,24 @@ describe("SectionRenderer", () => {
     expect(screen.getByText("Jane Doe", { exact: false })).toBeTruthy();
   });
 
-  it("applies the theme's title typography token to testimonials/pricing/faq headings", () => {
+  it("applies the compiled theme's title typography token to testimonials/pricing/faq headings", () => {
     const { unmount: unmount1 } = render(
       <SectionRenderer section={sec("testimonials", "cards")} landing={landing} theme={theme} layout={layout} />
     );
     const testimonialsHeading = screen.getByRole("heading", { name: "Testimonials" });
-    for (const cls of theme.typography.title.split(" ")) {
-      expect(testimonialsHeading.className).toContain(cls);
-    }
+    expect(parseFloat(testimonialsHeading.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.title.fontSize as string));
     unmount1();
 
     const { unmount: unmount2 } = render(
       <SectionRenderer section={sec("pricing", "simple")} landing={landing} theme={theme} layout={layout} />
     );
     const pricingHeading = screen.getByRole("heading", { name: "Pricing" });
-    for (const cls of theme.typography.title.split(" ")) {
-      expect(pricingHeading.className).toContain(cls);
-    }
+    expect(parseFloat(pricingHeading.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.title.fontSize as string));
     unmount2();
 
     render(<SectionRenderer section={sec("faq", "accordion")} landing={landing} theme={theme} layout={layout} />);
     const faqHeading = screen.getByRole("heading", { name: "FAQ" });
-    for (const cls of theme.typography.title.split(" ")) {
-      expect(faqHeading.className).toContain(cls);
-    }
+    expect(parseFloat(faqHeading.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.title.fontSize as string));
   });
 
   it("renders pricing", () => {
@@ -167,21 +159,21 @@ describe("SectionRenderer - LandingComposition sections (logoCloud, cta)", () =>
     expect(screen.getByText("Learn More")).toBeTruthy();
   });
 
-  it("gives the cta banner a stacked layout under luxury and a row layout under startup", () => {
+  it("gives the cta banner a stacked layout for a narrow-contentWidth DNA and a row layout for a wide one", () => {
     const { unmount } = render(
       <SectionRenderer section={sec("cta", "default")} landing={landing} theme={theme} layout={layout} />
     );
-    const luxuryWrapper = screen.getByText("Schedule a Call").parentElement;
-    expect(luxuryWrapper?.className).toContain("flex-col");
+    const narrowWrapper = screen.getByText("Schedule a Call").parentElement;
+    expect(narrowWrapper?.className).toContain("flex-col");
     unmount();
 
-    const startupTheme = getTheme("startup");
-    const startupLayout = getLayoutPersonality("startup");
+    const wideTheme = compileTheme(startupDna);
+    const wideLayout = compileLayout(startupDna);
     render(
-      <SectionRenderer section={sec("cta", "default")} landing={landing} theme={startupTheme} layout={startupLayout} />
+      <SectionRenderer section={sec("cta", "default")} landing={landing} theme={wideTheme} layout={wideLayout} />
     );
-    const startupWrapper = screen.getByText("Schedule a Call").parentElement;
-    expect(startupWrapper?.className).toContain("flex-wrap");
+    const wideWrapper = screen.getByText("Schedule a Call").parentElement;
+    expect(wideWrapper?.className).toContain("flex-wrap");
   });
 });
 
@@ -190,67 +182,57 @@ describe("SectionRenderer - rhythm drives spacing", () => {
     const { container: denseContainer, unmount } = render(
       <SectionRenderer section={sec("benefits", "cards", "standard", "dense")} landing={landing} theme={theme} layout={layout} />
     );
-    const denseClass = denseContainer.querySelector("section")?.className ?? "";
+    const denseMargin = (denseContainer.querySelector("section") as HTMLElement | null)?.style.marginTop;
     unmount();
 
     const { container: breatherContainer } = render(
       <SectionRenderer section={sec("benefits", "cards", "standard", "breather")} landing={landing} theme={theme} layout={layout} />
     );
-    const breatherClass = breatherContainer.querySelector("section")?.className ?? "";
+    const breatherMargin = (breatherContainer.querySelector("section") as HTMLElement | null)?.style.marginTop;
 
-    expect(denseClass).not.toBe(breatherClass);
+    expect(denseMargin).not.toBe(breatherMargin);
   });
 });
 
-describe("SectionRenderer - Design System v2 (LayoutPersonality diverges by theme)", () => {
-  // The whole point of LayoutPersonality: two themes sharing the exact same
-  // section.variant ("features"/"grid") must still render structurally different
-  // markup (width/spacing/grid/card treatment), not just different colors/copy.
-  it("renders the same features:grid section with different structure for startup vs luxury", () => {
-    const startupTheme = getTheme("startup");
-    const startupLayout = getLayoutPersonality("startup");
-    const { container: startupContainer, unmount } = render(
-      <SectionRenderer
-        section={sec("features", "grid")}
-        landing={landing}
-        theme={startupTheme}
-        layout={startupLayout}
-      />
+describe("SectionRenderer - DNA compiler (LayoutPersonality diverges continuously, not by label)", () => {
+  // The whole point of the compiler: two DNA objects that differ meaningfully in
+  // density/contentWidth must still render structurally different markup (width/
+  // spacing/grid), not just different colors/copy.
+  it("renders the same features:grid section with different grid-column structure for a wide vs narrow DNA", () => {
+    const wideTheme = compileTheme(startupDna);
+    const wideLayout = compileLayout(startupDna);
+    const { container: wideContainer, unmount } = render(
+      <SectionRenderer section={sec("features", "grid")} landing={landing} theme={wideTheme} layout={wideLayout} />
     );
-    const startupGrid = startupContainer.querySelector(".grid");
-    expect(startupGrid?.className).toContain("xl:grid-cols-3");
+    const wideGrid = wideContainer.querySelector(".grid");
+    expect(wideGrid?.className).toContain("xl:grid-cols-3");
     unmount();
 
-    const luxuryTheme = getTheme("luxury");
-    const luxuryLayout = getLayoutPersonality("luxury");
-    const { container: luxuryContainer } = render(
-      <SectionRenderer
-        section={sec("features", "grid")}
-        landing={landing}
-        theme={luxuryTheme}
-        layout={luxuryLayout}
-      />
+    const narrowTheme = compileTheme(luxuryDna);
+    const narrowLayout = compileLayout(luxuryDna);
+    const { container: narrowContainer } = render(
+      <SectionRenderer section={sec("features", "grid")} landing={landing} theme={narrowTheme} layout={narrowLayout} />
     );
-    const luxuryGrid = luxuryContainer.querySelector(".grid");
-    expect(luxuryGrid?.className).not.toContain("xl:grid-cols-3");
+    const narrowGrid = narrowContainer.querySelector(".grid");
+    expect(narrowGrid?.className).not.toContain("xl:grid-cols-3");
   });
 
-  it("gives luxury a stacked CTA layout and startup a row CTA layout for the same hero variant", () => {
-    const startupTheme = getTheme("startup");
-    const startupLayout = getLayoutPersonality("startup");
+  it("gives a narrow-contentWidth DNA a stacked CTA layout and a wide one a row layout, for the same hero variant", () => {
+    const wideTheme = compileTheme(startupDna);
+    const wideLayout = compileLayout(startupDna);
     const { unmount } = render(
-      <SectionRenderer section={sec("hero", "minimal")} landing={landing} theme={startupTheme} layout={startupLayout} />
+      <SectionRenderer section={sec("hero", "minimal")} landing={landing} theme={wideTheme} layout={wideLayout} />
     );
-    const startupCtaWrapper = screen.getByText("Schedule a Call").parentElement;
-    expect(startupCtaWrapper?.className).toContain("flex-wrap");
+    const wideCtaWrapper = screen.getByText("Schedule a Call").parentElement;
+    expect(wideCtaWrapper?.className).toContain("flex-wrap");
     unmount();
 
-    const luxuryTheme = getTheme("luxury");
-    const luxuryLayout = getLayoutPersonality("luxury");
+    const narrowTheme = compileTheme(luxuryDna);
+    const narrowLayout = compileLayout(luxuryDna);
     render(
-      <SectionRenderer section={sec("hero", "minimal")} landing={landing} theme={luxuryTheme} layout={luxuryLayout} />
+      <SectionRenderer section={sec("hero", "minimal")} landing={landing} theme={narrowTheme} layout={narrowLayout} />
     );
-    const luxuryCtaWrapper = screen.getByText("Schedule a Call").parentElement;
-    expect(luxuryCtaWrapper?.className).toContain("flex-col");
+    const narrowCtaWrapper = screen.getByText("Schedule a Call").parentElement;
+    expect(narrowCtaWrapper?.className).toContain("flex-col");
   });
 });

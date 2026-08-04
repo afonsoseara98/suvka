@@ -1,54 +1,36 @@
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { CompositionSignals } from "../types/signals";
-import type { TrustStrategy, CredibilityApproach, ProofDensity, ObjectionHandling } from "../types/strategy";
+import type { StrategyDNA } from "../types/dna";
+import { clamp01 } from "../utils/math";
 
 // TRUST ENGINE
 //
 // Deliberately covers what could have been three separate "Authority Engine", "Social
 // Proof Engine" and "Objection Engine" modules - they all answer the same underlying
-// question ("how does this specific page earn belief") from the same handful of
-// signals, so splitting them would mean three places re-deriving overlapping reads of
-// trustDifficulty/authorityRequirement/riskPerception instead of one coherent strategy.
-// See types/strategy.ts for the fuller reasoning.
+// question ("how does this page earn belief") from the same handful of signals, so
+// splitting them would mean three places re-deriving overlapping reads of
+// trustDifficulty/authorityRequirement/riskPerception instead of one coherent read.
+// credibilityApproach used to be a 4-way enum (credentials/social-proof/data/guarantee)
+// - credibilityRationalLean replaces it with where on that spectrum the business sits,
+// continuously, rather than snapping to whichever bucket scored highest.
 
-function resolveCredibilityApproach(bi: BusinessIntelligenceProfile, signals: CompositionSignals): CredibilityApproach {
-  if (bi.authorityRequirement >= 0.65) return "credentials";
-  if (bi.riskPerception >= 0.6 && bi.buyerSophistication >= 0.5) return "data";
-  if (signals.socialProofNeed >= 0.55) return "social-proof";
-  return "guarantee";
-}
+export type TrustDNA = Pick<
+  StrategyDNA,
+  "credibilityRationalLean" | "proofDensity" | "authorityEmphasis" | "objectionProactivity"
+>;
 
-function resolveProofDensity(signals: CompositionSignals): ProofDensity {
-  if (signals.socialProofNeed >= 0.7) return "heavy";
-  if (signals.socialProofNeed <= 0.35) return "minimal";
-  return "moderate";
-}
+export function resolveTrustDNA(bi: BusinessIntelligenceProfile, signals: CompositionSignals): TrustDNA {
+  // 0 = social-proof/emotional credibility, 1 = data/credentials-led. Authority and
+  // analytical rigor push toward 1; a socially-proven, less analytical business sits
+  // toward 0.
+  const credibilityRationalLean = clamp01(
+    bi.authorityRequirement * 0.5 + bi.riskPerception * 0.3 + bi.buyerSophistication * 0.2
+  );
 
-function resolveObjectionHandling(signals: CompositionSignals): ObjectionHandling {
-  if (signals.objectionPressure >= 0.65) return "proactive";
-  if (signals.objectionPressure <= 0.3) return "minimal";
-  return "reactive";
-}
-
-export function resolveTrustStrategy(bi: BusinessIntelligenceProfile, signals: CompositionSignals): TrustStrategy {
   return {
-    credibilityApproach: resolveCredibilityApproach(bi, signals),
-    proofDensity: resolveProofDensity(signals),
-    objectionHandling: resolveObjectionHandling(signals),
+    credibilityRationalLean,
+    proofDensity: signals.socialProofNeed,
     authorityEmphasis: bi.authorityRequirement,
+    objectionProactivity: signals.objectionPressure,
   };
-}
-
-export function describeTrustStrategyForPrompt(strategy: TrustStrategy): string[] {
-  const lines = [
-    `Credibility approach: ${strategy.credibilityApproach}`,
-    `Proof density: ${strategy.proofDensity}`,
-    `Objection handling: ${strategy.objectionHandling}`,
-  ];
-
-  if (strategy.authorityEmphasis >= 0.65) {
-    lines.push("Credentials/expertise are central to the sale - surface them prominently, not as an afterthought.");
-  }
-
-  return lines;
 }

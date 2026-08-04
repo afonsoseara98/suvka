@@ -5,38 +5,24 @@ import { buildPipeline } from "@/app/ai/builders/PipelineBuilder";
 import { validatePrompt } from "@/app/lib/validatePrompt";
 import { getGenerateRateLimiter } from "@/app/lib/rateLimit";
 
-import type { DesignStyle, HeroVariant } from "@/app/types/design";
-import type { Theme, HeroImageStyle } from "@/app/types/landing";
+import type { HeroImageStyle } from "@/app/types/landing";
 
 function getClientKey(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
   return forwardedFor?.split(",")[0]?.trim() ?? "unknown";
 }
 
-// DesignSystem.style/heroVariant are already computed by DesignPlanner.ts for every
-// request but were previously discarded before the response was sent - the LLM chose
-// `theme`/`hero.imageStyle` on its own instead, which is why every Stage 5 baseline
-// business came back with the same "startup" theme regardless of industry. These two
-// tables translate DesignSystem's vocabulary into the response schema's vocabulary
-// (the two type files predate this wiring and never used the same literal unions).
-// Pure lookup, no inference: given the same DesignSystem, the output is always the same.
-const STYLE_TO_THEME: Record<DesignStyle, Theme> = {
-  saas: "startup",
-  agency: "agency",
-  luxury: "luxury",
-  corporate: "agency", // DesignPlanner.ts never produces this today; closest available Theme
-  medical: "medical",
-  restaurant: "restaurant",
-  fitness: "fitness",
-};
-
-const HERO_VARIANT_TO_IMAGE_STYLE: Record<HeroVariant, HeroImageStyle> = {
-  dashboard: "dashboard",
-  image: "website",
-  product: "product",
-  phone: "phone", // DesignPlanner.ts never produces this today
-  minimal: "abstract", // produced by DesignPlanner.ts for real_estate (style: "luxury")
-};
+// hero.imageStyle is the one place a real generative asset concept (which illustration
+// to render inside the hero scene) has to stay a discrete choice - "0.6 of a dashboard
+// illustration" isn't a renderable thing. Still fully DNA-derived (heroImageryProminence/
+// complexity), never left to the LLM's own guess, which is why this still overrides
+// whatever the model put in its JSON rather than trusting it.
+function imageStyleFor(heroImageryProminence: number, complexity: number): HeroImageStyle {
+  if (heroImageryProminence >= 0.65) return complexity >= 0.55 ? "product" : "abstract";
+  if (complexity >= 0.6) return "analytics";
+  if (complexity >= 0.4) return "dashboard";
+  return "website";
+}
 
 export async function POST(request: Request) {
   try {
@@ -100,12 +86,15 @@ export async function POST(request: Request) {
 
     const landingPage = JSON.parse(content);
 
-    // Override, not merge: theme/imageStyle are replaced with the pipeline's own
+    // Override, not merge: dna/imageStyle are replaced with the pipeline's own
     // deterministic values rather than left to whatever the LLM happened to pick.
-    landingPage.theme = STYLE_TO_THEME[pipeline.design.style];
+    // landingPage.dna is now the full continuous StrategyDNA object - a direct
+    // passthrough, not a lookup translating one vocabulary into another, since the
+    // renderer compiles this object directly (see app/styles/theme.ts / layout.ts).
+    landingPage.dna = pipeline.dna;
 
     if (landingPage.hero) {
-      landingPage.hero.imageStyle = HERO_VARIANT_TO_IMAGE_STYLE[pipeline.design.heroVariant];
+      landingPage.hero.imageStyle = imageStyleFor(pipeline.dna.heroImageryProminence, pipeline.dna.complexity);
     }
 
     landingPage.sections = pipeline.sections;

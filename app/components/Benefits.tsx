@@ -1,8 +1,7 @@
 import type { LandingPage, SectionRhythm } from "@/app/types/landing";
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
-import { resolveSectionSpacing } from "@/app/styles/layout";
-import GlowBackground from "./ui/GlowBackground";
+import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 
 type BenefitsProps = {
@@ -21,8 +20,14 @@ function BenefitsCards({ items, theme, layout }: ListProps) {
       {items.map((benefit, index) => (
         <div
           key={index}
-          className={`group relative overflow-hidden ${layout.cardRadius} border ${layout.cardPadding} backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl`}
-          style={{ borderColor: theme.colors.border, background: theme.colors.card, color: theme.colors.primary }}
+          className="group relative overflow-hidden border backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+          style={{
+            borderColor: theme.colors.border,
+            background: theme.colors.card,
+            color: theme.colors.primary,
+            borderRadius: theme.radius.xl,
+            padding: theme.spacing.lg,
+          }}
         >
           {/* Glow */}
           <div
@@ -77,30 +82,26 @@ function BenefitsList({ items, theme }: ListProps) {
 
 export default function Benefits({ items, theme, layout, rhythm, variant }: BenefitsProps) {
   return (
-    <section className={`relative ${resolveSectionSpacing(layout.sectionSpacing, rhythm)} overflow-hidden`}>
-      <GlowBackground theme={theme} decorative={layout.decorative}>
-        <div className={`mx-auto ${layout.sectionWidth}`}>
-          <SectionHeader
-            theme={theme}
-            layout={layout}
-            eyebrow="Why choose us"
-            title={
-              <>
-                Benefits that make
-                <br />
-                the difference
-              </>
-            }
-            description="Designed to help businesses build trust, increase conversions and deliver a better experience to every visitor."
-          />
+    <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
+      <SectionHeader
+        theme={theme}
+        layout={layout}
+        eyebrow="Why choose us"
+        title={
+          <>
+            Benefits that make
+            <br />
+            the difference
+          </>
+        }
+        description="Designed to help businesses build trust, increase conversions and deliver a better experience to every visitor."
+      />
 
-          {variant === "list" ? (
-            <BenefitsList items={items} theme={theme} layout={layout} />
-          ) : (
-            <BenefitsCards items={items} theme={theme} layout={layout} />
-          )}
-        </div>
-      </GlowBackground>
-    </section>
+      {variant === "list" ? (
+        <BenefitsList items={items} theme={theme} layout={layout} />
+      ) : (
+        <BenefitsCards items={items} theme={theme} layout={layout} />
+      )}
+    </SectionShell>
   );
 }
