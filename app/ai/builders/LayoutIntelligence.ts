@@ -50,11 +50,24 @@ type ContentPhase = Exclude<NarrativePhase, "hook" | "close">;
 // fit, so two businesses with similar-but-not-identical signals are meaningfully
 // likely to land on different variants instead of the strongest-scoring one winning
 // every time by a hair.
+// valueFirst/contextHeavy added after the 100-page stress test found the original 4
+// variants left the combinatorial space too small: a large share of realistically-
+// plain-worded prompts (no distinguishing lexicon hits - see BusinessIntelligence.ts)
+// collapse toward near-identical CompositionSignals, and with only 4 buckets to land
+// in, that cluster produced one single section sequence for 40% of all 100 pages. More
+// legitimate narrative shapes directly shrinks how often that cluster's members
+// coincide - the fix belongs here, not in forcing artificial signal differences.
 const PHASE_ORDER_VARIANTS = {
   standard: ["context", "value", "proof", "decision", "objection"],
   proofLed: ["proof", "context", "value", "decision", "objection"],
   decisionLed: ["value", "decision", "proof", "objection", "context"],
   objectionFirst: ["context", "objection", "value", "proof", "decision"],
+  // Confident and direct: show the offer immediately, worry about proof/context after -
+  // fits a simple offer with little to overcome before someone's ready to see it.
+  valueFirst: ["value", "proof", "context", "decision", "objection"],
+  // Build credibility at length before ever making an ask - fits a business where
+  // trust is hard-won and the decision itself is involved.
+  contextHeavy: ["context", "proof", "value", "objection", "decision"],
 } as const satisfies Record<string, readonly ContentPhase[]>;
 
 type PhaseOrderVariant = keyof typeof PHASE_ORDER_VARIANTS;
@@ -66,6 +79,8 @@ const PHASE_ORDER_FIT: Record<PhaseOrderVariant, (signals: CompositionSignals) =
   proofLed: (s) => clamp01(s.socialProofNeed * 0.7 + s.trustNeed * 0.3),
   decisionLed: (s) => clamp01(s.urgency * 0.6 + (1 - s.complexity) * 0.4),
   objectionFirst: (s) => clamp01(s.objectionPressure * 0.85),
+  valueFirst: (s) => clamp01((1 - s.complexity) * 0.5 + (1 - s.trustNeed) * 0.5),
+  contextHeavy: (s) => clamp01(s.trustNeed * 0.6 + s.complexity * 0.4),
 };
 
 // Cubed for the same reason DesignFamily.ts sharpens its own fit scores: with 4
@@ -210,12 +225,31 @@ export function rhythmFrom(signals: CompositionSignals): SectionRhythm {
 
 // The one hero layout decision that stays genuinely structural (a literal different
 // React component tree, not a CSS value a compiler can interpolate) - still derived
-// from a continuous DNA field (heroSplitLean) via a single threshold at this boundary,
-// never stored as its own category upstream.
-export function heroVariantFor(heroSplitLean: number, priceEmphasis: number): HeroVariant {
-  if (priceEmphasis <= 0.35 && heroSplitLean <= 0.35) return "minimal";
-  if (heroSplitLean >= 0.6) return "split";
-  return "centered";
+// from continuous DNA fields (heroSplitLean, priceEmphasis), never stored as its own
+// category upstream.
+//
+// Rewritten from a hard-threshold version after the 100-page stress test found it had
+// collapsed in practice: heroSplitLean clusters tightly around ~0.45-0.55 for most
+// realistic businesses (its formula's own base term is 0.3, and the swing terms rarely
+// push it far), so "split" (>=0.6) fired for only ~11% of pages and "minimal" (both
+// priceEmphasis<=0.35 AND heroSplitLean<=0.35 simultaneously) never fired at all across
+// 100 samples - not a rare edge case, an unreachable one. Each variant now gets a fit
+// score instead of a hard boundary, and seededPick (cubed, same sharpening as every
+// other seed-consuming decision in this pipeline) chooses - "centered" still wins the
+// clear majority of genuinely middling cases (as it should), but "minimal"/"split" are
+// now reachable in real proportion to how well they actually fit, and the seed adds a
+// second point of structural divergence for two businesses whose signals landed close
+// together (the actual root cause the stress test surfaced - see PipelineBuilder.ts).
+export function heroVariantFor(heroSplitLean: number, priceEmphasis: number, random: () => number): HeroVariant {
+  const minimalFit = clamp01((1 - priceEmphasis) * 0.6 + (1 - heroSplitLean) * 0.4);
+  const splitFit = heroSplitLean;
+  const centeredFit = clamp01(1 - Math.abs(heroSplitLean - 0.5) * 1.2);
+
+  return seededPick(random, [
+    { value: "minimal" as HeroVariant, weight: minimalFit ** 3 },
+    { value: "split" as HeroVariant, weight: splitFit ** 3 },
+    { value: "centered" as HeroVariant, weight: centeredFit ** 3 },
+  ]);
 }
 
 // Selects and orders every role belonging to one phase: gate by threshold, then sort
@@ -327,7 +361,7 @@ export function generateLayout(
   ]);
 
   return {
-    heroVariant: heroVariantFor(heroSplitLean, priceEmphasis),
+    heroVariant: heroVariantFor(heroSplitLean, priceEmphasis, random),
     sections,
   };
 }

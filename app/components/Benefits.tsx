@@ -80,7 +80,37 @@ function BenefitsList({ items, theme }: ListProps) {
   );
 }
 
+// Numbered, no card chrome, two-column - the same restrained/editorial treatment
+// StatsInline and FAQTwoColumn already give their sections, so a "minimal"/"editorial"
+// design family reads consistently restrained across every section, not just some.
+function BenefitsMinimal({ items, theme }: ListProps) {
+  return (
+    <div className="mt-20 grid gap-x-12 gap-y-10 md:grid-cols-2">
+      {items.map((benefit, index) => (
+        <div key={index} className="flex items-start gap-5">
+          <span className="text-sm font-bold" style={{ color: theme.colors.accent }}>
+            {String(index + 1).padStart(2, "0")}
+          </span>
+
+          <div>
+            <h3 className="text-lg font-bold" style={{ color: theme.colors.primary }}>{benefit.title}</h3>
+            <p className="mt-2 leading-7" style={{ color: theme.colors.secondary }}>{benefit.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const BENEFITS_VARIANTS: Record<string, (props: ListProps) => React.ReactElement> = {
+  cards: BenefitsCards,
+  list: BenefitsList,
+  minimal: BenefitsMinimal,
+};
+
 export default function Benefits({ items, theme, layout, rhythm, variant }: BenefitsProps) {
+  const Variant = (variant && BENEFITS_VARIANTS[variant]) || BenefitsCards;
+
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
       <SectionHeader
@@ -97,11 +127,7 @@ export default function Benefits({ items, theme, layout, rhythm, variant }: Bene
         description="Designed to help businesses build trust, increase conversions and deliver a better experience to every visitor."
       />
 
-      {variant === "list" ? (
-        <BenefitsList items={items} theme={theme} layout={layout} />
-      ) : (
-        <BenefitsCards items={items} theme={theme} layout={layout} />
-      )}
+      <Variant items={items} theme={theme} layout={layout} />
     </SectionShell>
   );
 }

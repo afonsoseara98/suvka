@@ -10,6 +10,11 @@ export type Industry =
   | "real_estate"
   | "ecommerce"
   | "education"
+  | "beauty"
+  | "home_services"
+  | "consulting"
+  | "automotive"
+  | "events"
   | "generic";
 
 export type BusinessGoal =

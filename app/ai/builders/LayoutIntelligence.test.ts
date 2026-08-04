@@ -136,10 +136,38 @@ describe("prominenceFrom / rhythmFrom / heroVariantFor / ctaCountFor", () => {
     expect(rhythmFrom({ ...NEUTRAL, complexity: 0.1, urgency: 0.2 })).toBe("standard");
   });
 
-  it("picks minimal hero for low price emphasis + low split lean, split for high split lean", () => {
-    expect(heroVariantFor(0.1, 0.1)).toBe("minimal");
-    expect(heroVariantFor(0.8, 0.5)).toBe("split");
-    expect(heroVariantFor(0.5, 0.5)).toBe("centered");
+  describe("heroVariantFor - seeded weighted pick", () => {
+    function shareOf(target: string, heroSplitLean: number, priceEmphasis: number, trials = 60): number {
+      let hits = 0;
+      for (let s = 0; s < trials; s++) {
+        if (heroVariantFor(heroSplitLean, priceEmphasis, seed(s)) === target) hits++;
+      }
+      return hits / trials;
+    }
+
+    it("strongly prefers minimal for low price emphasis + low split lean", () => {
+      expect(shareOf("minimal", 0.1, 0.1)).toBeGreaterThan(0.6);
+    });
+
+    it("strongly prefers split for high split lean", () => {
+      expect(shareOf("split", 0.8, 0.5)).toBeGreaterThan(0.5);
+    });
+
+    it("strongly prefers centered for the exact middle of the range", () => {
+      expect(shareOf("centered", 0.5, 0.5)).toBeGreaterThan(0.6);
+    });
+
+    it("reaches every one of the 3 variants across enough seeds - the regression this rewrite fixes (minimal was 0/100 under the old hard-threshold version)", () => {
+      const seen = new Set<string>();
+      for (let s = 0; s < 100; s++) {
+        seen.add(heroVariantFor(0.5, 0.5, seed(s)));
+      }
+      expect(seen.size).toBe(3);
+    });
+
+    it("is deterministic for a given seed", () => {
+      expect(heroVariantFor(0.4, 0.6, seed(3))).toBe(heroVariantFor(0.4, 0.6, seed(3)));
+    });
   });
 
   it("returns 0/1/2 CTAs at the documented urgency thresholds", () => {

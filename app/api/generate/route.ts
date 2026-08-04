@@ -99,6 +99,12 @@ export async function POST(request: Request) {
 
     landingPage.sections = pipeline.sections;
 
+    // Already computed deterministically, pre-LLM, by buildPipeline() - returning it
+    // alongside the page lets the client build a Project (app/editor/project.ts)
+    // without a second round trip. Not part of the LandingPage wire schema itself
+    // (app/types/landing.ts stays untouched), just an additional top-level field.
+    landingPage.businessProfile = pipeline.businessProfile;
+
     return NextResponse.json(landingPage);
 
   } catch (error: unknown) {

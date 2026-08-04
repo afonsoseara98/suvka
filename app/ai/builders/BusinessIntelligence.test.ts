@@ -16,6 +16,8 @@ function profile(overrides: Partial<BusinessProfile> = {}): BusinessProfile {
   };
 }
 
+const NEUTRAL_DIMENSION = 0.45; // matches BusinessIntelligence.ts's NEUTRAL constant
+
 const PRIMARY_DIMENSIONS: (keyof BusinessIntelligenceProfile)[] = [
   "pricePositioning",
   "competitionLevel",
@@ -76,6 +78,47 @@ describe("buildBusinessIntelligence", () => {
     expect(luxury.pricePositioning).toBeGreaterThan(budget.pricePositioning);
   });
 
+  // Broadened lexicon coverage (see LEXICON's header comment): plain, realistic prompts
+  // that never use the ORIGINAL narrow word lists ("luxury"/"cheap") still need to
+  // diverge on the new, more natural synonyms real users actually type, or the
+  // convergence-to-NEUTRAL problem the stress test found just resurfaces one word list
+  // later.
+  it("diverges pricePositioning using natural synonyms outside the original narrow lexicon", () => {
+    const premium = buildBusinessIntelligence(
+      "A top-tier, handcrafted, signature experience with a private, invitation-only feel",
+      profile({ industry: "generic" })
+    );
+    const value = buildBusinessIntelligence(
+      "A wallet-friendly, no-frills, everyday low prices kind of place, on a budget",
+      profile({ industry: "generic" })
+    );
+
+    expect(premium.pricePositioning).toBeGreaterThan(0.6);
+    expect(value.pricePositioning).toBeLessThan(0.4);
+  });
+
+  it("diverges visualImportance using natural synonyms outside the original narrow lexicon", () => {
+    const visual = buildBusinessIntelligence(
+      "A gorgeous, eye-catching showcase with a striking, sleek look and feel",
+      profile({ industry: "generic" })
+    );
+    expect(visual.visualImportance).toBeGreaterThan(NEUTRAL_DIMENSION);
+  });
+
+  it("diverges decisionComplexity/offerComplexity using natural synonyms outside the original narrow lexicon", () => {
+    const complex = buildBusinessIntelligence(
+      "A fully customized onboarding and implementation, with an all-in-one, full-service bundle",
+      profile({ industry: "generic" })
+    );
+    const easy = buildBusinessIntelligence(
+      "Ready to go, no setup, works out of the box, hassle-free and focused on just one thing",
+      profile({ industry: "generic" })
+    );
+
+    expect(complex.decisionComplexity).toBeGreaterThan(easy.decisionComplexity);
+    expect(complex.offerComplexity).toBeGreaterThan(easy.offerComplexity);
+  });
+
   it("maps primaryGoal to funnelType", () => {
     expect(buildBusinessIntelligence("x", profile({ primaryGoal: "collect_emails" })).funnelType).toBe("lead-generation");
     expect(buildBusinessIntelligence("x", profile({ primaryGoal: "book_consultation" })).funnelType).toBe("booking");
@@ -87,6 +130,17 @@ describe("buildBusinessIntelligence", () => {
     expect(buildBusinessIntelligence("x", profile({ businessModel: "saas" })).lifetimeValue).toBe("recurring-high");
     expect(buildBusinessIntelligence("x", profile({ businessModel: "local_business" })).lifetimeValue).toBe("recurring-low");
     expect(buildBusinessIntelligence("x", profile({ businessModel: "something-new" })).lifetimeValue).toBe("one-time");
+  });
+
+  it("gives the new industry verticals a distinguishable prior on a bland prompt (vs generic)", () => {
+    const bland = "Landing page for our business";
+    const beauty = buildBusinessIntelligence(bland, profile({ industry: "beauty" }));
+    const consulting = buildBusinessIntelligence(bland, profile({ industry: "consulting" }));
+    const generic = buildBusinessIntelligence(bland, profile({ industry: "generic" }));
+
+    expect(beauty.visualImportance).toBeGreaterThan(generic.visualImportance);
+    expect(consulting.decisionComplexity).toBeGreaterThan(generic.decisionComplexity);
+    expect(consulting.authorityRequirement).toBeGreaterThan(generic.authorityRequirement);
   });
 
   it("never returns an empty trafficSourceSuitability list", () => {

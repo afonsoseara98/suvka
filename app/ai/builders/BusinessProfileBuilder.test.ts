@@ -82,6 +82,42 @@ describe("BusinessProfileBuilder - positive classification (every supported indu
     expect(industryOf("Somos uma startup que oferece uma plataforma SaaS para equipas.")).toBe("startup");
   });
 
+  it("classifies beauty (EN)", () => {
+    expect(industryOf("Book an appointment at our hair salon for a haircut and blowout.")).toBe("beauty");
+  });
+
+  it("classifies beauty (PT)", () => {
+    expect(industryOf("Nosso salão de beleza oferece cabeleireiro e manicure.")).toBe("beauty");
+  });
+
+  it("classifies home_services (EN)", () => {
+    expect(industryOf("Our licensed plumber offers 24/7 plumbing and electrical repair.")).toBe("home_services");
+  });
+
+  it("classifies home_services (PT)", () => {
+    expect(industryOf("Somos um encanador profissional para reparos residenciais.")).toBe("home_services");
+  });
+
+  it("classifies consulting (EN)", () => {
+    expect(industryOf("Our business consultant offers strategy consulting and executive coaching.")).toBe("consulting");
+  });
+
+  it("classifies consulting (PT)", () => {
+    expect(industryOf("Oferecemos consultoria empresarial para pequenas empresas.")).toBe("consulting");
+  });
+
+  it("classifies automotive (EN)", () => {
+    expect(industryOf("Visit our auto repair shop for brake repair and an oil change.")).toBe("automotive");
+  });
+
+  it("classifies automotive (PT)", () => {
+    expect(industryOf("Nossa oficina mecânica oferece revisão e troca de óleo.")).toBe("automotive");
+  });
+
+  it("classifies events (EN)", () => {
+    expect(industryOf("Our wedding planner handles event coordination and venue booking.")).toBe("events");
+  });
+
   it("falls back to generic when no industry keywords are present", () => {
     expect(industryOf("We help people achieve their goals every day.")).toBe("generic");
   });
@@ -166,18 +202,11 @@ describe("BusinessProfileBuilder - mixed-industry / adversarial cases (provider 
     ).toBe("startup");
   });
 
-  // KNOWN LIMITATION - NOT YET FIXED.
-  // Currently fails: agency scores "marketing agency" (+5); restaurant scores "restaurant"
-  // (+5, matched via "restaurant owners" - singular, so it's a legitimate keyword match).
-  // Both land on 5, and the tie resolves to restaurant because it appears earlier in
-  // CLASSIFICATION_PRIORITY - even though the business being described is the agency, not
-  // the restaurant. Unlike startup, agency's keyword table was never reinforced with
-  // provider-signal language for this "X serving Y" pattern (see the startup fixes above -
-  // "software for"/"built for"/"crm"/"erp"/"ai-powered" - for the precedent to follow).
-  // This assertion encodes the CORRECT expected behavior. Un-skip once agency's vocabulary
-  // is strengthened the same way; until then this documents the gap without pretending the
-  // current output is intended.
-  it.skip("classifies an agency serving restaurant owners as agency, not restaurant", () => {
+  // FIXED: "agency" was added as its own primary keyword (not just "marketing agency"/
+  // "digital agency"/"creative agency"), so this prompt now scores agency 10 ("marketing
+  // agency" + "agency", both primary) against restaurant's 5 ("restaurant owners") - a
+  // clean, decisive win instead of a tie resolved by CLASSIFICATION_PRIORITY order.
+  it("classifies an agency serving restaurant owners as agency, not restaurant", () => {
     expect(
       industryOf("A digital marketing agency helping restaurant owners increase online orders.")
     ).toBe("agency");

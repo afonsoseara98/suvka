@@ -39,7 +39,10 @@ function variantOptions(
     case "benefits":
       return prominence === "compact"
         ? [{ value: "list", weight: 1 }]
-        : [{ value: "cards", weight: 1 }];
+        : [
+            { value: "cards", weight: 1 },
+            { value: "minimal", weight: restrainedLike || editorialLike ? 1.3 : 0.5 },
+          ];
 
     case "testimonials":
       if (prominence === "compact") {
@@ -57,10 +60,16 @@ function variantOptions(
       ];
 
     case "stats":
-      return [{ value: "cards", weight: 1 }];
+      return [
+        { value: "cards", weight: 1 },
+        { value: "inline", weight: restrainedLike || editorialLike ? 1.4 : 0.5 },
+      ];
 
     case "faq":
-      return [{ value: "accordion", weight: 1 }];
+      return [
+        { value: "accordion", weight: 1 },
+        { value: "twoColumn", weight: denseLike ? 1.3 : 0.6 },
+      ];
 
     case "footer":
       return [{ value: "simple", weight: 1 }];

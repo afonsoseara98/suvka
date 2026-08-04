@@ -65,6 +65,11 @@ const INDUSTRY_PRIOR: Record<Industry, Partial<Record<PrimaryDimension, number>>
   real_estate: { decisionComplexity: 0.75, riskPerception: 0.7, visualImportance: 0.7, offerComplexity: 0.5, pricePositioning: 0.6 },
   ecommerce: { decisionComplexity: 0.2, purchaseUrgency: 0.45, competitionLevel: 0.7 },
   education: { trustDifficulty: 0.5, decisionComplexity: 0.4, emotionalVsRational: 0.45 },
+  beauty: { visualImportance: 0.55, emotionalVsRational: 0.5, decisionComplexity: 0.15, offerComplexity: 0.15 },
+  home_services: { trustDifficulty: 0.55, authorityRequirement: 0.5, decisionComplexity: 0.3 },
+  consulting: { decisionComplexity: 0.6, offerComplexity: 0.55, trustDifficulty: 0.55, authorityRequirement: 0.6, buyerSophistication: 0.55 },
+  automotive: { trustDifficulty: 0.5, decisionComplexity: 0.3, riskPerception: 0.4 },
+  events: { emotionalVsRational: 0.65, visualImportance: 0.55, decisionComplexity: 0.4, offerComplexity: 0.35, pricePositioning: 0.55 },
   generic: {},
 };
 
@@ -81,52 +86,114 @@ const HIT_WEIGHT = 0.16;
 // authorityRequirement, riskPerception) intentionally carry thin or no lexicon here -
 // forcing a keyword list onto every dimension just to have one would be exactly the
 // kind of hollow "intelligence" this system is meant to avoid.
+// Every list below started as the narrow set that made the "luxury/cheap wedding
+// photographer" worked example pass (see BusinessIntelligence.test.ts) - real prompts
+// rarely use those exact words. Broadened after the 100-page stress test showed most
+// plain-worded prompts hit NO lexicon at all and collapsed every primary dimension to
+// NEUTRAL (0.45), which is what actually drove design-family/hero/phase-order collision
+// downstream (see LayoutIntelligence.ts, DesignFamily.ts) - widening the vocabulary here
+// is the upstream fix; the downstream seed-based tie-breaking is only a mitigation for
+// whatever still collapses after this.
 const LEXICON: Partial<Record<PrimaryDimension, Lexicon>> = {
   pricePositioning: {
     positive: [
       "luxury", "premium", "exclusive", "bespoke", "boutique", "high-end", "elite",
       "artisan", "curated", "prestige", "white-glove", "upscale", "high end",
+      "high-quality", "top-tier", "designer", "handcrafted", "signature", "five-star",
+      "vip", "finest", "refined", "sophisticated", "indulgent", "handmade", "couture",
+      "private", "members-only", "invitation-only", "top-shelf",
     ],
-    negative: ["cheap", "affordable", "budget", "discount", "low-cost", "inexpensive", "economical", "value"],
+    negative: [
+      "cheap", "affordable", "budget", "discount", "low-cost", "inexpensive", "economical", "value",
+      "wallet-friendly", "student discount", "no hidden fees", "family-friendly pricing",
+      "small budget", "bargain", "on a budget", "low price", "cost-effective", "everyday low prices",
+    ],
   },
   competitionLevel: {
-    positive: ["leading", "established market", "crowded market"],
-    negative: ["only", "first", "unique", "pioneering", "revolutionary", "one-of-a-kind", "never before"],
+    positive: [
+      "leading", "established market", "crowded market", "well-known", "trusted by thousands",
+      "industry leader", "top-rated", "award-winning", "market leader", "#1", "number one",
+    ],
+    negative: [
+      "only", "first", "unique", "pioneering", "revolutionary", "one-of-a-kind", "never before",
+      "new", "newest", "just launched", "innovative", "cutting-edge", "next-generation", "brand new",
+    ],
   },
   visualImportance: {
-    positive: ["stunning", "beautiful", "design", "aesthetic", "gallery", "portfolio", "visual", "photography", "style"],
+    positive: [
+      "stunning", "beautiful", "design", "aesthetic", "gallery", "portfolio", "visual", "photography", "style",
+      "showcase", "visuals", "photos", "images", "look and feel", "craftsmanship", "beautifully",
+      "gorgeous", "visually", "eye-catching", "striking", "elegant design", "sleek", "stylish",
+    ],
     negative: [],
   },
   buyerSophistication: {
-    positive: ["professional", "expert", "enterprise", "advanced", "industry-leading"],
-    negative: ["beginner", "first-time", "new to", "simple", "easy for anyone"],
+    positive: [
+      "professional", "expert", "enterprise", "advanced", "industry-leading",
+      "specialists", "veteran", "seasoned", "technical", "power users", "experienced professionals",
+    ],
+    negative: [
+      "beginner", "first-time", "new to", "simple", "easy for anyone",
+      "no experience needed", "anyone can", "no tech skills", "user-friendly", "for beginners", "no experience required",
+    ],
   },
   emotionalVsRational: {
-    positive: ["love", "dream", "memories", "journey", "story", "feel", "magical", "unforgettable", "passion", "heartfelt"],
-    negative: ["roi", "efficiency", "data", "metrics", "performance", "results", "guaranteed", "proven", "analytics", "measurable"],
+    positive: [
+      "love", "dream", "memories", "journey", "story", "feel", "magical", "unforgettable", "passion", "heartfelt",
+      "special day", "celebrate", "cherish", "warmth", "comfort", "belonging", "joy", "delight", "family", "together",
+    ],
+    negative: [
+      "roi", "efficiency", "data", "metrics", "performance", "results", "guaranteed", "proven", "analytics", "measurable",
+      "numbers", "reports", "dashboard", "conversion rate", "productivity", "output", "throughput", "benchmarks",
+    ],
   },
   decisionComplexity: {
-    positive: ["custom", "tailored", "integration", "enterprise", "multi-step", "consultation", "complex"],
-    negative: ["simple", "easy", "one-click", "instant", "straightforward", "quick"],
+    positive: [
+      "custom", "tailored", "integration", "enterprise", "multi-step", "consultation", "complex",
+      "onboarding", "implementation", "requirements", "workflow", "configure", "customized", "in-depth",
+    ],
+    negative: [
+      "simple", "easy", "one-click", "instant", "straightforward", "quick",
+      "plug and play", "ready to go", "no setup", "works out of the box", "hassle-free", "no installation",
+    ],
   },
   purchaseUrgency: {
-    positive: ["now", "today", "limited", "hurry", "last chance", "urgent", "immediately", "same-day", "emergency", "don't wait"],
+    positive: [
+      "now", "today", "limited", "hurry", "last chance", "urgent", "immediately", "same-day", "emergency", "don't wait",
+      "book today", "spots are limited", "while supplies last", "act fast", "don't miss out", "closing soon",
+      "limited time", "ends soon", "call now",
+    ],
     negative: [],
   },
   offerComplexity: {
-    positive: ["platform", "suite", "end-to-end", "comprehensive", "multi", "integration", "enterprise"],
-    negative: ["simple", "single", "straightforward"],
+    positive: [
+      "platform", "suite", "end-to-end", "comprehensive", "multi", "integration", "enterprise",
+      "all-in-one", "full-service", "everything you need", "bundle", "modular", "full suite",
+    ],
+    negative: [
+      "simple", "single", "straightforward",
+      "one thing", "focused", "no-frills", "lightweight", "just one",
+    ],
   },
   riskPerception: {
-    positive: ["investment", "commitment", "contract", "long-term", "permanent", "surgery", "legal", "financial"],
-    negative: ["guarantee", "risk-free", "free trial", "money-back", "no commitment", "cancel anytime"],
+    positive: [
+      "investment", "commitment", "contract", "long-term", "permanent", "surgery", "legal", "financial",
+      "safety", "liability", "high-stakes", "irreversible", "binding", "life-changing", "major decision",
+    ],
+    negative: [
+      "guarantee", "risk-free", "free trial", "money-back", "no commitment", "cancel anytime",
+      "no obligation", "satisfaction guaranteed", "nothing to lose", "try before you buy", "flexible cancellation", "no risk",
+    ],
   },
   trustDifficulty: {
     positive: [],
     negative: ["certified", "licensed", "accredited", "award-winning", "trusted by", "established"],
   },
   authorityRequirement: {
-    positive: ["expert", "certified", "board-certified", "licensed", "accredited", "years of experience", "published", "featured in", "award-winning"],
+    positive: [
+      "expert", "certified", "board-certified", "licensed", "accredited", "years of experience", "published", "featured in", "award-winning",
+      "credentials", "qualified", "trained", "insured", "background-checked", "verified", "certified professionals",
+    ],
     negative: [],
   },
 };

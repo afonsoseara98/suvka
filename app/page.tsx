@@ -2,19 +2,29 @@
 
 import { useState } from "react";
 import Landing from "@/app/components/Landing";
+import { projectFromLandingPage, currentPageState, type Project } from "@/app/editor/project";
 import type { LandingPage } from "@/app/types/landing";
+import type { BusinessProfile } from "@/app/ai/types";
 
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [landing, setLanding] = useState<LandingPage | null>(null);
+  // Project (app/editor/project.ts), not the raw LandingPage - projectFromLandingPage()
+  // converts the generation pipeline's output into the canonical, editable model
+  // exactly once, here, at the one seam between "generated" and "editable." Nothing
+  // about app/ai/* or /api/generate's actual generation behavior needed to change for
+  // this (the route now additionally returns the already-computed businessProfile
+  // alongside the page, no new OpenAI call). A Project always holds at least one page
+  // ("landing") - today's flow only ever produces that one, but the shape is already
+  // ready for more.
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function generateLandingPage() {
     if (!prompt.trim()) return;
 
-    setLanding(null);
+    setProject(null);
     setError(null);
     setLoading(true);
 
@@ -34,7 +44,10 @@ export default function Home() {
         return;
       }
 
-      setLanding(data);
+      const businessProfile = data.businessProfile as BusinessProfile;
+      setProject(
+        projectFromLandingPage(data as LandingPage, businessProfile, { id: `project-${Date.now()}`, name: "Untitled Project" })
+      );
     } catch (err) {
       console.error(err);
       setError("Unable to contact the server.");
@@ -159,7 +172,7 @@ export default function Home() {
 
   </section>
 )}
-      {landing && (
+      {project && (
   <section className="mx-auto mb-40 max-w-7xl px-6">
 
     <div className="mb-6 flex items-center justify-between">
@@ -194,8 +207,8 @@ export default function Home() {
 
       </div>
 
-      <Landing {...landing} />
-    
+      <Landing state={currentPageState(project, "landing")} />
+
 
     </div>
 
