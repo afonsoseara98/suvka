@@ -12,6 +12,7 @@ import type {
   FunnelType,
 } from "../types/businessIntelligence";
 import { countMatches } from "../utils/textMatching";
+import { clamp01 } from "../utils/math";
 
 // BUSINESS INTELLIGENCE ENGINE
 //
@@ -44,10 +45,6 @@ type PrimaryDimension = Exclude<
 
 const NEUTRAL = 0.45;
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
 // Every industry's reasonable starting point for the dimensions it strongly predicts
 // regardless of phrasing (a dentist is high-trust-difficulty even in the blandest
 // prompt). Dimensions not listed for an industry fall back to NEUTRAL - pure text-
@@ -59,7 +56,13 @@ const INDUSTRY_PRIOR: Record<Industry, Partial<Record<PrimaryDimension, number>>
   restaurant: { visualImportance: 0.75, emotionalVsRational: 0.7, decisionComplexity: 0.15, offerComplexity: 0.15 },
   fitness: { emotionalVsRational: 0.55, purchaseUrgency: 0.4, visualImportance: 0.5 },
   law: { trustDifficulty: 0.8, authorityRequirement: 0.85, riskPerception: 0.75, decisionComplexity: 0.6 },
-  real_estate: { decisionComplexity: 0.75, riskPerception: 0.7, visualImportance: 0.7, offerComplexity: 0.5 },
+  // pricePositioning 0.6: real estate transactions are inherently higher-ticket than
+  // average (matches priceLevel "high" already set for this industry in
+  // BusinessProfileBuilder.ts) - without this prior, the Narrative/Visual engines
+  // (which score purely against BusinessIntelligenceProfile, never against industry
+  // directly) had no signal to route a real_estate prompt toward the luxury archetype
+  // and style the way the old industry-keyed tables explicitly did.
+  real_estate: { decisionComplexity: 0.75, riskPerception: 0.7, visualImportance: 0.7, offerComplexity: 0.5, pricePositioning: 0.6 },
   ecommerce: { decisionComplexity: 0.2, purchaseUrgency: 0.45, competitionLevel: 0.7 },
   education: { trustDifficulty: 0.5, decisionComplexity: 0.4, emotionalVsRational: 0.45 },
   generic: {},

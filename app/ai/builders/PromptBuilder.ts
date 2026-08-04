@@ -3,6 +3,10 @@ import { CONVERSION_PROMPT } from "../prompts/conversion";
 import { SCHEMA_PROMPT } from "../prompts/schema";
 import { describeSignalsForPrompt } from "./CompositionIntelligence";
 import { describeBusinessIntelligenceForPrompt } from "./BusinessIntelligence";
+import { describeHeroStrategyForPrompt } from "../engines/HeroEngine";
+import { describeTrustStrategyForPrompt } from "../engines/TrustEngine";
+import { describeCtaStrategyForPrompt } from "../engines/CTAEngine";
+import { describePricingStrategyForPrompt } from "../engines/PricingEngine";
 
 import type { BusinessProfile } from "../types";
 import type { BusinessKnowledge } from "../types/knowledge";
@@ -10,6 +14,7 @@ import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { CompositionSignals } from "../types/signals";
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
+import type { HeroStrategy, TrustStrategy, CtaStrategy, PricingStrategy } from "../types/strategy";
 import type { DesignSystem } from "@/app/types/design";
 import type { Section } from "@/app/types/landing";
 
@@ -28,7 +33,11 @@ export function buildPrompt(
   design: DesignSystem,
   sections: readonly Section[],
   signals: CompositionSignals,
-  businessIntelligence: BusinessIntelligenceProfile
+  businessIntelligence: BusinessIntelligenceProfile,
+  heroStrategy: HeroStrategy,
+  trustStrategy: TrustStrategy,
+  ctaStrategy: CtaStrategy,
+  pricingStrategy: PricingStrategy
 ): string {
   // knowledge.trustSignals and psychology.trustFactors both exist to answer the same
   // question ("why should this reader trust this business") from two different
@@ -117,6 +126,38 @@ export function buildPrompt(
     "",
 
     ...describeSignalsForPrompt(signals),
+
+    "",
+
+    "==============================",
+    "HERO STRATEGY",
+    "==============================",
+
+    ...describeHeroStrategyForPrompt(heroStrategy),
+
+    "",
+
+    "==============================",
+    "TRUST STRATEGY",
+    "==============================",
+
+    ...describeTrustStrategyForPrompt(trustStrategy),
+
+    "",
+
+    "==============================",
+    "CTA STRATEGY",
+    "==============================",
+
+    ...describeCtaStrategyForPrompt(ctaStrategy),
+
+    "",
+
+    "==============================",
+    "PRICING STRATEGY",
+    "==============================",
+
+    ...describePricingStrategyForPrompt(pricingStrategy),
 
     "",
 

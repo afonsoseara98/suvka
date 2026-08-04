@@ -2,6 +2,7 @@ import type { CompositionSignals } from "../types/signals";
 import type { PageArchetype } from "../types/archetype";
 import type { LandingComposition, CompositionSection } from "../types/composition";
 import type { SectionType, SectionProminence, SectionRhythm, HeroVariant } from "@/app/types/landing";
+import { clamp01 } from "../utils/math";
 
 // LAYOUT INTELLIGENCE
 //
@@ -119,10 +120,6 @@ const BIAS_BY_ARCHETYPE: Record<PageArchetype, Partial<Record<GatedRole, number>
   personal_brand: { testimonials: 0.2, logoCloud: -0.2 },
   portfolio: { features: 0.15, logoCloud: -0.15 },
 };
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
 
 // Exported alongside generateLayout (its only real "public API" for the rest of the
 // pipeline) purely so tests can verify each piece of the decision on its own terms -

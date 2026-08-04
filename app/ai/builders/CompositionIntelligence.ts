@@ -3,6 +3,7 @@ import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { CompositionSignals } from "../types/signals";
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
+import { clamp01 } from "../utils/math";
 
 // Owns the read of "who this business is" as CompositionSignals - both how the page is
 // structured (LayoutIntelligence.ts consumes these signals to generate a
@@ -10,10 +11,6 @@ import type { BusinessIntelligenceProfile } from "../types/businessIntelligence"
 // same signals into directives PromptBuilder.ts feeds the LLM). One computation, two
 // consumers, so the structure a page renders in and the copy it's written with are
 // always describing the same read of the business, never two independent ones.
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
 const PRICE_LEVEL_TRUST_WEIGHT: Record<BusinessProfile["priceLevel"], number> = {
   low: 0.15,
   medium: 0.35,
