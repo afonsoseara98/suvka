@@ -3,6 +3,7 @@ import type { BusinessIntelligenceProfile } from "../types/businessIntelligence"
 import type { LandingComposition, CompositionSection } from "../types/composition";
 import type { SectionType, SectionProminence, SectionRhythm, HeroVariant } from "@/app/types/landing";
 import { clamp01 } from "../utils/math";
+import { seededPick } from "../utils/seed";
 
 // LAYOUT INTELLIGENCE
 //
@@ -34,8 +35,54 @@ import { clamp01 } from "../utils/math";
 // effectively unbounded, without a single one of them having been written down.
 
 type NarrativePhase = "hook" | "context" | "value" | "proof" | "decision" | "objection" | "close";
+type ContentPhase = Exclude<NarrativePhase, "hook" | "close">;
 
-const PHASE_ORDER: readonly NarrativePhase[] = ["hook", "context", "value", "proof", "decision", "objection", "close"];
+// STRUCTURAL DIVERSITY: previously a single fixed content order (context -> value ->
+// proof -> decision -> objection) ran for every business - inclusion/exclusion and
+// prominence were signal-driven, but the SHAPE of the narrative arc itself never
+// varied, which is a real source of "every page feels like the same generator" even
+// once colors/spacing/copy diverge. Each variant below is a narratively legitimate
+// reordering (leading with proof for a business that needs to earn belief before
+// anything else lands, leading straight to the offer for an urgent/simple sale,
+// surfacing objections before the pitch for a business where skepticism is the real
+// barrier) - resolvePhaseOrder scores every variant against the business's own
+// signals and lets the design seed (see utils/seed.ts) pick among them weighted by
+// fit, so two businesses with similar-but-not-identical signals are meaningfully
+// likely to land on different variants instead of the strongest-scoring one winning
+// every time by a hair.
+const PHASE_ORDER_VARIANTS = {
+  standard: ["context", "value", "proof", "decision", "objection"],
+  proofLed: ["proof", "context", "value", "decision", "objection"],
+  decisionLed: ["value", "decision", "proof", "objection", "context"],
+  objectionFirst: ["context", "objection", "value", "proof", "decision"],
+} as const satisfies Record<string, readonly ContentPhase[]>;
+
+type PhaseOrderVariant = keyof typeof PHASE_ORDER_VARIANTS;
+
+const PHASE_ORDER_FIT: Record<PhaseOrderVariant, (signals: CompositionSignals) => number> = {
+  // A real, always-legitimate default - never zero, so it stays in the running even
+  // when nothing else about the business is distinctive.
+  standard: () => 0.45,
+  proofLed: (s) => clamp01(s.socialProofNeed * 0.7 + s.trustNeed * 0.3),
+  decisionLed: (s) => clamp01(s.urgency * 0.6 + (1 - s.complexity) * 0.4),
+  objectionFirst: (s) => clamp01(s.objectionPressure * 0.85),
+};
+
+// Cubed for the same reason DesignFamily.ts sharpens its own fit scores: with 4
+// competing variants, an unsharpened proportional draw lets a business that clearly
+// needs one narrative shape still lose to the combined mass of the other three most of
+// the time. Cubing keeps a decisive fit decisive while still leaving real room for the
+// seed to matter when two variants fit almost equally well.
+const FIT_SHARPENING_POWER = 3;
+
+export function resolvePhaseOrder(signals: CompositionSignals, random: () => number): readonly ContentPhase[] {
+  const options = (Object.keys(PHASE_ORDER_VARIANTS) as PhaseOrderVariant[]).map((name) => ({
+    value: PHASE_ORDER_VARIANTS[name],
+    weight: PHASE_ORDER_FIT[name](signals) ** FIT_SHARPENING_POWER,
+  }));
+
+  return seededPick(random, options);
+}
 
 // The one-and-only structural classification in this file: which storytelling job does
 // each role do. This is a *taxonomy*, not a template - it says nothing about whether a
@@ -265,9 +312,10 @@ export function generateLayout(
   bi: BusinessIntelligenceProfile,
   signals: CompositionSignals,
   heroSplitLean: number,
-  priceEmphasis: number
+  priceEmphasis: number,
+  random: () => number
 ): LandingComposition {
-  const contentPhases = PHASE_ORDER.filter((p) => p !== "hook" && p !== "close");
+  const contentPhases = resolvePhaseOrder(signals, random);
 
   const body = contentPhases.flatMap((phase) => resolvePhase(phase, signals, bi));
   const withCtas = insertCtas(body, signals);

@@ -8,10 +8,14 @@ import {
   heroVariantFor,
   ctaCountFor,
   sectionWeightsFor,
+  resolvePhaseOrder,
   GATED_ROLES,
 } from "./LayoutIntelligence";
 import { neutralBusinessIntelligence as bi } from "../testFixtures";
+import { createSeededRandom } from "../utils/seed";
 import type { CompositionSignals } from "../types/signals";
+
+const seed = (n: number) => createSeededRandom(n);
 
 const NEUTRAL: CompositionSignals = {
   trustNeed: 0.5,
@@ -147,28 +151,34 @@ describe("prominenceFrom / rhythmFrom / heroVariantFor / ctaCountFor", () => {
 });
 
 describe("generateLayout - structural guarantees", () => {
-  it("never places two cta sections adjacent to each other", () => {
+  it("never places two cta sections adjacent to each other, under any phase order", () => {
     const veryUrgent: CompositionSignals = { ...NEUTRAL, urgency: 0.95 };
-    const { sections } = generateLayout(bi(), veryUrgent, 0.5, 0.5);
-    for (let i = 0; i < sections.length - 1; i++) {
-      if (sections[i].role === "cta") {
-        expect(sections[i + 1]?.role).not.toBe("cta");
+    for (let s = 0; s < 20; s++) {
+      const { sections } = generateLayout(bi(), veryUrgent, 0.5, 0.5, seed(s));
+      for (let i = 0; i < sections.length - 1; i++) {
+        if (sections[i].role === "cta") {
+          expect(sections[i + 1]?.role).not.toBe("cta");
+        }
       }
     }
   });
 
-  it("never places a cta immediately after hero", () => {
+  it("never places a cta immediately after hero, under any phase order", () => {
     const veryUrgent: CompositionSignals = { ...NEUTRAL, urgency: 0.95 };
-    const { sections } = generateLayout(bi(), veryUrgent, 0.5, 0.5);
-    expect(sections[1]?.role).not.toBe("cta");
+    for (let s = 0; s < 20; s++) {
+      const { sections } = generateLayout(bi(), veryUrgent, 0.5, 0.5, seed(s));
+      expect(sections[1]?.role).not.toBe("cta");
+    }
   });
 
-  it("never produces 3+ consecutive sections with identical rhythm", () => {
-    const { sections } = generateLayout(bi(), NEUTRAL, 0.5, 0.5);
-    let run = 1;
-    for (let i = 1; i < sections.length; i++) {
-      run = sections[i].rhythm === sections[i - 1].rhythm ? run + 1 : 1;
-      expect(run).toBeLessThan(3);
+  it("never produces 3+ consecutive sections with identical rhythm, under any phase order", () => {
+    for (let s = 0; s < 20; s++) {
+      const { sections } = generateLayout(bi(), NEUTRAL, 0.5, 0.5, seed(s));
+      let run = 1;
+      for (let i = 1; i < sections.length; i++) {
+        run = sections[i].rhythm === sections[i - 1].rhythm ? run + 1 : 1;
+        expect(run).toBeLessThan(3);
+      }
     }
   });
 
@@ -184,16 +194,60 @@ describe("generateLayout - structural guarantees", () => {
     // trustDifficulty pulls stats up further and visualImportance pulls features up -
     // pushed apart explicitly so the ordering claim doesn't rest on a coincidental tie.
     const statsFirstBi = bi({ trustDifficulty: 0.9, visualImportance: 0.1, emotionalVsRational: 0.1 });
-    const { sections } = generateLayout(statsFirstBi, statsFirst, 0.5, 0.5);
+    const { sections } = generateLayout(statsFirstBi, statsFirst, 0.5, 0.5, seed(1));
     const statsIndex = sections.findIndex((s) => s.role === "stats");
     const featuresIndex = sections.findIndex((s) => s.role === "features");
     expect(statsIndex).toBeGreaterThan(-1);
     expect(statsIndex).toBeLessThan(featuresIndex);
   });
 
-  it("is fully deterministic", () => {
-    const a = generateLayout(bi(), NEUTRAL, 0.5, 0.5);
-    const b = generateLayout(bi(), NEUTRAL, 0.5, 0.5);
+  it("is fully deterministic for the same seed", () => {
+    const a = generateLayout(bi(), NEUTRAL, 0.5, 0.5, seed(1));
+    const b = generateLayout(bi(), NEUTRAL, 0.5, 0.5, seed(1));
     expect(a).toEqual(b);
+  });
+
+  it("produces genuinely different section sequences across seeds for the exact same business", () => {
+    // The core of the diversity mechanism: two "generations" of the same neutral
+    // business (no seed) would previously always be identical in shape (they still
+    // are, for the SAME seed - determinism holds), but across different seeds the
+    // structure itself now varies, not just prominence/rhythm.
+    const sequences = new Set<string>();
+    for (let s = 0; s < 30; s++) {
+      const { sections } = generateLayout(bi(), NEUTRAL, 0.5, 0.5, seed(s));
+      sequences.add(sections.map((sec) => sec.role).join(">"));
+    }
+    expect(sequences.size).toBeGreaterThan(1);
+  });
+});
+
+describe("resolvePhaseOrder", () => {
+  it("is deterministic for a given seed", () => {
+    expect(resolvePhaseOrder(NEUTRAL, seed(5))).toEqual(resolvePhaseOrder(NEUTRAL, seed(5)));
+  });
+
+  it("always returns a permutation of the same 5 content phases", () => {
+    const expected = ["context", "value", "proof", "decision", "objection"].sort();
+    for (let s = 0; s < 20; s++) {
+      expect([...resolvePhaseOrder(NEUTRAL, seed(s))].sort()).toEqual(expected);
+    }
+  });
+
+  it("strongly prefers proof-led ordering for a business with overwhelming social-proof need", () => {
+    const proofHeavy: CompositionSignals = { ...NEUTRAL, socialProofNeed: 0.95, trustNeed: 0.9 };
+    let proofFirstCount = 0;
+    const trials = 40;
+    for (let s = 0; s < trials; s++) {
+      if (resolvePhaseOrder(proofHeavy, seed(s))[0] === "proof") proofFirstCount++;
+    }
+    expect(proofFirstCount / trials).toBeGreaterThan(0.5);
+  });
+
+  it("resolves to more than one variant across enough seeds, for the same neutral signals", () => {
+    const seen = new Set<string>();
+    for (let s = 0; s < 30; s++) {
+      seen.add(resolvePhaseOrder(NEUTRAL, seed(s)).join(">"));
+    }
+    expect(seen.size).toBeGreaterThan(1);
   });
 });

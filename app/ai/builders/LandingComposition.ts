@@ -12,7 +12,8 @@ export function buildLandingComposition(
   bi: BusinessIntelligenceProfile,
   signals: CompositionSignals,
   heroSplitLean: number,
-  priceEmphasis: number
+  priceEmphasis: number,
+  random: () => number
 ): LandingComposition {
-  return generateLayout(bi, signals, heroSplitLean, priceEmphasis);
+  return generateLayout(bi, signals, heroSplitLean, priceEmphasis, random);
 }

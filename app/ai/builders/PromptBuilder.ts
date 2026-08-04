@@ -9,6 +9,7 @@ import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 import type { StrategyDNA } from "../types/dna";
+import type { DesignFamilyName } from "../engines/DesignFamily";
 import type { Section } from "@/app/types/landing";
 
 // Every DNA dimension paired with a short (lowMeaning / highMeaning) hint so the raw
@@ -81,7 +82,8 @@ export function buildPrompt(
   offer: OfferStrategy,
   sections: readonly Section[],
   businessIntelligence: BusinessIntelligenceProfile,
-  dna: StrategyDNA
+  dna: StrategyDNA,
+  designFamily: DesignFamilyName
 ): string {
   // knowledge.trustSignals and psychology.trustFactors both exist to answer the same
   // question ("why should this reader trust this business") from two different
@@ -164,6 +166,10 @@ export function buildPrompt(
     "==============================",
     "STRATEGY DNA",
     "==============================",
+
+    `Design family: ${designFamily} - let this inform word choice and tone (e.g. "bold" reads confident and energetic, "elegant" reads restrained and considered), it is already fully reflected in the numbers below.`,
+
+    "",
 
     ...describeDnaForPrompt(dna),
 

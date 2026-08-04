@@ -96,17 +96,59 @@ function PricingPremium({ plans, theme, layout }: ListProps) {
   );
 }
 
+// Comparison treatment: plans as column headers, every distinct feature mentioned by
+// any plan as a row - a single table communicates the tier structure at a glance
+// instead of asking the reader to compare three separate cards. Suits the
+// "corporate"/"startupDashboard" families' more structured identity.
+function PricingComparison({ plans, theme }: ListProps) {
+  const allFeatures = Array.from(new Set(plans.flatMap((plan) => plan.features)));
+
+  return (
+    <div className="overflow-x-auto border" style={{ borderColor: theme.colors.border, borderRadius: theme.radius.lg }}>
+      <table className="w-full border-collapse text-left">
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${theme.colors.border}` }}>
+            <th className="p-6 font-medium" style={{ color: theme.colors.secondary }}></th>
+            {plans.map((plan, index) => (
+              <th key={index} className="p-6 text-center">
+                <div className="text-lg font-bold">{plan.name}</div>
+                <div className="mt-1 text-2xl font-bold" style={{ color: theme.colors.accent }}>€{plan.price}</div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {allFeatures.map((feature, row) => (
+            <tr key={row} style={{ borderBottom: `1px solid ${theme.colors.border}` }}>
+              <td className="p-4" style={{ color: theme.colors.secondary }}>{feature}</td>
+              {plans.map((plan, col) => (
+                <td key={col} className="p-4 text-center" style={{ color: theme.colors.accent }}>
+                  {plan.features.includes(feature) ? "✓" : ""}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const PRICING_VARIANTS: Record<string, (props: ListProps) => React.ReactElement> = {
+  premium: PricingPremium,
+  comparison: PricingComparison,
+  simple: PricingSimple,
+};
+
 export default function Pricing({ plans, theme, layout, rhythm, variant }: PricingProps) {
+  const Variant = (variant && PRICING_VARIANTS[variant]) || PricingSimple;
+
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
       <SectionHeader theme={theme} layout={layout} title="Pricing" />
 
       <div className="mt-10">
-        {variant === "premium" ? (
-          <PricingPremium plans={plans} theme={theme} layout={layout} />
-        ) : (
-          <PricingSimple plans={plans} theme={theme} layout={layout} />
-        )}
+        <Variant plans={plans} theme={theme} layout={layout} />
       </div>
     </SectionShell>
   );

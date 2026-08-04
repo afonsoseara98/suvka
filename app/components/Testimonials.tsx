@@ -67,17 +67,68 @@ function TestimonialsMinimal({ items, theme }: ListProps) {
   );
 }
 
+// Spotlight treatment: the first testimonial is presented alone, at real size, with
+// the rest reduced to a supporting row beneath it - one story does the emotional work,
+// the others just corroborate it. Suits the "editorial"/"elegant"/"highEndAgency"
+// families' more considered pacing.
+function TestimonialsSpotlight({ items, theme, layout }: ListProps) {
+  const [lead, ...rest] = items;
+
+  return (
+    <div>
+      {lead && (
+        <div
+          className="mx-auto max-w-3xl border text-center"
+          style={{
+            borderColor: theme.colors.border,
+            background: theme.colors.card,
+            borderRadius: theme.radius.xl,
+            padding: theme.spacing.xl,
+          }}
+        >
+          <p className="text-2xl font-medium leading-9">&ldquo;{lead.text}&rdquo;</p>
+          <div className="mt-6">
+            <div className="font-bold">{lead.name}</div>
+            <div style={{ color: theme.colors.secondary }}>{lead.company}</div>
+          </div>
+        </div>
+      )}
+
+      {rest.length > 0 && (
+        <div className={`mt-10 grid gap-6 ${layout.gridColumns}`}>
+          {rest.map((item, index) => (
+            <div
+              key={index}
+              className="border"
+              style={{ borderColor: theme.colors.border, background: theme.colors.card, borderRadius: theme.radius.lg, padding: theme.spacing.md }}
+            >
+              <p className="text-sm leading-6" style={{ color: theme.colors.secondary }}>
+                &ldquo;{item.text}&rdquo;
+              </p>
+              <div className="mt-4 text-sm font-semibold">{item.name}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TESTIMONIALS_VARIANTS: Record<string, (props: ListProps) => React.ReactElement> = {
+  minimal: TestimonialsMinimal,
+  spotlight: TestimonialsSpotlight,
+  cards: TestimonialsCards,
+};
+
 export default function Testimonials({ items, theme, layout, rhythm, variant }: TestimonialsProps) {
+  const Variant = (variant && TESTIMONIALS_VARIANTS[variant]) || TestimonialsCards;
+
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
       <SectionHeader theme={theme} layout={layout} title="Testimonials" />
 
       <div className="mt-10">
-        {variant === "minimal" ? (
-          <TestimonialsMinimal items={items} theme={theme} layout={layout} />
-        ) : (
-          <TestimonialsCards items={items} theme={theme} layout={layout} />
-        )}
+        <Variant items={items} theme={theme} layout={layout} />
       </div>
     </SectionShell>
   );

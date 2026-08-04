@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { buildLandingComposition } from "./LandingComposition";
 import { deriveCompositionSignals } from "./CompositionIntelligence";
 import { neutralBusinessIntelligence as bi } from "../testFixtures";
+import { createSeededRandom } from "../utils/seed";
 import type { BusinessProfile } from "../types";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
@@ -63,9 +64,10 @@ function composition(
   intelligence = bi(),
   signals: CompositionSignals = NEUTRAL,
   heroSplitLean = 0.5,
-  priceEmphasis = 0.5
+  priceEmphasis = 0.5,
+  random: () => number = createSeededRandom(1)
 ) {
-  return buildLandingComposition(intelligence, signals, heroSplitLean, priceEmphasis);
+  return buildLandingComposition(intelligence, signals, heroSplitLean, priceEmphasis, random);
 }
 
 describe("LandingComposition - coverage and structural invariants", () => {
