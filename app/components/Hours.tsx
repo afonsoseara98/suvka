@@ -64,7 +64,7 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
                 the owner wrote them, which is also how a door sign shows them. */}
             <div
               className="mt-2 leading-relaxed"
-              style={{ color: theme.colors.primary, whiteSpace: entry.field === "schedule" ? "pre-line" : undefined }}
+              style={{ color: theme.colors.primary, whiteSpace: entry.field === "schedule" ? "pre-line" : "normal" }}
             >
               {entry.href && !onUpdateContent ? (
                 <a href={entry.href} className="hover:underline" style={{ color: theme.colors.primary }}>
