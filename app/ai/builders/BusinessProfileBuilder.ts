@@ -160,8 +160,21 @@ const INDUSTRY_KEYWORDS: Record<ClassifiableIndustry, IndustryKeywords> = {
     negative: ["course", "curso", "online course"],
   },
   restaurant: {
-    primary: ["restaurant", "restaurante", "café", "cafe", "bistro"],
-    secondary: ["menu", "reservation", "reserva", "chef", "dining", "cuisine", "pizzeria"],
+    // A real end-to-end generation exposed this: "A family-run bakery in Porto selling
+    // sourdough bread, custard tarts and coffee" classified as `generic` and was offered a
+    // stock photo of an office. The lexicon knew restaurants and cafés but not the baking
+    // and pastry half of the same trade - which is one of the most common small businesses
+    // there is, and exactly the kind this product exists to serve.
+    primary: [
+      "restaurant", "restaurante", "café", "cafe", "bistro", "bakery", "padaria", "pastelaria",
+      "patisserie", "coffee shop", "coffee house", "tea room", "wine bar", "gastropub", "brasserie",
+      "food truck", "takeaway", "deli", "delicatessen", "creamery", "ice cream shop", "brunch spot",
+    ],
+    secondary: [
+      "menu", "reservation", "reserva", "chef", "dining", "cuisine", "pizzeria",
+      "sourdough", "pastry", "pastries", "baked", "baking", "bread", "cakes", "espresso",
+      "brunch", "tasting", "seasonal dishes", "wine list",
+    ],
     negative: [],
   },
   ecommerce: {

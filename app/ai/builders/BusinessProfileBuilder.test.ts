@@ -243,3 +243,28 @@ describe("BusinessProfileBuilder - industries that used to fall through to gener
     expect(industryOf("A hair salon offering cuts, colour and blowouts.")).toBe("beauty");
   });
 });
+
+// Found by running one real generation end to end, not by a test: a family bakery in Porto
+// classified as `generic` and was offered a stock photograph of an office. Bakeries, cafés
+// and pastry shops are among the most common businesses this product exists to serve.
+describe("BusinessProfileBuilder - food businesses that are not called restaurants", () => {
+  it("classifies a bakery as restaurant", () => {
+    expect(
+      industryOf("A family-run bakery in Porto selling sourdough bread, custard tarts and coffee, open every morning since 1974.")
+    ).toBe("restaurant");
+  });
+
+  it("classifies a coffee shop as restaurant", () => {
+    expect(industryOf("An independent coffee shop serving espresso, pastries and brunch.")).toBe("restaurant");
+  });
+
+  it("classifies a wine bar as restaurant", () => {
+    expect(industryOf("A neighbourhood wine bar with a short seasonal menu and natural wine.")).toBe("restaurant");
+  });
+
+  it("does not swallow neighbouring trades", () => {
+    // The food lexicon grew; a caterer's client should not become a restaurant, and a
+    // grocery e-commerce site is not a dining room.
+    expect(industryOf("An online store selling artisan kitchenware and cookware.")).not.toBe("restaurant");
+  });
+});
