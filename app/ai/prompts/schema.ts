@@ -242,7 +242,14 @@ Rules:
   - phone
   - website
   - abstract
-- Generate exactly 3 hero stats.
+- NEVER invent a number. Do not write a statistic, percentage, rating, review count,
+  years-in-business or customer total unless that exact figure appears in the business
+  description you were given. If it does not appear there, return an empty stats array.
+  These pages are published under a real business's name, and an unverified success rate
+  or satisfaction score is a regulated claim that business never made.
+- NEVER invent a testimonial, review, or a customer's name. Return an empty testimonials
+  array unless real review text was supplied.
+- NEVER invent FAQ entries. Return an empty faq array unless real questions were supplied.
 - Generate exactly 3 features.
 - Generate exactly 3 benefits.
 - Generate exactly 3 testimonials.

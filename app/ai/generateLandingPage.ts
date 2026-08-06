@@ -1,5 +1,6 @@
 import { buildPipeline } from "./builders/PipelineBuilder";
 import { deriveVisualIntent } from "./builders/VisualIntelligence";
+import { groundLandingPage, dropEmptySections } from "./builders/factualGrounding";
 import { createImageProvider, resolveImageSafely, type ImageProvider } from "@/app/lib/images";
 import type { LandingPage, SiteData } from "@/app/types/landing";
 import type { BusinessProfile } from "./types";
@@ -131,6 +132,17 @@ export async function generateLandingPage(
   }
 
   landingPage.sections = pipeline.sections;
+
+  // NOTHING THE PERSON DID NOT SAY.
+  //
+  // The schema used to instruct the model to "Generate exactly 3 hero stats", and with a
+  // brief containing no numbers it complied: a dental clinic got "98% Success Rate on
+  // Treatments", a law firm "95% Cases Resolved Successfully" and named reviews from
+  // people who do not exist. Those are regulated professional claims and prohibited fake
+  // reviews, published under a real business's name. See factualGrounding.ts.
+  const grounded = groundLandingPage(landingPage as unknown as LandingPage, prompt);
+  Object.assign(landingPage, dropEmptySections(grounded.landing) as unknown as Record<string, unknown>);
+  landingPage.groundingReport = grounded.report;
   landingPage.businessProfile = pipeline.businessProfile;
   landingPage.businessIntelligence = pipeline.businessIntelligence;
   landingPage.signals = pipeline.signals;
