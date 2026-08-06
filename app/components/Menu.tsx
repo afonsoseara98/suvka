@@ -36,6 +36,8 @@ export default function Menu({ items, theme, layout, rhythm, heading, onUpdateCo
 
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
+      {/* The hero CTA links here. Without a target the button scrolls nowhere. */}
+      <div id="menu" style={{ scrollMarginTop: 24 }} />
       <SectionHeader
         theme={theme}
         layout={layout}

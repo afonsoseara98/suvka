@@ -4,6 +4,7 @@ import type { ResolvedImage } from "@/app/ai/types/visual";
 import { DEFAULT_DNA } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
+import { labelsFor } from "./labels";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -81,6 +82,7 @@ export function buildRestaurantPage(
   input: RestaurantInput,
   images: { hero: ResolvedImage | null; gallery: ResolvedImage[] }
 ): LandingPage {
+  const labels = labelsFor(input.language);
   const gallery = images.gallery.map((image) => ({ url: image.url, alt: image.alt, credit: image.credit }));
 
   const subtitle =
@@ -107,8 +109,12 @@ export function buildRestaurantPage(
       // Emphasise the last word of the name, which is usually the distinctive one.
       highlightWord: input.name.trim().split(/\s+/).slice(-1)[0] ?? "",
       subtitle,
-      primaryCTA: input.phone ? "Call to book" : "Book a table",
-      secondaryCTA: input.dishes.length > 0 ? "See the menu" : "Find us",
+      primaryCTA: labels.callToBook,
+      secondaryCTA: input.dishes.length > 0 ? labels.seeMenu : labels.findUs,
+      // Real destinations. The phone dials on a mobile - the single most valuable action a
+      // restaurant page can offer - and the secondary jumps to the menu further down.
+      primaryHref: input.phone ? `tel:${input.phone.replace(/[^\d+]/g, "")}` : undefined,
+      secondaryHref: input.dishes.length > 0 ? "#menu" : "#hours",
       imageStyle: "website",
       imagePrompt: "",
       // Load-bearing. planHeroVisual falls back to a rendered software mockup unless the
@@ -135,8 +141,15 @@ export function buildRestaurantPage(
     pricing: [],
     faq: [],
     menu: input.dishes,
+    menuTitle: labels.menu,
+    hoursTitle: labels.findUs,
     gallery,
-    hours: { schedule: input.schedule, address: input.address, phone: input.phone },
+    hours: {
+      schedule: input.schedule,
+      address: input.address,
+      phone: input.phone,
+      labels: { address: labels.address, hours: labels.hours, phone: labels.phone },
+    },
     footer: {
       company: input.name,
       email: input.email,

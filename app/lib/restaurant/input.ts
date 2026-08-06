@@ -9,6 +9,8 @@
 // the finished page is something the owner said. Free text remains supported for other
 // businesses; this is a second entry point, not a replacement.
 
+import type { SiteLanguage } from "./labels";
+
 export interface RestaurantDish {
   name: string;
   price: string;
@@ -50,6 +52,10 @@ export interface RestaurantInput {
   // site is the difference between replacing something and being someone's first website,
   // and those are different products.
   existingWebsite: string;
+
+  // Which language the finished SITE speaks. Portugal is the market, so the default is
+  // Portuguese - an owner who wants English can switch.
+  language: SiteLanguage;
 }
 
 export const DESCRIPTION_MAX = 200;
@@ -114,6 +120,7 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     description: (input.description ?? "").trim(),
     email: (input.email ?? "").trim(),
     existingWebsite: (input.existingWebsite ?? "").trim(),
+    language: input.language ?? "pt",
     dishes: input.dishes
       .filter((dish) => !isBlank(dish.name) && !isBlank(dish.price))
       .map((dish) => ({

@@ -77,10 +77,10 @@ export default function HeroTextBlock({ data, theme, layout, align = "left", onU
             : `mt-10 flex flex-wrap gap-4 ${isCentered ? "justify-center" : ""}`
         }
       >
-        <PrimaryButton theme={theme}>
+        <PrimaryButton theme={theme} href={data.primaryHref}>
           <EditableText value={data.primaryCTA} onCommit={commit("primaryCTA")} />
         </PrimaryButton>
-        <SecondaryButton theme={theme}>
+        <SecondaryButton theme={theme} href={data.secondaryHref}>
           <EditableText value={data.secondaryCTA} onCommit={commit("secondaryCTA")} />
         </SecondaryButton>
       </div>

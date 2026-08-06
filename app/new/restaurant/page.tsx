@@ -13,6 +13,7 @@ import {
   type FieldErrors,
   type RestaurantInput,
 } from "@/app/lib/restaurant/input";
+import { LANGUAGES, DEFAULT_LANGUAGE, type SiteLanguage } from "@/app/lib/restaurant/labels";
 
 const EMPTY: RestaurantInput = {
   name: "",
@@ -29,6 +30,7 @@ const EMPTY: RestaurantInput = {
   style: "Modern",
   description: "",
   email: "",
+  language: DEFAULT_LANGUAGE,
   existingWebsite: "",
 };
 
@@ -82,14 +84,14 @@ function RestaurantForm() {
 
       if (!response.ok) {
         if (data?.errors) setErrors(data.errors);
-        else setFailure(data?.message ?? "Something went wrong.");
+        else setFailure(data?.message ?? "Algo correu mal.");
         return;
       }
 
       router.push(`/editor/${data.id}`);
     } catch (error) {
       console.error(error);
-      setFailure("Couldn't reach the server. Please try again.");
+      setFailure("Não foi possível contactar o servidor. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -99,19 +101,19 @@ function RestaurantForm() {
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-2xl px-6 py-12">
         <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white">
-          ← Dashboard
+          ← Voltar
         </Link>
 
-        <h1 className="mt-6 text-3xl font-bold">Your restaurant&apos;s website</h1>
+        <h1 className="mt-6 text-3xl font-bold">O site do seu restaurante</h1>
         <p className="mt-2 text-zinc-400">
-          Everything you type here appears on the site. Nothing else does — we don&apos;t invent reviews,
-          ratings or numbers on your behalf.
+          Tudo o que escrever aqui aparece no site. Mais nada. Não inventamos avaliações,
+          classificações nem números em seu nome.
         </p>
 
         <form onSubmit={submit} className="mt-10 space-y-8" noValidate>
           <div>
             <label className={label} htmlFor="name">
-              Restaurant name
+              Nome do restaurante
             </label>
             <input id="name" className={field} value={input.name} onChange={(e) => set("name", e.target.value)} placeholder="Taberna do Bairro" />
             {errors.name && <p className={errorText}>{errors.name}</p>}
@@ -120,7 +122,7 @@ function RestaurantForm() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
               <label className={label} htmlFor="cuisine">
-                Kind of food
+                Tipo de cozinha
               </label>
               <select id="cuisine" className={field} value={input.cuisine} onChange={(e) => set("cuisine", e.target.value as RestaurantInput["cuisine"])}>
                 {CUISINES.map((cuisine) => (
@@ -133,7 +135,7 @@ function RestaurantForm() {
 
             <div>
               <label className={label} htmlFor="style">
-                How it should feel
+                Estilo
               </label>
               <select id="style" className={field} value={input.style} onChange={(e) => set("style", e.target.value as RestaurantInput["style"])}>
                 {STYLES.map((style) => (
@@ -146,8 +148,27 @@ function RestaurantForm() {
           </div>
 
           <div>
+            <label className={label} htmlFor="language">
+              Língua do site
+            </label>
+            <select
+              id="language"
+              className={field}
+              value={input.language}
+              onChange={(e) => set("language", e.target.value as SiteLanguage)}
+            >
+              {LANGUAGES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-zinc-500">Em que língua os seus clientes leem o site.</p>
+          </div>
+
+          <div>
             <label className={label} htmlFor="address">
-              Address
+              Morada
             </label>
             <input id="address" className={field} value={input.address} onChange={(e) => set("address", e.target.value)} placeholder="Rua das Flores 112, Porto" />
             {errors.address && <p className={errorText}>{errors.address}</p>}
@@ -156,7 +177,7 @@ function RestaurantForm() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
               <label className={label} htmlFor="phone">
-                Phone
+                Telefone
               </label>
               <input id="phone" className={field} value={input.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+351 220 145 880" />
               {errors.phone && <p className={errorText}>{errors.phone}</p>}
@@ -164,7 +185,7 @@ function RestaurantForm() {
 
             <div>
               <label className={label} htmlFor="schedule">
-                Opening hours
+                Horário
               </label>
               <textarea
                 id="schedule"
@@ -172,7 +193,7 @@ function RestaurantForm() {
                 className={field}
                 value={input.schedule}
                 onChange={(e) => set("schedule", e.target.value)}
-                placeholder={"Tue–Sun 12:00–15:00, 19:00–22:30\nClosed Mondays"}
+                placeholder={"Terça a domingo\n12:00–15:00 e 19:00–22:30\nEncerrado à segunda"}
               />
               {errors.schedule && <p className={errorText}>{errors.schedule}</p>}
             </div>
@@ -180,8 +201,8 @@ function RestaurantForm() {
 
           <div>
             <div className="flex items-baseline justify-between">
-              <span className={label}>Three dishes people order most</span>
-              <span className="text-xs text-zinc-500">These become your menu</span>
+              <span className={label}>Três pratos mais pedidos</span>
+              <span className="text-xs text-zinc-500">Ficam na ementa</span>
             </div>
 
             <div className="mt-3 space-y-3">
@@ -191,22 +212,22 @@ function RestaurantForm() {
                     className={field.replace("mt-2 ", "")}
                     value={dish.name}
                     onChange={(e) => setDish(index, "name", e.target.value)}
-                    placeholder={index === 0 ? "Bacalhau à Braga" : "Dish name"}
-                    aria-label={`Dish ${index + 1} name`}
+                    placeholder={index === 0 ? "Bacalhau à Braga" : "Nome do prato"}
+                    aria-label={`Prato ${index + 1} — nome`}
                   />
                   <input
                     className={field.replace("mt-2 ", "")}
                     value={dish.price}
                     onChange={(e) => setDish(index, "price", e.target.value)}
                     placeholder="18,50 €"
-                    aria-label={`Dish ${index + 1} price`}
+                    aria-label={`Prato ${index + 1} — preço`}
                   />
                   <input
                     className={`${field.replace("mt-2 ", "")} sm:col-span-2`}
                     value={dish.description}
                     onChange={(e) => setDish(index, "description", e.target.value)}
-                    placeholder="Short description (optional)"
-                    aria-label={`Dish ${index + 1} description`}
+                    placeholder="Descrição curta (opcional)"
+                    aria-label={`Prato ${index + 1} — descrição`}
                   />
                 </div>
               ))}
@@ -227,13 +248,13 @@ function RestaurantForm() {
                 onChange={(e) => set("email", e.target.value)}
                 placeholder="reservas@tabernadobairro.pt"
               />
-              <p className="mt-1 text-xs text-zinc-500">Shown on your site so people can reach you.</p>
+              <p className="mt-1 text-xs text-zinc-500">Aparece no site para os clientes o contactarem.</p>
               {errors.email && <p className={errorText}>{errors.email}</p>}
             </div>
 
             <div>
               <label className={label} htmlFor="existingWebsite">
-                Current website <span className="font-normal text-zinc-500">— optional</span>
+                Site atual <span className="font-normal text-zinc-500">— opcional</span>
               </label>
               <input
                 id="existingWebsite"
@@ -245,7 +266,7 @@ function RestaurantForm() {
               {/* Never rendered on the finished site. Asked because replacing a site and
                   being someone's first site are different products, and we do not yet know
                   which one this is. */}
-              <p className="mt-1 text-xs text-zinc-500">Not shown anywhere. Just so we know if you already have one.</p>
+              <p className="mt-1 text-xs text-zinc-500">Não aparece em lado nenhum. É só para sabermos se já tem site.</p>
             </div>
           </div>
 
@@ -256,13 +277,13 @@ function RestaurantForm() {
               onChange={(e) => set("hasDelivery", e.target.checked)}
               className="h-4 w-4 rounded border-zinc-700 bg-zinc-950"
             />
-            We do takeaway or delivery
+            Fazemos take-away ou entregas
           </label>
 
           <div>
             <div className="flex items-baseline justify-between">
               <label className={label} htmlFor="description">
-                One sentence about the place (optional)
+                Uma frase sobre a casa (opcional)
               </label>
               <span className="text-xs text-zinc-500">
                 {input.description.length}/{DESCRIPTION_MAX}
@@ -275,7 +296,7 @@ function RestaurantForm() {
               className={field}
               value={input.description}
               onChange={(e) => set("description", e.target.value)}
-              placeholder="A small dining room off Rua das Flores, cooking what the market gives us."
+              placeholder="Uma sala pequena na Rua das Flores, a cozinhar o que o mercado dá."
             />
             {errors.description && <p className={errorText}>{errors.description}</p>}
           </div>
@@ -291,7 +312,7 @@ function RestaurantForm() {
             disabled={submitting}
             className="w-full rounded-xl bg-white px-6 py-4 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
           >
-            {submitting ? "Building your site…" : "Build my site"}
+            {submitting ? "A criar o seu site…" : "Criar o meu site"}
           </button>
         </form>
       </div>

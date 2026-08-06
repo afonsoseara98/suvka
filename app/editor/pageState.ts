@@ -118,11 +118,13 @@ function contentFor(landing: LandingPage, type: SectionType): SectionContent {
     case "faq":
       return landing.faq;
     case "menu":
-      return landing.menu ?? [];
+      // Wrapper shape rather than a bare array, so the section can carry its own heading.
+      // asList() already accepts both (see SectionRenderer).
+      return { items: landing.menu ?? [], title: landing.menuTitle } as unknown as SectionContent;
     case "gallery":
       return landing.gallery ?? [];
     case "hours":
-      return landing.hours ?? null;
+      return landing.hours ? { ...landing.hours, title: landing.hoursTitle } as unknown as SectionContent : null;
     case "footer":
       return landing.footer;
     case "logoCloud":

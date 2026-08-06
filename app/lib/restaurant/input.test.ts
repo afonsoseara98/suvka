@@ -14,6 +14,7 @@ function input(overrides: Partial<RestaurantInput> = {}): RestaurantInput {
     style: "Rustic",
     email: "reservas@tabernadobairro.pt",
     existingWebsite: "",
+    language: "pt",
     description: "A small dining room.",
     ...overrides,
   };
@@ -102,7 +103,7 @@ describe("building the page from the form", () => {
   });
 
   it("puts the address, hours and phone on the page", () => {
-    expect(built.hours).toEqual({
+    expect(built.hours).toMatchObject({
       schedule: "Tue-Sun 12:00-22:30",
       address: "Rua das Flores 112, Porto",
       phone: "+351 220 145 880",
@@ -169,5 +170,50 @@ describe("the hero never falls back to a software mockup", () => {
   it("asks for the cuisine the owner chose", () => {
     const japanese = buildRestaurantPage(input({ cuisine: "Japanese" }), { hero: null, gallery: [] });
     expect(japanese.hero.visual?.subject).toContain("japanese");
+  });
+});
+
+// The finished site is read by the restaurant's customers, not by us. A restaurant in Porto
+// showing "Find us" and "Call to book" to people looking for dinner is a site its owner
+// cannot publish and would not recognise as theirs.
+describe("the page speaks the restaurant's language", () => {
+  it("labels a Portuguese restaurant in Portuguese", () => {
+    const built = buildRestaurantPage(input({ language: "pt" }), { hero: null, gallery: [] });
+    expect(built.hero.primaryCTA).toBe("Ligar para reservar");
+    expect(built.hero.secondaryCTA).toBe("Ver a ementa");
+    expect(built.hours?.labels).toEqual({ address: "Morada", hours: "Horário", phone: "Telefone" });
+  });
+
+  it("switches to English when the owner asks for it", () => {
+    const built = buildRestaurantPage(input({ language: "en" }), { hero: null, gallery: [] });
+    expect(built.hero.primaryCTA).toBe("Call to book");
+    expect(built.hours?.labels?.address).toBe("Address");
+  });
+
+  it("defaults to Portuguese, because Portugal is the market", () => {
+    expect(normaliseRestaurantInput({ ...input(), language: undefined as never }).language).toBe("pt");
+  });
+});
+
+// Both hero buttons were <button> elements with no handler and no destination - dead
+// controls on the one action a restaurant page exists to produce.
+describe("the calls to action actually do something", () => {
+  it("dials the restaurant, which on a phone is a single tap", () => {
+    const built = buildRestaurantPage(input({ phone: "+351 220 145 880" }), { hero: null, gallery: [] });
+    expect(built.hero.primaryHref).toBe("tel:+351220145880");
+  });
+
+  it("strips the formatting a person types into a dialable number", () => {
+    const built = buildRestaurantPage(input({ phone: "(+351) 220-145 880" }), { hero: null, gallery: [] });
+    expect(built.hero.primaryHref).toBe("tel:+351220145880");
+  });
+
+  it("sends the second button to the menu", () => {
+    expect(buildRestaurantPage(input(), { hero: null, gallery: [] }).hero.secondaryHref).toBe("#menu");
+  });
+
+  it("sends it to the address instead when there is no menu", () => {
+    const built = buildRestaurantPage(input({ dishes: [] }), { hero: null, gallery: [] });
+    expect(built.hero.secondaryHref).toBe("#hours");
   });
 });

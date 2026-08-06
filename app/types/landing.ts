@@ -89,6 +89,10 @@ export interface OpeningHours {
   // domain, which is a consent problem the customer never agreed to and would be
   // answerable for.
   mapUrl?: string;
+
+  // The three column headings. Carried on the content rather than hardcoded in the
+  // component, because a restaurant in Porto shows its customers Portuguese words.
+  labels?: { address: string; hours: string; phone: string };
 }
 
 export interface HeroStat {
@@ -129,6 +133,12 @@ export interface HeroData {
   // depends on a third-party API still answering - the same reason publishing
   // materializes a snapshot instead of replaying a log.
   image?: ResolvedImage | null;
+
+  // Where the two calls to action actually go. Without these they render as dead controls -
+  // see PrimaryButton. For a restaurant the primary is a tel: link, which on a phone turns
+  // the booking into a single tap.
+  primaryHref?: string;
+  secondaryHref?: string;
 
   stats: HeroStat[];
 }
@@ -213,6 +223,10 @@ export interface LandingPage {
 
   // Present only when the owner supplied them. Absent means the section is absent.
   menu?: MenuItem[];
+  // The heading above the menu, in the site language. Without it the component falls back
+  // to the English noun.
+  menuTitle?: string;
+  hoursTitle?: string;
   gallery?: GalleryImage[];
   hours?: OpeningHours;
 

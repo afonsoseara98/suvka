@@ -31,15 +31,17 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
     onUpdateContent && ((value: string) => onUpdateContent({ ...data, [field]: value }));
 
   const entries: Array<{ label: string; field: "address" | "schedule" | "phone"; value: string; href?: string }> = ([
-    { label: "Address", field: "address", value: data.address, href: data.mapUrl },
-    { label: "Hours", field: "schedule", value: data.schedule },
-    { label: "Phone", field: "phone", value: data.phone, href: data.phone ? `tel:${data.phone.replace(/[^\d+]/g, "")}` : undefined },
+    { label: data.labels?.address ?? "Address", field: "address", value: data.address, href: data.mapUrl },
+    { label: data.labels?.hours ?? "Hours", field: "schedule", value: data.schedule },
+    { label: data.labels?.phone ?? "Phone", field: "phone", value: data.phone, href: data.phone ? `tel:${data.phone.replace(/[^\d+]/g, "")}` : undefined },
   ] as Array<{ label: string; field: "address" | "schedule" | "phone"; value: string; href?: string }>).filter((entry) => entry.value && entry.value.trim().length > 0);
 
   if (entries.length === 0) return null;
 
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
+      {/* The hero CTA links here. Without a target the button scrolls nowhere. */}
+      <div id="hours" style={{ scrollMarginTop: 24 }} />
       <SectionHeader
         theme={theme}
         layout={layout}
