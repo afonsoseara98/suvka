@@ -5,7 +5,7 @@ import type { ThemeConfig } from "@/app/styles/theme";
 import { compileTheme } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
 import { compileLayout } from "@/app/styles/layout";
-import type { HeroData, StatsItem, FeatureItem, Testimonial, PricingPlan, FAQItem, FooterData } from "@/app/types/landing";
+import type { HeroData, StatsItem, FeatureItem, Testimonial, PricingPlan, FAQItem, FooterData, MenuItem, GalleryImage, OpeningHours } from "@/app/types/landing";
 
 import Hero from "../Hero";
 import Stats from "../Stats";
@@ -17,6 +17,9 @@ import FAQ from "../FAQ";
 import Footer from "../Footer";
 import CTABanner from "../CTABanner";
 import LogoCloudSection from "../LogoCloudSection";
+import Menu from "../Menu";
+import Gallery from "../Gallery";
+import Hours from "../Hours";
 
 type Props = {
   instance: SectionInstance;
@@ -163,6 +166,46 @@ function renderSection(
           layout={layout}
           variant={instance.variant}
           onUpdateContent={onUpdateContent}
+        />
+      );
+
+    // The sections a local business actually has. Each returns null when the owner gave no
+    // content for it, so an empty menu is an absent menu rather than a heading over a gap.
+    case "menu":
+      return (
+        <Menu
+          items={asList<MenuItem>(instance.content, "items")}
+          heading={readHeading(instance.content)}
+          theme={theme}
+          layout={layout}
+          rhythm={rhythm}
+          variant={instance.variant}
+          onUpdateContent={onUpdateContent as ((content: MenuItem[]) => void) | undefined}
+        />
+      );
+
+    case "gallery":
+      return (
+        <Gallery
+          items={asList<GalleryImage>(instance.content, "items")}
+          heading={readHeading(instance.content)}
+          theme={theme}
+          layout={layout}
+          rhythm={rhythm}
+          variant={instance.variant}
+        />
+      );
+
+    case "hours":
+      return (
+        <Hours
+          data={(instance.content ?? { schedule: "", address: "", phone: "" }) as OpeningHours}
+          heading={readHeading(instance.content)}
+          theme={theme}
+          layout={layout}
+          rhythm={rhythm}
+          variant={instance.variant}
+          onUpdateContent={onUpdateContent as ((content: OpeningHours) => void) | undefined}
         />
       );
 

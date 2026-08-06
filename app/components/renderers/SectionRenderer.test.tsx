@@ -44,6 +44,9 @@ const HERO_CONTENT = {
 const CONTENT_BY_TYPE: Record<SectionType, SectionContent> = {
   hero: HERO_CONTENT,
   logoCloud: null,
+  menu: [{ name: "Bacalhau", price: "18", description: "With olive oil and greens." }],
+  gallery: [{ url: "https://example/1.jpg", alt: "A plated dish" }],
+  hours: { schedule: "Tue-Sun 12:00-22:00", address: "Rua das Flores 12, Porto", phone: "+351 220 000 000" },
   stats: [{ value: "10", label: "Years" }],
   features: [{ title: "Feature One", description: "Desc", icon: "🏠" }],
   benefits: [{ title: "Benefit One", description: "Desc", icon: "✨" }],

@@ -9,6 +9,23 @@ import type { ResolvedImage, VisualIntent } from "../ai/types/visual";
 // until that's explicitly decided - this union is where they'd be added.
 export type SectionType =
   | "hero"
+  // RESTAURANT AND LOCAL-BUSINESS SECTIONS
+  //
+  // Everything below "hero" in the original list is SaaS-native: features, benefits,
+  // pricing tiers, stats, FAQ. Rendered for a restaurant that produces a software product
+  // page with food words in it, and no amount of reordering fixes it - a restaurant needs
+  // a menu, and a menu was not expressible at all.
+  //
+  // Measured across the 20-business corpus after removing fabricated content, 12 of 20
+  // collapsed to the identical hero > features > benefits > pricing > footer, including a
+  // restaurant, a plumber and a barber. The problem was never the order. It was that the
+  // vocabulary had no word for what those businesses actually show people.
+  //
+  // These are not a template keyed by industry: a section appears when the owner supplied
+  // content for it and not otherwise, so a cafe that lists no dishes simply has no menu.
+  | "menu"
+  | "gallery"
+  | "hours"
   | "logoCloud"
   | "stats"
   | "features"
@@ -46,6 +63,33 @@ export type HeroImageStyle =
   | "phone"
   | "website"
   | "abstract";
+
+// One dish, as the owner wrote it. `price` is a free string on purpose: "12", "12,00 EUR"
+// and "Market price" are all things a real menu says, and normalising it would mean
+// inventing a currency or a figure the owner never gave.
+export interface MenuItem {
+  name: string;
+  price: string;
+  description: string;
+}
+
+export interface GalleryImage {
+  url: string;
+  alt: string;
+  credit?: { name: string; url: string; source: string } | null;
+}
+
+export interface OpeningHours {
+  // Free text - one line per day, or a summary. Whatever the owner actually typed.
+  schedule: string;
+  address: string;
+  phone: string;
+  // Rendered as a plain link, never as an embedded map. A third-party map iframe on a
+  // customer's published page loads that provider's trackers under the customer's own
+  // domain, which is a consent problem the customer never agreed to and would be
+  // answerable for.
+  mapUrl?: string;
+}
 
 export interface HeroStat {
   value: string;
@@ -166,6 +210,11 @@ export interface LandingPage {
   pricing: PricingPlan[];
 
   faq: FAQItem[];
+
+  // Present only when the owner supplied them. Absent means the section is absent.
+  menu?: MenuItem[];
+  gallery?: GalleryImage[];
+  hours?: OpeningHours;
 
   footer: FooterData;
 }

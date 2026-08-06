@@ -102,7 +102,7 @@ export function resolvePhaseOrder(signals: CompositionSignals, random: () => num
 // The one-and-only structural classification in this file: which storytelling job does
 // each role do. This is a *taxonomy*, not a template - it says nothing about whether a
 // role appears or where among its phase-mates it lands.
-const ROLE_PHASE: Record<Exclude<SectionType, "hero" | "footer" | "cta">, NarrativePhase> = {
+const ROLE_PHASE: Record<GatedRole, NarrativePhase> = {
   logoCloud: "context",
   features: "value",
   benefits: "value",
@@ -112,7 +112,14 @@ const ROLE_PHASE: Record<Exclude<SectionType, "hero" | "footer" | "cta">, Narrat
   faq: "objection",
 };
 
-export type GatedRole = Exclude<SectionType, "hero" | "footer" | "cta">;
+// menu/gallery/hours are excluded deliberately. The gating model below decides whether a
+// SaaS narrative beat has earned its place - whether this business needs social proof
+// before pricing, whether an FAQ pre-empts an objection. Those questions do not apply to a
+// menu: a restaurant shows its menu because it has one, and hides it because it does not.
+// Their presence is a fact about the owner's input, not a rhetorical judgement, and
+// running them through a persuasion model would be the category error this whole
+// vocabulary change exists to correct.
+export type GatedRole = Exclude<SectionType, "hero" | "footer" | "cta" | "menu" | "gallery" | "hours">;
 
 export const GATED_ROLES: readonly GatedRole[] = [
   "logoCloud",

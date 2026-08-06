@@ -11,6 +11,9 @@ import type {
   PricingPlan,
   FAQItem,
   FooterData,
+  MenuItem,
+  GalleryImage,
+  OpeningHours,
   SiteData,
 } from "@/app/types/landing";
 import type { StrategyDNA } from "@/app/ai/types/dna";
@@ -43,6 +46,9 @@ export type SectionContent =
   | PricingPlan[]
   | FAQItem[]
   | FooterData
+  | MenuItem[]
+  | GalleryImage[]
+  | OpeningHours
   | null; // "cta" and "logoCloud" have no content of their own today (see SectionRenderer.tsx)
 
 export type CreatedBy = "ai" | "user" | "template";
@@ -111,6 +117,12 @@ function contentFor(landing: LandingPage, type: SectionType): SectionContent {
       return landing.pricing;
     case "faq":
       return landing.faq;
+    case "menu":
+      return landing.menu ?? [];
+    case "gallery":
+      return landing.gallery ?? [];
+    case "hours":
+      return landing.hours ?? null;
     case "footer":
       return landing.footer;
     case "logoCloud":
