@@ -57,7 +57,15 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
             >
               {entry.label}
             </div>
-            <div className="mt-2 leading-relaxed" style={{ color: theme.colors.primary }}>
+            {/* Opening hours are the one field an owner deliberately writes across several
+                lines - "Tue-Sun 12:00-15:00 and 19:00-22:30" then "Closed Mondays". HTML
+                collapses those newlines, so the two facts ran together into one unreadable
+                sentence. Honouring the line breaks means the page shows the hours the way
+                the owner wrote them, which is also how a door sign shows them. */}
+            <div
+              className="mt-2 leading-relaxed"
+              style={{ color: theme.colors.primary, whiteSpace: entry.field === "schedule" ? "pre-line" : undefined }}
+            >
               {entry.href && !onUpdateContent ? (
                 <a href={entry.href} className="hover:underline" style={{ color: theme.colors.primary }}>
                   {entry.value}

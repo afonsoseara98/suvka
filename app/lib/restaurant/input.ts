@@ -41,6 +41,15 @@ export interface RestaurantInput {
   hasDelivery: boolean;
   style: RestaurantStyle;
   description: string;
+
+  // Reaching the owner. Shown on the published page as a contact address, which is what a
+  // restaurant site is expected to carry - and how we reach them back during the pilot.
+  email: string;
+
+  // Optional, and never rendered. Asked because knowing whether a restaurant already has a
+  // site is the difference between replacing something and being someone's first website,
+  // and those are different products.
+  existingWebsite: string;
 }
 
 export const DESCRIPTION_MAX = 200;
@@ -67,6 +76,12 @@ export function validateRestaurantInput(input: Partial<RestaurantInput>): FieldE
   if (isBlank(input.address)) errors.address = "An address is the most looked-up thing on the page.";
   if (isBlank(input.phone)) errors.phone = "A phone number is how most people will book.";
   if (isBlank(input.schedule)) errors.schedule = "Opening hours are why people visit the site.";
+
+  // Deliberately the loosest possible check. An address with an @ and a dot is almost
+  // certainly a real attempt; a stricter pattern rejects valid addresses and teaches the
+  // owner that the form is fighting them.
+  if (isBlank(input.email)) errors.email = "We need an email to reach you.";
+  else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(input.email).trim())) errors.email = "That does not look like an email address.";
 
   const dishes = Array.isArray(input.dishes) ? input.dishes : [];
   const complete = dishes.filter((dish) => !isBlank(dish?.name) && !isBlank(dish?.price));
@@ -97,6 +112,8 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     phone: input.phone.trim(),
     schedule: input.schedule.trim(),
     description: (input.description ?? "").trim(),
+    email: (input.email ?? "").trim(),
+    existingWebsite: (input.existingWebsite ?? "").trim(),
     dishes: input.dishes
       .filter((dish) => !isBlank(dish.name) && !isBlank(dish.price))
       .map((dish) => ({

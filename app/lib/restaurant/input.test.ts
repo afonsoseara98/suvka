@@ -12,6 +12,8 @@ function input(overrides: Partial<RestaurantInput> = {}): RestaurantInput {
     dishes: [{ name: "Bacalhau", price: "18,50 €", description: "Salt cod." }],
     hasDelivery: false,
     style: "Rustic",
+    email: "reservas@tabernadobairro.pt",
+    existingWebsite: "",
     description: "A small dining room.",
     ...overrides,
   };
@@ -108,6 +110,32 @@ describe("building the page from the form", () => {
   });
 });
 
+describe("contact details", () => {
+  it("requires an email so a real restaurant can be reached", () => {
+    expect(validateRestaurantInput(input({ email: " " })).email).toBeTruthy();
+  });
+
+  it("rejects something that is plainly not an address", () => {
+    expect(validateRestaurantInput(input({ email: "taberna.pt" })).email).toBeTruthy();
+  });
+
+  it("accepts ordinary addresses without fighting the owner", () => {
+    for (const email of ["a@b.pt", "reservas+geral@taberna-do-bairro.com", "INFO@Taberna.PT"]) {
+      expect(validateRestaurantInput(input({ email })).email, email).toBeUndefined();
+    }
+  });
+
+  it("puts the email on the page and keeps the existing website off it", () => {
+    const built = buildRestaurantPage(input({ existingWebsite: "https://old-site.pt" }), { hero: null, gallery: [] });
+    expect(built.footer.email).toBe("reservas@tabernadobairro.pt");
+    expect(JSON.stringify(built)).not.toContain("old-site.pt");
+  });
+
+  it("treats the existing website as optional", () => {
+    expect(validateRestaurantInput(input({ existingWebsite: "" })).existingWebsite).toBeUndefined();
+  });
+});
+
 describe("the two dropdowns actually change the design", () => {
   it("gives a Japanese restaurant a cooler palette than an Italian one", () => {
     expect(dnaForRestaurant(input({ cuisine: "Japanese" })).colorTemperature).toBeLessThan(
@@ -125,5 +153,21 @@ describe("the two dropdowns actually change the design", () => {
     // A cafe is a daytime business; a dining room at night is not.
     expect(dnaForRestaurant(input({ cuisine: "Café" })).brightness).toBeGreaterThan(0.5);
     expect(dnaForRestaurant(input({ cuisine: "Fine dining" })).brightness).toBeLessThan(0.5);
+  });
+});
+
+// A restaurant page rendered a fake browser window containing the placeholder domain
+// "yourbusiness.com", because planHeroVisual falls back to a software mockup unless the
+// hero declares a photo treatment. Found in a mobile screenshot, after the whole visual
+// layer had been built specifically to remove that mockup from non-software businesses.
+describe("the hero never falls back to a software mockup", () => {
+  it("declares a photo treatment so a restaurant is never shown a fake browser window", () => {
+    const built = buildRestaurantPage(input(), { hero: null, gallery: [] });
+    expect(built.hero.visual?.treatment).toBe("photo");
+  });
+
+  it("asks for the cuisine the owner chose", () => {
+    const japanese = buildRestaurantPage(input({ cuisine: "Japanese" }), { hero: null, gallery: [] });
+    expect(japanese.hero.visual?.subject).toContain("japanese");
   });
 });

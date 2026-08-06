@@ -111,6 +111,19 @@ export function buildRestaurantPage(
       secondaryCTA: input.dishes.length > 0 ? "See the menu" : "Find us",
       imageStyle: "website",
       imagePrompt: "",
+      // Load-bearing. planHeroVisual falls back to a rendered software mockup unless the
+      // hero declares a photo treatment - so omitting this put the fake browser window with
+      // "yourbusiness.com" in it back on a restaurant's page, which is the exact defect the
+      // visual layer was built to remove. Caught in a mobile screenshot, not by a test.
+      visual: {
+        treatment: "photo",
+        subject: `${input.cuisine.toLowerCase()} restaurant plated dish`,
+        alternateSubjects: ["restaurant food", "restaurant interior"],
+        alt: `${input.name} — ${input.cuisine} cooking`,
+        orientation: "landscape",
+        variantSeed: 0,
+        scene: "website",
+      },
       image: images.hero,
       // No stats. A restaurant that has not told us a number does not get one.
       stats: [],
@@ -126,7 +139,7 @@ export function buildRestaurantPage(
     hours: { schedule: input.schedule, address: input.address, phone: input.phone },
     footer: {
       company: input.name,
-      email: "",
+      email: input.email,
       copyright: `© ${new Date().getFullYear()} ${input.name}`,
     },
   } as unknown as LandingPage;

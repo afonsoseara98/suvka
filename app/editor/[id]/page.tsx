@@ -41,6 +41,8 @@ function EditorContent() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [justCopied, setJustCopied] = useState(false);
+  // Mobile first: this is what the owner should be judging by default.
+  const [viewport, setViewport] = useState<"mobile" | "desktop">("mobile");
   // Lazy initializer rather than an effect: window doesn't exist during the server pass,
   // and there is nothing to synchronize afterwards - the origin never changes for the
   // life of the page. The published banner only renders once `project` has loaded over
@@ -288,10 +290,39 @@ function EditorContent() {
             <div className="h-3 w-3 rounded-full bg-red-500"></div>
             <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
             <div className="h-3 w-3 rounded-full bg-green-500"></div>
-            <div className="ml-6 rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-400">https://preview.noctra.ai</div>
+            <div className="ml-6 flex-1 truncate rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-400">
+              {liveUrl ?? "Not published yet"}
+            </div>
+
+            {/* Mobile is the default, not an afterthought. Someone looking up a restaurant
+                is almost always on a phone - and a page reviewed only at 1440px is a page
+                whose owner has never seen what their customers see. */}
+            <div className="flex overflow-hidden rounded-lg border border-zinc-700">
+              {(["mobile", "desktop"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setViewport(option)}
+                  className={`px-3 py-1.5 text-xs capitalize transition ${
+                    viewport === option ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <Landing state={currentState(history)} onDispatchOperation={onDispatchOperation} />
+          {/* The phone frame is a real 375px viewport, not a scaled screenshot, so the
+              clamp()-based typography and spacing resolve exactly as they will on a phone. */}
+          <div className={viewport === "mobile" ? "flex justify-center bg-zinc-900 py-8" : ""}>
+            <div
+              className={viewport === "mobile" ? "overflow-hidden rounded-2xl border border-zinc-700 bg-black" : ""}
+              style={viewport === "mobile" ? { width: 375 } : undefined}
+            >
+              <Landing state={currentState(history)} onDispatchOperation={onDispatchOperation} />
+            </div>
+          </div>
         </div>
       </div>
     </main>

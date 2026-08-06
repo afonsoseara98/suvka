@@ -28,6 +28,8 @@ const EMPTY: RestaurantInput = {
   hasDelivery: false,
   style: "Modern",
   description: "",
+  email: "",
+  existingWebsite: "",
 };
 
 const label = "block text-sm font-medium text-zinc-300";
@@ -210,6 +212,41 @@ function RestaurantForm() {
               ))}
             </div>
             {errors.dishes && <p className={errorText}>{errors.dishes}</p>}
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <label className={label} htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                className={field}
+                value={input.email}
+                onChange={(e) => set("email", e.target.value)}
+                placeholder="reservas@tabernadobairro.pt"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Shown on your site so people can reach you.</p>
+              {errors.email && <p className={errorText}>{errors.email}</p>}
+            </div>
+
+            <div>
+              <label className={label} htmlFor="existingWebsite">
+                Current website <span className="font-normal text-zinc-500">— optional</span>
+              </label>
+              <input
+                id="existingWebsite"
+                className={field}
+                value={input.existingWebsite}
+                onChange={(e) => set("existingWebsite", e.target.value)}
+                placeholder="tabernadobairro.pt"
+              />
+              {/* Never rendered on the finished site. Asked because replacing a site and
+                  being someone's first site are different products, and we do not yet know
+                  which one this is. */}
+              <p className="mt-1 text-xs text-zinc-500">Not shown anywhere. Just so we know if you already have one.</p>
+            </div>
           </div>
 
           <label className="flex items-center gap-3 text-sm text-zinc-300">
