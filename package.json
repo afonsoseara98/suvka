@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "audit:signal": "tsx scripts/audit-signal.ts"
+    "audit:signal": "tsx scripts/audit-signal.ts",
+    "audit:ordering": "tsx scripts/audit-ordering.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

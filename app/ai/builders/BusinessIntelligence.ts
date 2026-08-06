@@ -12,7 +12,7 @@ import type {
   FunnelType,
 } from "../types/businessIntelligence";
 import { countMatches } from "../utils/textMatching";
-import { clamp01 } from "../utils/math";
+import { calibrateSignal } from "./signalCalibration";
 
 // BUSINESS INTELLIGENCE ENGINE
 //
@@ -203,13 +203,13 @@ function scorePrimary(dimension: PrimaryDimension, text: string, industry: Indus
   const lexicon = LEXICON[dimension];
 
   if (!lexicon) {
-    return clamp01(prior);
+    return calibrateSignal(dimension, prior);
   }
 
   const positiveHits = countMatches(text, lexicon.positive);
   const negativeHits = countMatches(text, lexicon.negative);
 
-  return clamp01(prior + positiveHits * HIT_WEIGHT - negativeHits * HIT_WEIGHT);
+  return calibrateSignal(dimension, prior + positiveHits * HIT_WEIGHT - negativeHits * HIT_WEIGHT);
 }
 
 const TONE_TO_PERSONALITY: Record<BusinessProfile["tone"], BrandPersonality> = {
