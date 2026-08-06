@@ -5,6 +5,7 @@ import { updateArrayItemField } from "@/app/editor/contentEdits";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
+import type { SectionHeading } from "./renderers/SectionRenderer";
 
 type Items = LandingPage["benefits"];
 
@@ -13,6 +14,9 @@ type BenefitsProps = {
   theme: ThemeConfig;
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
+  // Per-business heading copy. Absent on pages stored before headings became content,
+  // in which case the section falls back to a plain noun rather than inventing one.
+  heading?: SectionHeading;
   variant?: string;
   onUpdateContent?: (content: Items) => void;
 };
@@ -150,7 +154,7 @@ const BENEFITS_VARIANTS: Record<string, (props: ListProps) => React.ReactElement
   minimal: BenefitsMinimal,
 };
 
-export default function Benefits({ items, theme, layout, rhythm, variant, onUpdateContent }: BenefitsProps) {
+export default function Benefits({ items, theme, layout, rhythm, variant, onUpdateContent, heading }: BenefitsProps) {
   const Variant = (variant && BENEFITS_VARIANTS[variant]) || BenefitsCards;
 
   return (
@@ -158,15 +162,13 @@ export default function Benefits({ items, theme, layout, rhythm, variant, onUpda
       <SectionHeader
         theme={theme}
         layout={layout}
-        eyebrow="Why choose us"
+        eyebrow={heading?.eyebrow}
         title={
           <>
-            Benefits that make
-            <br />
-            the difference
+            {heading?.title ?? "Benefits"}
           </>
         }
-        description="Designed to help businesses build trust, increase conversions and deliver a better experience to every visitor."
+        description={heading?.description}
       />
 
       <Variant items={items} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />

@@ -8,6 +8,7 @@ import { updateArrayItemField } from "@/app/editor/contentEdits";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
+import type { SectionHeading } from "./renderers/SectionRenderer";
 
 type Item = { question: string; answer: string };
 
@@ -16,6 +17,9 @@ type FAQProps = {
   theme: ThemeConfig;
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
+  // Per-business heading copy. Absent on pages stored before headings became content,
+  // in which case the section falls back to a plain noun rather than inventing one.
+  heading?: SectionHeading;
   variant?: string;
   onUpdateContent?: (content: Item[]) => void;
 };
@@ -136,12 +140,12 @@ const FAQ_VARIANTS: Record<string, (props: ListProps) => React.ReactElement> = {
   twoColumn: FAQTwoColumn,
 };
 
-export default function FAQ({ items, theme, layout, rhythm, variant, onUpdateContent }: FAQProps) {
+export default function FAQ({ items, theme, layout, rhythm, variant, onUpdateContent, heading }: FAQProps) {
   const Variant = (variant && FAQ_VARIANTS[variant]) || FAQAccordion;
 
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
-      <SectionHeader theme={theme} layout={layout} title="FAQ" />
+      <SectionHeader theme={theme} layout={layout} eyebrow={heading?.eyebrow} title={heading?.title ?? "FAQ"} description={heading?.description} />
 
       <div className="mt-10">
         <Variant items={items} theme={theme} onUpdateContent={onUpdateContent} />

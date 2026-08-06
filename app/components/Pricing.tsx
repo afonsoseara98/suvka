@@ -6,6 +6,7 @@ import SectionShell from "./ui/SectionShell";
 import Badge from "./ui/Badge";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
+import type { SectionHeading } from "./renderers/SectionRenderer";
 
 type Plan = {
   name: string;
@@ -18,6 +19,9 @@ type PricingProps = {
   theme: ThemeConfig;
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
+  // Per-business heading copy. Absent on pages stored before headings became content,
+  // in which case the section falls back to a plain noun rather than inventing one.
+  heading?: SectionHeading;
   variant?: string;
   onUpdateContent?: (content: Plan[]) => void;
 };
@@ -182,12 +186,12 @@ const PRICING_VARIANTS: Record<string, (props: ListProps) => React.ReactElement>
   simple: PricingSimple,
 };
 
-export default function Pricing({ plans, theme, layout, rhythm, variant, onUpdateContent }: PricingProps) {
+export default function Pricing({ plans, theme, layout, rhythm, variant, onUpdateContent, heading }: PricingProps) {
   const Variant = (variant && PRICING_VARIANTS[variant]) || PricingSimple;
 
   return (
     <SectionShell theme={theme} layout={layout} rhythm={rhythm}>
-      <SectionHeader theme={theme} layout={layout} title="Pricing" />
+      <SectionHeader theme={theme} layout={layout} eyebrow={heading?.eyebrow} title={heading?.title ?? "Pricing"} description={heading?.description} />
 
       <div className="mt-10">
         <Variant plans={plans} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />
