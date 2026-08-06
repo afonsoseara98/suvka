@@ -1,9 +1,11 @@
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
 import type { SectionRhythm } from "@/app/types/landing";
+import { updateArrayItemField, updatePlanFeature } from "@/app/editor/contentEdits";
 import SectionShell from "./ui/SectionShell";
 import Badge from "./ui/Badge";
 import SectionHeader from "./ui/SectionHeader";
+import EditableText from "./editor/EditableText";
 
 type Plan = {
   name: string;
@@ -17,11 +19,12 @@ type PricingProps = {
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
   variant?: string;
+  onUpdateContent?: (content: Plan[]) => void;
 };
 
-type ListProps = { plans: Plan[]; theme: ThemeConfig; layout: LayoutPersonality };
+type ListProps = { plans: Plan[]; theme: ThemeConfig; layout: LayoutPersonality; onUpdateContent?: (content: Plan[]) => void };
 
-function PricingSimple({ plans, theme, layout }: ListProps) {
+function PricingSimple({ plans, theme, layout, onUpdateContent }: ListProps) {
   return (
     <div className={`grid gap-8 ${layout.gridColumns}`}>
       {plans.map((plan, index) => (
@@ -36,12 +39,29 @@ function PricingSimple({ plans, theme, layout }: ListProps) {
             padding: theme.spacing.lg,
           }}
         >
-          <h3 className="text-3xl font-bold">{plan.name}</h3>
-          <div className="mt-4 text-5xl font-bold">€{plan.price}</div>
+          <EditableText
+            as="h3"
+            className="text-3xl font-bold"
+            value={plan.name}
+            onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(plans, index, "name", v)))}
+          />
+          <div className="mt-4 text-5xl font-bold">
+            €
+            <EditableText
+              value={plan.price}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(plans, index, "price", v)))}
+            />
+          </div>
 
           <div className="mt-8 space-y-3">
             {plan.features.map((feature, i) => (
-              <div key={i}>✓ {feature}</div>
+              <div key={i}>
+                ✓{" "}
+                <EditableText
+                  value={feature}
+                  onCommit={onUpdateContent && ((v) => onUpdateContent(updatePlanFeature(plans, index, i, v)))}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -50,7 +70,7 @@ function PricingSimple({ plans, theme, layout }: ListProps) {
   );
 }
 
-function PricingPremium({ plans, theme, layout }: ListProps) {
+function PricingPremium({ plans, theme, layout, onUpdateContent }: ListProps) {
   const featuredIndex = Math.min(1, plans.length - 1);
 
   return (
@@ -81,12 +101,29 @@ function PricingPremium({ plans, theme, layout }: ListProps) {
               </div>
             )}
 
-            <h3 className="text-3xl font-bold">{plan.name}</h3>
-            <div className="mt-4 text-5xl font-bold">€{plan.price}</div>
+            <EditableText
+              as="h3"
+              className="text-3xl font-bold"
+              value={plan.name}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(plans, index, "name", v)))}
+            />
+            <div className="mt-4 text-5xl font-bold">
+              €
+              <EditableText
+                value={plan.price}
+                onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(plans, index, "price", v)))}
+              />
+            </div>
 
             <div className="mt-8 space-y-3">
               {plan.features.map((feature, i) => (
-                <div key={i}>✓ {feature}</div>
+                <div key={i}>
+                  ✓{" "}
+                  <EditableText
+                    value={feature}
+                    onCommit={onUpdateContent && ((v) => onUpdateContent(updatePlanFeature(plans, index, i, v)))}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -100,6 +137,11 @@ function PricingPremium({ plans, theme, layout }: ListProps) {
 // any plan as a row - a single table communicates the tier structure at a glance
 // instead of asking the reader to compare three separate cards. Suits the
 // "corporate"/"startupDashboard" families' more structured identity.
+//
+// Not wired for inline editing: a row label is deduplicated across every plan that
+// shares that exact feature string (Array.from(new Set(...))), so editing one occurrence
+// is ambiguous (which plan's feature is it?) - deliberately out of scope, see
+// docs plan for this pass. Cells themselves only ever render "✓" or "", never text.
 function PricingComparison({ plans, theme }: ListProps) {
   const allFeatures = Array.from(new Set(plans.flatMap((plan) => plan.features)));
 
@@ -140,7 +182,7 @@ const PRICING_VARIANTS: Record<string, (props: ListProps) => React.ReactElement>
   simple: PricingSimple,
 };
 
-export default function Pricing({ plans, theme, layout, rhythm, variant }: PricingProps) {
+export default function Pricing({ plans, theme, layout, rhythm, variant, onUpdateContent }: PricingProps) {
   const Variant = (variant && PRICING_VARIANTS[variant]) || PricingSimple;
 
   return (
@@ -148,7 +190,7 @@ export default function Pricing({ plans, theme, layout, rhythm, variant }: Prici
       <SectionHeader theme={theme} layout={layout} title="Pricing" />
 
       <div className="mt-10">
-        <Variant plans={plans} theme={theme} layout={layout} />
+        <Variant plans={plans} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />
       </div>
     </SectionShell>
   );

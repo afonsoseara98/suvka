@@ -2,12 +2,14 @@ import { SYSTEM_PROMPT } from "../prompts/system";
 import { CONVERSION_PROMPT } from "../prompts/conversion";
 import { SCHEMA_PROMPT } from "../prompts/schema";
 import { describeBusinessIntelligenceForPrompt } from "./BusinessIntelligence";
+import { describeSignalsForPrompt } from "./CompositionIntelligence";
 
 import type { BusinessProfile } from "../types";
 import type { BusinessKnowledge } from "../types/knowledge";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
 import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
+import type { CompositionSignals } from "../types/signals";
 import type { StrategyDNA } from "../types/dna";
 import type { DesignFamilyName } from "../engines/DesignFamily";
 import type { Section } from "@/app/types/landing";
@@ -83,7 +85,8 @@ export function buildPrompt(
   sections: readonly Section[],
   businessIntelligence: BusinessIntelligenceProfile,
   dna: StrategyDNA,
-  designFamily: DesignFamilyName
+  designFamily: DesignFamilyName,
+  signals: CompositionSignals
 ): string {
   // knowledge.trustSignals and psychology.trustFactors both exist to answer the same
   // question ("why should this reader trust this business") from two different
@@ -160,6 +163,20 @@ export function buildPrompt(
     "Trust Signals:",
 
     ...trustSignals,
+
+    "",
+
+    "==============================",
+    "COMPOSITION SIGNALS",
+    "==============================",
+
+    // The same 6 signals (trustNeed/urgency/complexity/socialProofNeed/
+    // objectionPressure/priceSensitivity) that already decided section count, order and
+    // CTA count (LayoutIntelligence.ts) - describeSignalsForPrompt existed, fully built
+    // and tested, since CompositionIntelligence.ts was written, but was never actually
+    // called from here (Signal Trace Audit v1, finding #4). The model was writing copy
+    // blind to the exact reasoning that shaped the PAGE STRUCTURE it's being told to fill in.
+    ...describeSignalsForPrompt(signals),
 
     "",
 

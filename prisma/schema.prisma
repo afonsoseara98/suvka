@@ -1,0 +1,221 @@
+// Noctra persistence schema. See docs/noctra-product-blueprint-v1.md (§7, §17) for the
+// product-level rationale and docs/editor-architecture-report.md for the in-memory
+// domain model (app/editor/*) this schema persists.
+//
+// Nothing in app/editor/* or app/ai/* depends on this file - the repository layer
+// (app/lib/repositories/*) is the only code that imports the generated Prisma client.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Connection URL lives in prisma.config.ts (Prisma 7 config model), not here - see
+// that file for the DATABASE_URL wiring used by `prisma migrate`/`prisma generate`.
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Auth.js required models (@auth/prisma-adapter's canonical schema) ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  // Credentials provider only (see auth.ts) - null for any future OAuth-only user.
+  passwordHash  String?
+
+  accounts Account[]
+  sessions Session[]
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- Product models ---
+//
+// Mirrors app/editor/project.ts's Project/ProjectPage and app/editor/pageState.ts's
+// SectionInstance almost field-for-field - see app/lib/repositories/ for the mapping
+// functions between these rows and those in-memory types. businessProfile/brand/settings
+// stay as Json (small, cohesive, never queried by sub-field today); Section is its own
+// table, not Json, so a future component library can query sections independently of
+// any one page's operation log (see docs/noctra-product-blueprint-v1.md §17, ADR on
+// this exact choice).
+
+model Project {
+  id              String   @id @default(cuid())
+  ownerId         String
+  name            String
+  // The public URL segment: noctra.site/s/<slug>. Globally unique because it is a
+  // public namespace, not scoped to an owner - two users cannot both own "joes-bakery".
+  // Nullable: a project only gets a slug the first time it is published, so drafts
+  // never squat on names they may never use.
+  slug            String?  @unique
+  businessProfile Json
+  brand           Json
+  settings        Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner  User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  pages  Page[]
+  assets Asset[]
+
+  @@index([ownerId])
+}
+
+model Page {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  slug      String
+  // This page's position among its project's pages (reorderPages) - independent of
+  // `createdAt`, which stays a pure audit timestamp.
+  order     Int      @default(0)
+  // Position in this page's OperationLogEntry log the editor is currently "at" -
+  // mirrors app/editor/history.ts's PageHistory.cursor. Undo/redo moves this without
+  // touching the log or the Section rows below it (see app/lib/projectService.ts).
+  cursor    Int      @default(0)
+  // The full PageState exactly as generated, before any OperationLogEntry - the seed
+  // `PageHistory.states[0]` is reconstructed from on load. Written once at page
+  // creation, never updated after (the Section table is the current-state read path;
+  // this is the replay path's starting point, not a duplicate of it).
+  baseState Json
+  // PUBLISHED VERSION - deliberately a materialized snapshot, not a pointer into the
+  // operation log (the open decision in docs/noctra-product-blueprint-v1.md §17).
+  //
+  // A pointer would have meant replaying the whole log on every public request, which
+  // is O(number of edits ever made) on the one surface that has to be fastest and is
+  // hit by strangers, not by the owner - and it gets slower forever as the owner keeps
+  // editing. A snapshot makes serving a published page a single row read that can be
+  // cached at the edge, and it is what actually decouples "what visitors see" from
+  // "what I am editing": editing after publishing cannot change the live site until
+  // Publish is pressed again, which is the entire point of having the two concepts.
+  //
+  // publishedIndex keeps the provenance a pointer would have given (which log position
+  // this snapshot was taken at), so "restore to the version I published" stays possible
+  // later without making every visitor pay for a replay today.
+  publishedState Json?
+  publishedIndex Int?
+  publishedAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sections   Section[]
+  operations OperationLogEntry[]
+  versions   PageVersionTag[]
+
+  @@unique([projectId, slug])
+}
+
+// The CURRENT materialized sections for a page - the read path the editor/renderer
+// actually uses (app/lib/projectService.ts's loadProject reads this directly, never
+// replays the operation log for a normal page load). `id` matches SectionInstance.id
+// exactly; `order` replaces PageState.sections' array position.
+model Section {
+  id             String   @id
+  pageId         String
+  order          Int
+  type           String
+  variant        String
+  content        Json
+  prominence     String
+  rhythm         String
+  themeOverrides Json
+  visibility     String
+  locked         Boolean
+  createdBy      String
+  createdAt      DateTime
+  updatedAt      DateTime
+  version        Int
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, order])
+  @@index([pageId])
+}
+
+// Append-only - the write / undo-redo path, independent of Section's current-state read
+// path. One row per dispatch/dispatchBatch call (operations is the full Operation[]
+// array from that one call, applied atomically - see app/editor/history.ts's
+// OperationRecord, which this mirrors field-for-field).
+model OperationLogEntry {
+  id         String   @id @default(cuid())
+  pageId     String
+  index      Int
+  operations Json
+  actor      String
+  label      String?
+  timestamp  DateTime
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, index])
+}
+
+// Seed for the future Version History UI (blueprint v2, "Restore" - see
+// docs/noctra-product-blueprint-v1.md §4.4/§11). Not read or written by any app code
+// path yet - present now so adding that UI later is an additive feature, not a schema
+// migration blocking it.
+model PageVersionTag {
+  id        String   @id @default(cuid())
+  pageId    String
+  atIndex   Int
+  label     String
+  createdAt DateTime @default(now())
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  projectId String
+  type      String
+  url       String?
+  prompt    String?
+  label     String?
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}

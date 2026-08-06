@@ -1,5 +1,7 @@
 import type { StrategyDNA } from "@/app/ai/types/dna";
+import { withDnaDefaults } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
+import { selectAnchor, backgroundBandFor } from "./palettes";
 
 // THEME COMPILER
 //
@@ -85,52 +87,84 @@ function hsla(h: number, s: number, l: number, a: number): string {
   return `hsla(${Math.round(((h % 360) + 360) % 360)}, ${Math.round(clamp01(s / 100) * 100)}%, ${Math.round(clamp01(l / 100) * 100)}%, ${clamp01(a)})`;
 }
 
-// Blue (225) -> purple -> magenta -> red -> orange (30), deliberately going the "long
-// way" around the hue wheel rather than the short way through green/yellow - every
-// hand-authored palette this replaced (indigo, violet, gold, blue, orange, red) sat on
-// this same arc, never in green/yellow territory, which reads as off-brand for a
-// business accent color.
-function hueFromTemperature(colorTemperature: number): number {
-  return 225 + clamp01(colorTemperature) * 165;
+// Was `hueFromTemperature = 225 + colorTemperature * 165`, a free sweep across the wheel.
+// Measured over 20 real businesses it produced magenta 17 times, blue never, because the
+// arc's midpoint is hue 307 and blended DNA scores cluster at the midpoint. Replaced by
+// anchored ranges - see app/styles/palettes.ts for the measurement and the design study
+// the replacements are drawn from.
+function within([min, max]: readonly [number, number], t: number): number {
+  return min + (max - min) * clamp01(t);
 }
 
-export function compileTheme(dna: StrategyDNA): ThemeConfig {
-  const hue = hueFromTemperature(dna.colorTemperature);
+export function compileTheme(input: StrategyDNA): ThemeConfig {
+  // Normalized first: a DNA that has been through storage (a published snapshot) may
+  // predate a field this compiler now reads. See withDnaDefaults for why NaN, not
+  // undefined, is the failure mode that actually reaches users.
+  const dna = withDnaDefaults(input);
+
+  // Which region of colour space this business occupies. Chosen by distance in DNA space,
+  // never by industry - see selectAnchor.
+  const anchor = selectAnchor(dna);
+  const isDarkBg = anchor.mode === "dark";
+
   const sat = clamp01(dna.saturation);
   const bright = clamp01(dna.brightness);
   const accent = clamp01(dna.accentIntensity);
   const elevation = clamp01(dna.elevation);
   const weight = 400 + Math.round(lerp(0, 500, dna.typeWeight) / 100) * 100;
 
-  const accentColor = hsl(hue, lerp(40, 90, sat), lerp(45, 62, accent));
-  const accentHoverColor = hsl(hue, lerp(45, 95, sat), lerp(55, 70, accent));
+  // The DNA still drives every value below. What changed is that it now moves WITHIN a
+  // range the anchor guarantees is coherent, instead of across the whole wheel. Two
+  // businesses on the same anchor still differ in hue, saturation, contrast and depth -
+  // they just can no longer differ into a bad palette.
+  // Driven by emotionalIntensity, NOT colorTemperature. Temperature was already consumed
+  // selecting the anchor, so reusing it here would collapse: every business that picked
+  // the same anchor did so by having a similar temperature, and would then land on the
+  // same accent within it. Modulating on an axis the selection did not use is what makes
+  // two businesses on one anchor visibly different rather than the same page twice.
+  const hue = within(anchor.accentHue, dna.emotionalIntensity);
+  const neutralHue = anchor.neutralHue;
 
-  // Background lightness is continuous across the full [3, 92] range, but text
-  // lightness is deliberately NOT interpolated independently from the opposite fixed
-  // endpoint (97 -> 8) - at a mid-range brightness (~0.5) that produced two similarly
-  // mid-gray values with barely any contrast between them (a real bug found by
-  // rendering an actual page, not a hypothetical). Instead, text lightness is derived
-  // FROM the background's own lightness, always at least ~50 points away on the
-  // lightness scale - background stays fully continuous, but legibility is guaranteed
-  // at every point along that range, not just near the two extremes.
-  const bgLightness = lerp(3, 92, bright);
-  const isDarkBg = bgLightness < 50;
-  const textLightness = clamp01((isDarkBg ? bgLightness + 55 : bgLightness - 55) / 100) * 100;
-  const surfaceLightness = clamp01((isDarkBg ? bgLightness + 3 : bgLightness - 3) / 100) * 100;
-  const cardLightness = clamp01((isDarkBg ? bgLightness + 6 : bgLightness - 6) / 100) * 100;
-  const secondaryLightness = clamp01((isDarkBg ? textLightness - 25 : textLightness + 25) / 100) * 100;
-  const borderLightness = clamp01((isDarkBg ? bgLightness + 12 : bgLightness - 12) / 100) * 100;
+  const accentColor = hsl(hue, within(anchor.accentSat, sat), within(anchor.accentLight, accent));
+  const accentHoverColor = hsl(
+    hue,
+    Math.min(100, within(anchor.accentSat, sat) + 6),
+    within(anchor.accentLight, accent) + (isDarkBg ? 8 : 7)
+  );
+
+  // Bimodal, not continuous. A background is near-white or near-black; there is no such
+  // thing as a 50%-lightness website, so this can no longer emit one. `brightness` still
+  // matters - it modulates within the band, and it is weighted heavily in anchor
+  // selection, so it is what decides light vs dark in the first place.
+  const [bandMin, bandMax] = backgroundBandFor(anchor);
+  const bgLightness = within([bandMin, bandMax], isDarkBg ? 1 - bright : bright);
+
+  // Ink comes from the anchor's own range rather than being derived by offsetting the
+  // background. The previous code computed text as background +/- 55 specifically to
+  // rescue contrast at mid-brightness; with the background pinned to an extreme band, the
+  // separation is structural and the patch is no longer needed.
+  const textLightness = within(anchor.inkLight, 1 - Math.abs(bright - 0.5) * 0.6);
+  const neutralSat = within(anchor.neutralSat, sat);
+
+  const surfaceLightness = clamp01((isDarkBg ? bgLightness + 3.5 : bgLightness - 2.5) / 100) * 100;
+  const cardLightness = clamp01((isDarkBg ? bgLightness + 6 : bgLightness - 4.5) / 100) * 100;
+  const secondaryLightness = clamp01((isDarkBg ? textLightness - 28 : textLightness + 20) / 100) * 100;
+  // Barely-there, matching the ~8-point delta every studied system uses (#E9E5E0 on
+  // #FFFFFF). The old 12-point delta at mid-lightness read as a hard grey rule.
+  const borderLightness = clamp01((isDarkBg ? bgLightness + 9 : bgLightness - 8) / 100) * 100;
 
   return {
     colors: {
-      background: hsl(hue, lerp(4, 12, sat), bgLightness),
-      surface: hsl(hue, lerp(5, 14, sat), surfaceLightness),
-      card: hsl(hue, lerp(6, 16, sat), cardLightness),
+      background: hsl(neutralHue, neutralSat, bgLightness),
+      surface: hsl(neutralHue, neutralSat + 1, surfaceLightness),
+      card: hsl(neutralHue, neutralSat + 2, cardLightness),
 
-      primary: hsl(hue, 5, textLightness),
-      secondary: hsl(hue, 8, secondaryLightness),
+      // Tinted near-black / near-white, never neutral grey. Every system studied does
+      // this: #0A2540 is a cool navy-black, #37352F a warm brown-black.
+      primary: hsl(neutralHue, Math.min(30, neutralSat + 8), textLightness),
+      secondary: hsl(neutralHue, Math.min(20, neutralSat + 4), secondaryLightness),
 
-      border: hsl(hue, lerp(10, 30, sat), borderLightness),
+      border: hsl(neutralHue, Math.min(24, neutralSat + 3), borderLightness),
 
       accent: accentColor,
       accentHover: accentHoverColor,
@@ -144,9 +178,9 @@ export function compileTheme(dna: StrategyDNA): ThemeConfig {
     },
 
     gradients: {
-      hero: `linear-gradient(135deg, ${accentColor}, ${hsl(hue + 35, lerp(40, 90, sat), lerp(55, 72, accent))})`,
+      hero: `linear-gradient(135deg, ${accentColor}, ${hsl(hue + 22, Math.min(100, within(anchor.accentSat, sat) + 4), within(anchor.accentLight, accent) + 9)})`,
       button: `linear-gradient(135deg, ${accentColor}, ${accentHoverColor})`,
-      glow: `radial-gradient(circle, ${hsla(hue, lerp(40, 90, sat), lerp(45, 62, accent), 0.35)}, transparent)`,
+      glow: `radial-gradient(circle, ${hsla(hue, within(anchor.accentSat, sat), within(anchor.accentLight, accent), isDarkBg ? 0.3 : 0.16)}, transparent)`,
     },
 
     radius: {
@@ -170,23 +204,30 @@ export function compileTheme(dna: StrategyDNA): ThemeConfig {
       sm: `0 ${lerp(1, 4, elevation).toFixed(1)}px ${lerp(4, 12, elevation).toFixed(1)}px rgba(0,0,0,${lerp(0.06, 0.18, elevation).toFixed(2)})`,
       md: `0 ${lerp(6, 16, elevation).toFixed(1)}px ${lerp(20, 40, elevation).toFixed(1)}px rgba(0,0,0,${lerp(0.12, 0.28, elevation).toFixed(2)})`,
       lg: `0 ${lerp(16, 40, elevation).toFixed(1)}px ${lerp(50, 100, elevation).toFixed(1)}px rgba(0,0,0,${lerp(0.2, 0.4, elevation).toFixed(2)})`,
-      glow: `0 0 ${Math.round(lerp(20, 90, elevation))}px ${hsla(hue, lerp(40, 90, sat), lerp(45, 62, accent), 0.35)}`,
+      glow: `0 0 ${Math.round(lerp(20, 90, elevation))}px ${hsla(hue, within(anchor.accentSat, sat), within(anchor.accentLight, accent), 0.3)}`,
     },
 
+    // Every size below is a clamp(), not a fixed rem. A generated page is the artefact
+    // strangers actually see, most of them on a phone - and a 5.5rem headline with
+    // lineHeight 1 does not merely look wrong at 375px, it overflows the viewport.
+    // Expressing the DNA-derived size as the UPPER bound of a viewport-relative range
+    // keeps the desktop design exactly as it was while making the same value degrade
+    // sensibly all the way down, without a single media query or component change.
     typography: {
       hero: {
-        fontSize: `${lerp(2.5, 5.5, dna.typeScale).toFixed(2)}rem`,
+        fontSize: `clamp(${lerp(1.9, 2.6, dna.typeScale).toFixed(2)}rem, ${lerp(6, 9, dna.typeScale).toFixed(1)}vw, ${lerp(2.5, 5.5, dna.typeScale).toFixed(2)}rem)`,
         fontWeight: 700 + Math.round(lerp(0, 200, dna.typeWeight) / 100) * 100,
         letterSpacing: `${lerp(-0.01, -0.03, dna.typeScale).toFixed(3)}em`,
-        lineHeight: 1,
+        lineHeight: 1.05,
       },
       title: {
-        fontSize: `${lerp(1.875, 3, dna.typeScale).toFixed(2)}rem`,
+        fontSize: `clamp(${lerp(1.5, 1.9, dna.typeScale).toFixed(2)}rem, ${lerp(4, 5.5, dna.typeScale).toFixed(1)}vw, ${lerp(1.875, 3, dna.typeScale).toFixed(2)}rem)`,
         fontWeight: 600 + Math.round(lerp(0, 200, dna.typeWeight) / 100) * 100,
         letterSpacing: `${lerp(-0.005, -0.02, dna.typeScale).toFixed(3)}em`,
+        lineHeight: 1.15,
       },
       subtitle: {
-        fontSize: `${lerp(1.125, 1.375, dna.typeScale).toFixed(3)}rem`,
+        fontSize: `clamp(1rem, 2.5vw, ${lerp(1.125, 1.375, dna.typeScale).toFixed(3)}rem)`,
         fontWeight: 400,
         lineHeight: 1.6,
       },

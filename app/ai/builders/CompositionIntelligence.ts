@@ -114,7 +114,10 @@ export function deriveCompositionSignals(
 const HIGH = 0.7;
 const LOW = 0.3;
 
-function band(value: number): "low" | "medium" | "high" {
+// Exported once a second consumer (app/ai/builders/ExplainWhy.ts) needed the exact same
+// low/medium/high banding this file already used for describeSignalsForPrompt - same
+// "independent copies drift" reasoning as utils/math.ts's clamp01.
+export function band(value: number): "low" | "medium" | "high" {
   if (value >= HIGH) return "high";
   if (value <= LOW) return "low";
   return "medium";

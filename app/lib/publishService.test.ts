@@ -1,0 +1,276 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { createInMemoryRepositories } from "./repositories/memory";
+import type { RepositoryBundle } from "./repositories/types";
+import { createProjectFromGeneration, dispatchAndPersist } from "./projectService";
+import { publishProject, unpublishProject, loadPublishedSite, slugify, resolveAvailableSlug } from "./publishService";
+import { neutralStrategyDna } from "@/app/ai/testFixtures";
+import type { LandingPage } from "@/app/types/landing";
+import type { BusinessProfile } from "@/app/ai/types";
+
+const BUSINESS_PROFILE: BusinessProfile = {
+  industry: "startup",
+  businessModel: "saas",
+  primaryGoal: "book_demo",
+  audience: "Startup founders",
+  tone: "modern",
+  priceLevel: "medium",
+};
+
+function landingPage(): LandingPage {
+  return {
+    dna: neutralStrategyDna(),
+    site: {
+      seo: { title: "Acme SEO Title", description: "Acme description", keywords: ["a", "b"], ogTitle: "OG", ogDescription: "OGD" },
+      branding: {
+        primaryColor: "#111",
+        secondaryColor: "#222",
+        accentColor: "#333",
+        fontHeading: "Inter",
+        fontBody: "Inter",
+        logoPrompt: "a logo",
+      },
+      images: { heroPrompt: "", ogImagePrompt: "" },
+    },
+    sections: [
+      { type: "hero", variant: "centered", prominence: "primary", rhythm: "standard" },
+      { type: "stats", variant: "cards", prominence: "standard", rhythm: "standard" },
+      { type: "footer", variant: "simple", prominence: "compact", rhythm: "standard" },
+    ],
+    hero: {
+      badge: "B",
+      title: "Original Title",
+      highlightWord: "Original",
+      subtitle: "S",
+      primaryCTA: "Go",
+      secondaryCTA: "Learn",
+      imageStyle: "abstract",
+      imagePrompt: "",
+      stats: [],
+    },
+    stats: [{ value: "10", label: "Years" }],
+    features: [],
+    benefits: [],
+    testimonials: [],
+    pricing: [],
+    faq: [],
+    footer: { company: "Acme", email: "a@acme.com", copyright: "(c)" },
+  };
+}
+
+let repos: RepositoryBundle;
+
+beforeEach(() => {
+  repos = createInMemoryRepositories();
+});
+
+async function newProject(name = "Acme") {
+  return createProjectFromGeneration(repos, "user-1", landingPage(), BUSINESS_PROFILE, { name });
+}
+
+describe("slugify", () => {
+  it("lowercases and hyphenates", () => {
+    expect(slugify("Joe's Bakery")).toBe("joe-s-bakery");
+  });
+
+  it("strips accents rather than dropping the characters", () => {
+    expect(slugify("Padaria Céu Azul")).toBe("padaria-ceu-azul");
+  });
+
+  it("never leaves a leading or trailing hyphen", () => {
+    expect(slugify("  --Hello--  ")).toBe("hello");
+  });
+
+  it("returns an empty string for input with nothing usable", () => {
+    expect(slugify("!!!")).toBe("");
+  });
+});
+
+describe("resolveAvailableSlug", () => {
+  it("falls back to a usable slug when the name yields nothing", async () => {
+    const project = await newProject("!!!");
+    expect(await resolveAvailableSlug(repos, project.name, project.id)).toBe("site");
+  });
+
+  it("appends a numeric suffix when the slug is taken by another project", async () => {
+    const first = await newProject("Acme");
+    await publishProject(repos, first.id);
+
+    const second = await newProject("Acme");
+    expect(await resolveAvailableSlug(repos, "Acme", second.id)).toBe("acme-2");
+  });
+
+  it("returns the same slug for the project that already owns it", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    expect(await resolveAvailableSlug(repos, "Acme", project.id)).toBe("acme");
+  });
+
+  // A project slugged "dashboard" would sit at /s/dashboard, which is harmless today,
+  // but the reserved list also guards the names most likely to become real routes.
+  it("skips reserved names", async () => {
+    const project = await newProject("Dashboard");
+    expect(await resolveAvailableSlug(repos, "dashboard", project.id)).toBe("dashboard-2");
+  });
+});
+
+describe("publishProject", () => {
+  it("claims a slug derived from the project name", async () => {
+    const project = await newProject("Joe's Bakery");
+    const { slug } = await publishProject(repos, project.id);
+    expect(slug).toBe("joe-s-bakery");
+  });
+
+  it("marks the project published", async () => {
+    const project = await newProject();
+    await publishProject(repos, project.id);
+    const record = await repos.projects.findById(project.id);
+    expect(record?.settings.publishing.published).toBe(true);
+  });
+
+  it("stores a snapshot of the page at its current cursor", async () => {
+    const project = await newProject();
+    await publishProject(repos, project.id);
+
+    const snapshot = await repos.pages.getPublishedSnapshot(project.pages[0].id);
+    expect(snapshot).not.toBeNull();
+    expect(snapshot!.index).toBe(0);
+    const hero = snapshot!.state.sections.find((s) => s.type === "hero");
+    expect((hero!.content as { title: string }).title).toBe("Original Title");
+  });
+
+  it("keeps the same slug when republished, so a shared link never breaks", async () => {
+    const project = await newProject("Acme");
+    const first = await publishProject(repos, project.id);
+    const second = await publishProject(repos, project.id);
+    expect(second.slug).toBe(first.slug);
+  });
+
+  it("gives two projects with the same name distinct slugs", async () => {
+    const a = await newProject("Acme");
+    const b = await newProject("Acme");
+    const slugA = (await publishProject(repos, a.id)).slug;
+    const slugB = (await publishProject(repos, b.id)).slug;
+    expect(slugA).not.toBe(slugB);
+  });
+
+  it("throws for an unknown project", async () => {
+    await expect(publishProject(repos, "nope")).rejects.toThrow();
+  });
+});
+
+// This is the property that makes publishing meaningful at all: without it, every
+// keystroke in the editor would be live to the public.
+describe("edits after publishing stay private until republished", () => {
+  it("does not change the published snapshot when the page is edited", async () => {
+    const project = await newProject();
+    const pageId = project.pages[0].id;
+    const heroId = project.pages[0].history.states[0].sections.find((s) => s.type === "hero")!.id;
+    await publishProject(repos, project.id);
+
+    await dispatchAndPersist(
+      repos,
+      pageId,
+      { kind: "UpdateContent", sectionId: heroId, content: { ...landingPage().hero, title: "Draft Title" } },
+      "user"
+    );
+
+    const site = await loadPublishedSite(repos, "acme");
+    const publishedHero = site!.state.sections.find((s) => s.type === "hero");
+    expect((publishedHero!.content as { title: string }).title).toBe("Original Title");
+  });
+
+  it("picks up the edit once republished", async () => {
+    const project = await newProject();
+    const pageId = project.pages[0].id;
+    const heroId = project.pages[0].history.states[0].sections.find((s) => s.type === "hero")!.id;
+    await publishProject(repos, project.id);
+
+    await dispatchAndPersist(
+      repos,
+      pageId,
+      { kind: "UpdateContent", sectionId: heroId, content: { ...landingPage().hero, title: "Draft Title" } },
+      "user"
+    );
+    await publishProject(repos, project.id);
+
+    const site = await loadPublishedSite(repos, "acme");
+    const publishedHero = site!.state.sections.find((s) => s.type === "hero");
+    expect((publishedHero!.content as { title: string }).title).toBe("Draft Title");
+  });
+
+  it("advances the recorded publish index to the new cursor", async () => {
+    const project = await newProject();
+    const pageId = project.pages[0].id;
+    // Not the hero: applyOperation refuses to hide the last anchor section, which is
+    // the correct invariant and would make this test about the wrong thing.
+    const statsId = project.pages[0].history.states[0].sections.find((s) => s.type === "stats")!.id;
+    await publishProject(repos, project.id);
+
+    await dispatchAndPersist(repos, pageId, { kind: "HideSection", sectionId: statsId }, "user");
+    await publishProject(repos, project.id);
+
+    expect((await repos.pages.getPublishedSnapshot(pageId))!.index).toBe(1);
+  });
+});
+
+describe("loadPublishedSite", () => {
+  it("returns the site for a published slug", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    const site = await loadPublishedSite(repos, "acme");
+    expect(site?.projectName).toBe("Acme");
+    expect(site?.slug).toBe("acme");
+  });
+
+  it("carries the SEO data through to the caller", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    const site = await loadPublishedSite(repos, "acme");
+    expect(site!.state.site.seo.title).toBe("Acme SEO Title");
+  });
+
+  it("returns null for an unknown slug", async () => {
+    expect(await loadPublishedSite(repos, "does-not-exist")).toBeNull();
+  });
+
+  // A visitor must not be able to tell "never existed" from "exists but is private" -
+  // both are simply absent.
+  it("returns null for a project that was never published", async () => {
+    await newProject("Acme");
+    expect(await loadPublishedSite(repos, "acme")).toBeNull();
+  });
+});
+
+describe("unpublishProject", () => {
+  it("takes the site offline", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    await unpublishProject(repos, project.id);
+    expect(await loadPublishedSite(repos, "acme")).toBeNull();
+  });
+
+  it("clears the stored snapshot", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    await unpublishProject(repos, project.id);
+    expect(await repos.pages.getPublishedSnapshot(project.pages[0].id)).toBeNull();
+  });
+
+  // The URL stays reserved: taking a site down must not hand its address to whoever
+  // publishes next, or a re-publish would silently move someone's live link.
+  it("keeps the slug reserved for the same project", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    await unpublishProject(repos, project.id);
+
+    const other = await newProject("Acme");
+    expect(await resolveAvailableSlug(repos, "Acme", other.id)).toBe("acme-2");
+  });
+
+  it("restores the same URL when republished", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    await unpublishProject(repos, project.id);
+    expect((await publishProject(repos, project.id)).slug).toBe("acme");
+  });
+});

@@ -1,5 +1,6 @@
 import type { SectionRhythm } from "@/app/types/landing";
 import type { StrategyDNA } from "@/app/ai/types/dna";
+import { withDnaDefaults } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 
 // LAYOUT COMPILER
@@ -39,7 +40,9 @@ function lerp(min: number, max: number, t: number): number {
   return min + (max - min) * clamp01(t);
 }
 
-export function compileLayout(dna: StrategyDNA): LayoutPersonality {
+export function compileLayout(input: StrategyDNA): LayoutPersonality {
+  // Same normalization as compileTheme - see withDnaDefaults.
+  const dna = withDnaDefaults(input);
   const width = clamp01(dna.contentWidth);
   const density = clamp01(dna.density);
 
@@ -70,4 +73,19 @@ const RHYTHM_SHIFT_PX: Record<SectionRhythm, number> = {
 
 export function resolveSectionSpacing(basePx: number, rhythm: SectionRhythm): number {
   return Math.max(32, basePx + RHYTHM_SHIFT_PX[rhythm]);
+}
+
+// The DNA-derived px value is the DESKTOP figure. Emitting it raw meant a phone got the
+// same 144px hero padding and 160px section gaps as a 27" monitor, which wastes most of
+// a small screen before any content appears. clamp() keeps that figure as the ceiling
+// and lets the spacing collapse proportionally on narrow viewports - CSS-only, so no
+// component needs a breakpoint and the desktop rendering is byte-identical.
+export function responsivePx(px: number): string {
+  const min = Math.max(24, Math.round(px * 0.35));
+  const preferred = (px / 1440) * 100;
+  return `clamp(${min}px, ${preferred.toFixed(2)}vw, ${px}px)`;
+}
+
+export function responsiveSectionSpacing(basePx: number, rhythm: SectionRhythm): string {
+  return responsivePx(resolveSectionSpacing(basePx, rhythm));
 }

@@ -87,9 +87,9 @@ export function buildPipeline(prompt: string): PipelineResult {
 
   const knowledge = resolveKnowledge(businessProfile.industry);
 
-  const psychology = analyzePsychology(businessProfile, knowledge);
+  const psychology = analyzePsychology(businessProfile, knowledge, businessIntelligence);
 
-  const offer = buildOfferStrategy(businessProfile, knowledge, psychology);
+  const offer = buildOfferStrategy(businessProfile, knowledge, psychology, businessIntelligence);
 
   // Computed once, consumed by every Decision Engine below and by LayoutIntelligence -
   // the same reading of "who this business is" drives structure, visuals and copy
@@ -158,7 +158,8 @@ export function buildPipeline(prompt: string): PipelineResult {
     sections,
     businessIntelligence,
     dna,
-    designFamily
+    designFamily,
+    signals
   );
 
   return {

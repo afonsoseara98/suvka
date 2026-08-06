@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# benchmark results - real generated content for 20 benchmark businesses, not committed
+/benchmark-results/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+dev_stdout.log

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { compileLayout, resolveSectionSpacing } from "./layout";
+import { compileLayout, resolveSectionSpacing, responsivePx, responsiveSectionSpacing } from "./layout";
 import { neutralStrategyDna } from "@/app/ai/testFixtures";
 
 describe("compileLayout", () => {
@@ -55,3 +55,51 @@ describe("resolveSectionSpacing", () => {
     expect(resolveSectionSpacing(40, "dense")).toBeGreaterThanOrEqual(32);
   });
 });
+
+// Spacing has the same problem typography had: the DNA-derived px value was written
+// straight into the style attribute, so a phone got the same 144px hero padding as a
+// 27" monitor and most of a small screen was consumed before any content appeared.
+describe("responsivePx / responsiveSectionSpacing", () => {
+  it("emits a clamp whose ceiling is the value the DNA asked for", () => {
+    expect(responsivePx(144)).toMatch(/^clamp\(/);
+    expect(responsivePx(144)).toContain("144px");
+  });
+
+  it("floors small screens well below the desktop value", () => {
+    const [min, , max] = clampParts(responsivePx(144));
+    expect(min).toBeLessThan(max);
+    expect(min).toBeLessThanOrEqual(64);
+  });
+
+  it("never produces a floor above the ceiling, at any input", () => {
+    for (const px of [24, 32, 48, 80, 100, 144, 200]) {
+      const [min, , max] = clampParts(responsivePx(px));
+      expect(min).toBeLessThanOrEqual(max);
+    }
+  });
+
+  it("keeps a usable minimum so sections never collide on mobile", () => {
+    expect(clampParts(responsivePx(32))[0]).toBeGreaterThanOrEqual(24);
+  });
+
+  // This is the assertion the SectionRenderer rhythm test used to make against the DOM,
+  // moved to where the value is a real string rather than one happy-dom throws away.
+  it("preserves the rhythm ordering through the responsive wrapper", () => {
+    const dense = clampParts(responsiveSectionSpacing(100, "dense"))[2];
+    const standard = clampParts(responsiveSectionSpacing(100, "standard"))[2];
+    const breather = clampParts(responsiveSectionSpacing(100, "breather"))[2];
+
+    expect(dense).toBeLessThan(standard);
+    expect(standard).toBeLessThan(breather);
+  });
+
+  it("produces different values for different rhythms, not one collapsed value", () => {
+    expect(responsiveSectionSpacing(100, "dense")).not.toBe(responsiveSectionSpacing(100, "breather"));
+  });
+});
+
+function clampParts(value: string): [number, number, number] {
+  const inner = value.replace(/^clamp\(/, "").replace(/\)$/, "");
+  const parts = inner.split(",").map((p) => parseFloat(p.trim()));
+  return [parts[0], parts[1], parts[2]];
+}

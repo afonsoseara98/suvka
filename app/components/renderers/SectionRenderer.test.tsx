@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import SectionRenderer from "./SectionRenderer";
 import { compileTheme } from "@/app/styles/theme";
 import { compileLayout } from "@/app/styles/layout";
@@ -115,21 +115,31 @@ afterEach(() => {
 describe("SectionRenderer", () => {
   it("renders the hero with its variant and theme", () => {
     render(<SectionRenderer instance={sec("hero", "minimal")} page={page} theme={theme} layout={layout} />);
-    expect(screen.getByText("Find Your Dream Home")).toBeTruthy();
+    // Matched on the heading's full textContent: `highlightWord` ("Home") is now
+    // emphasised inside the title rather than repeated under it, so this also asserts the
+    // headline is not printed twice.
+    expect(
+      screen.getByText((_content, el) => el?.tagName === "H1" && el.textContent === "Find Your Dream Home")
+    ).toBeTruthy();
     expect(screen.getByText("Schedule a Call")).toBeTruthy();
   });
 
-  it("applies the compiled theme's typography tokens to the hero title and subtitle", () => {
+  // These used to read the value back off the element via style.fontSize. That stopped
+  // being possible when typography became responsive: theme.ts now emits clamp(), and
+  // happy-dom drops any inline style containing clamp() outright - it doesn't normalize
+  // it, it discards the whole style attribute (verified directly, not assumed). Real
+  // browsers apply it fine, so this is a test-environment limit, not a regression.
+  //
+  // The assertion is therefore split: the shape and ordering of the compiled tokens is
+  // covered properly in app/styles/theme.test.ts, and what stays here is what this file
+  // is actually for - that the right component renders the right content for a variant.
+  // The one thing no unit test can prove is that the clamp visibly works on a phone;
+  // that is verified in a real browser at a real viewport.
+  it("renders the hero title and subtitle content for the chosen variant", () => {
     render(<SectionRenderer instance={sec("hero", "minimal")} page={page} theme={theme} layout={layout} />);
 
-    // Compared as numbers, not strings: the DOM normalizes a CSS value like "4.00rem"
-    // down to "4rem" when it round-trips through style.fontSize, which is a browser
-    // formatting detail, not evidence the compiled value failed to reach the element.
-    const title = screen.getByRole("heading", { level: 1 });
-    expect(parseFloat(title.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.hero.fontSize as string));
-
-    const subtitle = screen.getByText("Personalized service.");
-    expect(parseFloat(subtitle.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.subtitle.fontSize as string));
+    expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
+    expect(screen.getByText("Personalized service.")).toBeTruthy();
   });
 
   it("renders features with the requested variant", () => {
@@ -153,24 +163,24 @@ describe("SectionRenderer", () => {
     expect(screen.getByText("Jane Doe", { exact: false })).toBeTruthy();
   });
 
-  it("applies the compiled theme's title typography token to testimonials/pricing/faq headings", () => {
+  // Same happy-dom clamp() limitation as the hero typography test above - what remains
+  // checkable here is that each section type renders its own section heading at the
+  // right level, which is the routing behaviour this file exists to guard.
+  it("renders a section heading for testimonials/pricing/faq", () => {
     const { unmount: unmount1 } = render(
       <SectionRenderer instance={sec("testimonials", "cards")} page={page} theme={theme} layout={layout} />
     );
-    const testimonialsHeading = screen.getByRole("heading", { name: "Testimonials" });
-    expect(parseFloat(testimonialsHeading.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.title.fontSize as string));
+    expect(screen.getByRole("heading", { name: "Testimonials" })).toBeTruthy();
     unmount1();
 
     const { unmount: unmount2 } = render(
       <SectionRenderer instance={sec("pricing", "simple")} page={page} theme={theme} layout={layout} />
     );
-    const pricingHeading = screen.getByRole("heading", { name: "Pricing" });
-    expect(parseFloat(pricingHeading.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.title.fontSize as string));
+    expect(screen.getByRole("heading", { name: "Pricing" })).toBeTruthy();
     unmount2();
 
     render(<SectionRenderer instance={sec("faq", "accordion")} page={page} theme={theme} layout={layout} />);
-    const faqHeading = screen.getByRole("heading", { name: "FAQ" });
-    expect(parseFloat(faqHeading.style.fontSize)).toBeCloseTo(parseFloat(theme.typography.title.fontSize as string));
+    expect(screen.getByRole("heading", { name: "FAQ" })).toBeTruthy();
   });
 
   it("renders pricing", () => {
@@ -266,19 +276,19 @@ describe("SectionRenderer - LandingComposition sections (logoCloud, cta)", () =>
 });
 
 describe("SectionRenderer - rhythm drives spacing", () => {
-  it("gives a 'breather' section more top margin than a 'dense' section of the same type/theme", () => {
-    const { container: denseContainer, unmount } = render(
-      <SectionRenderer instance={sec("benefits", "cards", { rhythm: "dense" })} page={page} theme={theme} layout={layout} />
-    );
-    const denseMargin = (denseContainer.querySelector("section") as HTMLElement | null)?.style.marginTop;
-    unmount();
-
-    const { container: breatherContainer } = render(
-      <SectionRenderer instance={sec("benefits", "cards", { rhythm: "breather" })} page={page} theme={theme} layout={layout} />
-    );
-    const breatherMargin = (breatherContainer.querySelector("section") as HTMLElement | null)?.style.marginTop;
-
-    expect(denseMargin).not.toBe(breatherMargin);
+  // The DOM-level version of this assertion died with the move to clamp() spacing (see
+  // the typography tests above for why happy-dom can't hold those values). The rhythm ->
+  // spacing relationship it was protecting is asserted directly against the compiler in
+  // app/styles/layout.test.ts, where the values are plain strings and the comparison is
+  // exact rather than inferred from a style attribute.
+  it("renders a section element for every rhythm, so spacing has something to apply to", () => {
+    for (const rhythm of ["dense", "standard", "breather"] as const) {
+      const { container, unmount } = render(
+        <SectionRenderer instance={sec("benefits", "cards", { rhythm })} page={page} theme={theme} layout={layout} />
+      );
+      expect(container.querySelector("section")).toBeTruthy();
+      unmount();
+    }
   });
 });
 
@@ -314,7 +324,8 @@ describe("SectionRenderer - DNA compiler (LayoutPersonality diverges continuousl
     const { unmount } = render(
       <SectionRenderer instance={sec("hero", "minimal")} page={widePage} theme={wideTheme} layout={wideLayout} />
     );
-    const wideCtaWrapper = screen.getByText("Schedule a Call").parentElement;
+    // Two levels up now: text -> EditableText's span -> SecondaryButton's <button> -> the flex wrapper.
+    const wideCtaWrapper = screen.getByText("Schedule a Call").parentElement?.parentElement;
     expect(wideCtaWrapper?.className).toContain("flex-wrap");
     unmount();
 
@@ -322,7 +333,67 @@ describe("SectionRenderer - DNA compiler (LayoutPersonality diverges continuousl
     const narrowTheme = compileTheme(luxuryDna);
     const narrowLayout = compileLayout(luxuryDna);
     render(<SectionRenderer instance={sec("hero", "minimal")} page={narrowPage} theme={narrowTheme} layout={narrowLayout} />);
-    const narrowCtaWrapper = screen.getByText("Schedule a Call").parentElement;
+    const narrowCtaWrapper = screen.getByText("Schedule a Call").parentElement?.parentElement;
     expect(narrowCtaWrapper?.className).toContain("flex-col");
+  });
+});
+
+// Regression guard for every caller that never passes onEditContent (today: none pass
+// it directly to SectionRenderer at all - Landing.tsx is the only caller, and its own
+// test covers the top-level case; this covers a non-hero section too, since the
+// per-instance onUpdateContent binding happens once here for every section type).
+describe("SectionRenderer - no onEditContent", () => {
+  it("renders testimonials as plain, non-interactive text", () => {
+    render(<SectionRenderer instance={sec("testimonials", "cards")} page={page} theme={theme} layout={layout} />);
+    fireEvent.click(screen.getByText("Jane Doe"));
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByText("Jane Doe")).toBeTruthy();
+  });
+});
+
+// A published page is served from a frozen JSON snapshot written by a language model.
+// When one list-shaped section held an object instead of an array, the component
+// destructured it (`const [lead, ...rest] = items`) and threw during server render - a
+// 500 on a paying customer's live site, caused by one malformed field in one section.
+// These lock in that a bad section degrades to empty instead of taking the page down.
+describe("SectionRenderer - malformed stored content never takes the page down", () => {
+  afterEach(cleanup);
+
+  const MALFORMED = [
+    ["an object where an array belongs", { unexpected: true }],
+    ["null", null],
+    ["a string", "not a list"],
+    ["a number", 42],
+  ] as const;
+
+  const LIST_SECTIONS: SectionType[] = ["stats", "features", "benefits", "testimonials", "pricing", "faq"];
+
+  for (const type of LIST_SECTIONS) {
+    for (const [label, content] of MALFORMED) {
+      it("renders an empty " + type + " section for " + label, () => {
+        expect(() =>
+          render(
+            <SectionRenderer
+              instance={sec(type, "default", { content: content as never })}
+              page={page}
+              theme={theme}
+              layout={layout}
+            />
+          )
+        ).not.toThrow();
+      });
+    }
+  }
+
+  it("still accepts the wrapped { items: [...] } shape", () => {
+    render(
+      <SectionRenderer
+        instance={sec("stats", "cards", { content: { items: [{ value: "500+", label: "Loaves a week" }] } as never })}
+        page={page}
+        theme={theme}
+        layout={layout}
+      />
+    );
+    expect(screen.getByText("Loaves a week")).toBeTruthy();
   });
 });

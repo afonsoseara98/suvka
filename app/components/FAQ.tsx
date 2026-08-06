@@ -4,8 +4,10 @@ import { useState } from "react";
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
 import type { SectionRhythm } from "@/app/types/landing";
+import { updateArrayItemField } from "@/app/editor/contentEdits";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
+import EditableText from "./editor/EditableText";
 
 type Item = { question: string; answer: string };
 
@@ -15,11 +17,14 @@ type FAQProps = {
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
   variant?: string;
+  onUpdateContent?: (content: Item[]) => void;
 };
+
+type ListProps = { items: Item[]; theme: ThemeConfig; onUpdateContent?: (content: Item[]) => void };
 
 // SectionPlanner.ts's default - each item toggles independently (not a single-open
 // accordion) so opening one never surprises the user by closing another.
-function FAQAccordion({ items, theme }: { items: Item[]; theme: ThemeConfig }) {
+function FAQAccordion({ items, theme, onUpdateContent }: ListProps) {
   const [openIndexes, setOpenIndexes] = useState<Set<number>>(new Set());
 
   function toggle(index: number) {
@@ -63,7 +68,12 @@ function FAQAccordion({ items, theme }: { items: Item[]; theme: ThemeConfig }) {
               onClick={() => toggle(index)}
               className="flex w-full items-center justify-between gap-4 text-left font-bold"
             >
-              {item.question}
+              {/* EditableText stops click propagation itself when editable, so entering
+                  edit mode never also toggles this button - see EditableText.tsx. */}
+              <EditableText
+                value={item.question}
+                onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "question", v)))}
+              />
               <span aria-hidden="true" className={isOpen ? "rotate-180 transition-transform" : "transition-transform"}>
                 ▾
               </span>
@@ -77,7 +87,11 @@ function FAQAccordion({ items, theme }: { items: Item[]; theme: ThemeConfig }) {
                 className="mt-4"
                 style={{ color: theme.colors.secondary }}
               >
-                {item.answer}
+                <EditableText
+                  value={item.answer}
+                  onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "answer", v)))}
+                  multiline
+                />
               </div>
             )}
           </div>
@@ -91,29 +105,38 @@ function FAQAccordion({ items, theme }: { items: Item[]; theme: ThemeConfig }) {
 // question/answer grid rather than an interactive accordion - a denser, more
 // scannable presentation that suits "bold"/"startupDashboard"/"playful" identities,
 // where hiding content behind a click reads as unnecessary friction.
-function FAQTwoColumn({ items, theme }: { items: Item[]; theme: ThemeConfig }) {
+function FAQTwoColumn({ items, theme, onUpdateContent }: ListProps) {
   return (
     <div className="grid gap-8 md:grid-cols-2">
       {items.map((item, index) => (
         <div key={index}>
-          <h3 className="font-bold" style={{ color: theme.colors.primary }}>
-            {item.question}
-          </h3>
-          <p className="mt-2 leading-7" style={{ color: theme.colors.secondary }}>
-            {item.answer}
-          </p>
+          <EditableText
+            as="h3"
+            className="font-bold"
+            style={{ color: theme.colors.primary }}
+            value={item.question}
+            onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "question", v)))}
+          />
+          <EditableText
+            as="p"
+            className="mt-2 leading-7"
+            style={{ color: theme.colors.secondary }}
+            value={item.answer}
+            onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "answer", v)))}
+            multiline
+          />
         </div>
       ))}
     </div>
   );
 }
 
-const FAQ_VARIANTS: Record<string, (props: { items: Item[]; theme: ThemeConfig }) => React.ReactElement> = {
+const FAQ_VARIANTS: Record<string, (props: ListProps) => React.ReactElement> = {
   accordion: FAQAccordion,
   twoColumn: FAQTwoColumn,
 };
 
-export default function FAQ({ items, theme, layout, rhythm, variant }: FAQProps) {
+export default function FAQ({ items, theme, layout, rhythm, variant, onUpdateContent }: FAQProps) {
   const Variant = (variant && FAQ_VARIANTS[variant]) || FAQAccordion;
 
   return (
@@ -121,7 +144,7 @@ export default function FAQ({ items, theme, layout, rhythm, variant }: FAQProps)
       <SectionHeader theme={theme} layout={layout} title="FAQ" />
 
       <div className="mt-10">
-        <Variant items={items} theme={theme} />
+        <Variant items={items} theme={theme} onUpdateContent={onUpdateContent} />
       </div>
     </SectionShell>
   );

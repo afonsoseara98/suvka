@@ -2,6 +2,7 @@ import type { BusinessProfile, BusinessGoal } from "../types";
 import type { BusinessKnowledge } from "../types/knowledge";
 import type { PsychologyProfile } from "../types/psychology";
 import type { OfferStrategy } from "../types/offer";
+import type { BusinessIntelligenceProfile } from "../types/businessIntelligence";
 
 const GOAL_CTA: Record<BusinessGoal, string> = {
   generate_leads: "Get Started",
@@ -25,12 +26,23 @@ const GOAL_FRAMING: Record<BusinessGoal, string> = {
   schedule_call: "Frame the offer as a no-pressure conversation, not a sales pitch",
 };
 
-const PRICE_FRAMING_MODIFIER: Record<BusinessProfile["priceLevel"], string | null> = {
-  low: null,
-  medium: null,
-  high: "while justifying the higher price with clear value",
-  premium: "leaning into exclusivity rather than competing on price",
-};
+// Replaces the old PRICE_FRAMING_MODIFIER table (keyed by BusinessProfile.priceLevel -
+// a constant fixed per industry, never derived from the prompt's own words). This is
+// the exact fix for Signal Trace Audit v1's finding #3: "Luxury Wedding Photographer"
+// and "Cheap Wedding Photographer" share an industry (both classify as "generic" or
+// whichever industry "wedding photographer" alone triggers) and therefore used to share
+// this modifier too, despite bi.pricePositioning already correctly reading >0.7 vs <0.3
+// for the two prompts - the offer framing text was silently contradicting the BUSINESS
+// INTELLIGENCE section of the same prompt.
+function priceFramingModifier(bi: BusinessIntelligenceProfile): string | null {
+  if (bi.pricePositioning >= 0.7) {
+    return "leaning into exclusivity rather than competing on price";
+  }
+  if (bi.pricePositioning >= 0.55) {
+    return "while justifying the higher price with clear value";
+  }
+  return null;
+}
 
 const GOAL_RISK_REVERSAL: Record<BusinessGoal, string> = {
   generate_leads: "No credit card required to get started",
@@ -73,9 +85,9 @@ function deriveValueProposition(
   )}, delivered through ${topBenefit.toLowerCase()}`;
 }
 
-function deriveOfferFraming(business: BusinessProfile): string {
+function deriveOfferFraming(business: BusinessProfile, bi: BusinessIntelligenceProfile): string {
   const base = GOAL_FRAMING[business.primaryGoal];
-  const modifier = PRICE_FRAMING_MODIFIER[business.priceLevel];
+  const modifier = priceFramingModifier(bi);
 
   return modifier ? `${base}, ${modifier}` : base;
 }
@@ -95,12 +107,13 @@ function deriveRiskReductionAngle(
 export function buildOfferStrategy(
   business: BusinessProfile,
   knowledge: BusinessKnowledge,
-  psychology: PsychologyProfile
+  psychology: PsychologyProfile,
+  bi: BusinessIntelligenceProfile
 ): OfferStrategy {
   return {
     primaryCTA: derivePrimaryCTA(business, knowledge),
     valueProposition: deriveValueProposition(business, knowledge, psychology),
-    offerFraming: deriveOfferFraming(business),
+    offerFraming: deriveOfferFraming(business, bi),
     riskReductionAngle: deriveRiskReductionAngle(business, psychology),
   };
 }

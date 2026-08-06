@@ -6,6 +6,28 @@ The JSON MUST follow this schema exactly.
 {
   "theme": "startup",
 
+  "site": {
+    "seo": {
+      "title": "",
+      "description": "",
+      "keywords": ["", "", ""],
+      "ogTitle": "",
+      "ogDescription": ""
+    },
+    "branding": {
+      "primaryColor": "",
+      "secondaryColor": "",
+      "accentColor": "",
+      "fontHeading": "",
+      "fontBody": "",
+      "logoPrompt": ""
+    },
+    "images": {
+      "heroPrompt": "",
+      "ogImagePrompt": ""
+    }
+  },
+
   "sections": [
     {
       "type": "hero",
@@ -68,15 +90,15 @@ The JSON MUST follow this schema exactly.
 
   "stats": [
     {
-      "number": "",
+      "value": "",
       "label": ""
     },
     {
-      "number": "",
+      "value": "",
       "label": ""
     },
     {
-      "number": "",
+      "value": "",
       "label": ""
     }
   ],
@@ -194,6 +216,18 @@ Rules:
 - Never use code blocks.
 - Never leave fields empty.
 - Generate content that matches the business.
+- site.seo.title must be a concrete, business-specific page title (never a placeholder),
+  under 60 characters. site.seo.description under 160 characters, written to earn a
+  click from a search result. site.seo.keywords: 3-6 lowercase phrases a real customer
+  of this business would search for. site.seo.ogTitle/ogDescription may repeat
+  title/description if there's no reason for them to differ.
+- site.branding colors must be hex codes (e.g. "#4F46E5") that fit the business's tone -
+  these are a record of the brand, not what renders the page (the page's actual visual
+  theme is generated separately); fontHeading/fontBody must be real Google Fonts names.
+  logoPrompt: one short sentence describing a logo concept for this business.
+- site.images.heroPrompt/ogImagePrompt: one short sentence each, describing an image
+  that fits the business - these are prompts for a future image-generation step, not
+  URLs.
 - Icons must be emoji only.
 - Each feature must have a unique icon.
 - Each benefit must have a unique icon.

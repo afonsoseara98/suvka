@@ -1,7 +1,7 @@
 import type { SectionRhythm } from "@/app/types/landing";
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
-import { resolveSectionSpacing } from "@/app/styles/layout";
+import { responsiveSectionSpacing } from "@/app/styles/layout";
 import GlowBackground from "./GlowBackground";
 
 type Props = {
@@ -20,7 +20,7 @@ export default function SectionShell({ children, theme, layout, rhythm }: Props)
   return (
     <section
       className="relative overflow-hidden"
-      style={{ marginTop: resolveSectionSpacing(layout.sectionSpacingPx, rhythm) }}
+      style={{ marginTop: responsiveSectionSpacing(layout.sectionSpacingPx, rhythm) }}
     >
       <GlowBackground theme={theme} decorative={layout.decorative} opacity={layout.decorationOpacity}>
         <div className="mx-auto" style={{ maxWidth: layout.sectionWidthPx }}>

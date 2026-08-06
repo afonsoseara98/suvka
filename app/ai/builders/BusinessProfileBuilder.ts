@@ -127,8 +127,21 @@ interface IndustryKeywords {
 
 const INDUSTRY_KEYWORDS: Record<ClassifiableIndustry, IndustryKeywords> = {
   medical: {
-    primary: ["dentist", "dentista", "dental", "clinic", "clínica", "doctor", "médico", "physician"],
-    secondary: ["patient", "paciente", "appointment", "consulta", "healthcare", "saúde", "hospital", "treatment"],
+    // Care delivered by a licensed practitioner, whether or not it happens in a building
+    // called a clinic. Mental-health and rehab vocabulary was missing entirely, which sent
+    // "A licensed psychologist offering individual therapy sessions" to `generic` - a
+    // misclassification that was invisible while every industry rendered the same fake
+    // dashboard, and became visible the moment the page started showing what the business
+    // actually is (see VisualIntelligence.ts).
+    primary: [
+      "dentist", "dentista", "dental", "clinic", "clínica", "doctor", "médico", "physician",
+      "psychologist", "psicólogo", "psychotherapist", "therapist", "physiotherapist", "physical therapist",
+      "fisioterapeuta", "chiropractor", "nutritionist", "veterinarian",
+    ],
+    secondary: [
+      "patient", "paciente", "appointment", "consulta", "healthcare", "saúde", "hospital", "treatment",
+      "therapy", "terapia", "counselling", "counseling", "rehabilitation", "mental health", "licensed",
+    ],
     negative: [],
   },
   law: {
@@ -192,13 +205,17 @@ const INDUSTRY_KEYWORDS: Record<ClassifiableIndustry, IndustryKeywords> = {
     negative: [],
   },
   beauty: {
+    // "An aesthetics studio offering skincare treatments, facials and beauty services"
+    // used to classify as `generic` despite naming beauty three times: the lexicon knew
+    // salons and barbershops but not the aesthetics/skincare half of the same industry.
     primary: [
       "hair salon", "beauty salon", "nail salon", "barbershop", "barber shop", "spa",
-      "salão de beleza", "cabeleireiro", "esthetician",
+      "salão de beleza", "cabeleireiro", "esthetician", "aesthetics studio", "aesthetic clinic",
+      "beauty studio", "beauty services", "med spa", "estética", "lash", "brow bar",
     ],
     secondary: [
       "haircut", "manicure", "pedicure", "facial", "waxing", "blowout", "hairstylist",
-      "hairdresser", "skincare treatment", "grooming",
+      "hairdresser", "skincare treatment", "grooming", "skincare", "cosmetic", "massage",
     ],
     negative: [],
   },

@@ -1,4 +1,5 @@
 import type { StrategyDNA } from "../ai/types/dna";
+import type { ResolvedImage, VisualIntent } from "../ai/types/visual";
 
 // "logoCloud" and "cta" are rendered entirely from data the pipeline already produces
 // (LogoCloud's content is static placeholder logos; CTABanner reuses hero.primaryCTA/
@@ -72,6 +73,18 @@ export interface HeroData {
   imageStyle: HeroImageStyle;
 
   imagePrompt: string;
+
+  // What this hero should SHOW, derived from the business itself - see
+  // app/ai/builders/VisualIntelligence.ts. Optional because it postdates every page
+  // already stored in the database and every published snapshot already frozen: a page
+  // without it renders exactly as it did before this existed.
+  visual?: VisualIntent;
+
+  // The concrete picture resolved from `visual` at generation time. Stored on the page
+  // (rather than resolved at render time) so a published site is self-contained and never
+  // depends on a third-party API still answering - the same reason publishing
+  // materializes a snapshot instead of replaying a log.
+  image?: ResolvedImage | null;
 
   stats: HeroStat[];
 }

@@ -1,31 +1,26 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-import { buildPipeline } from "@/app/ai/builders/PipelineBuilder";
+import { auth } from "@/auth";
+import { generateLandingPage } from "@/app/ai/generateLandingPage";
 import { validatePrompt } from "@/app/lib/validatePrompt";
 import { getGenerateRateLimiter } from "@/app/lib/rateLimit";
 
-import type { HeroImageStyle } from "@/app/types/landing";
-
-function getClientKey(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  return forwardedFor?.split(",")[0]?.trim() ?? "unknown";
-}
-
-// hero.imageStyle is the one place a real generative asset concept (which illustration
-// to render inside the hero scene) has to stay a discrete choice - "0.6 of a dashboard
-// illustration" isn't a renderable thing. Still fully DNA-derived (heroImageryProminence/
-// complexity), never left to the LLM's own guess, which is why this still overrides
-// whatever the model put in its JSON rather than trusting it.
-function imageStyleFor(heroImageryProminence: number, complexity: number): HeroImageStyle {
-  if (heroImageryProminence >= 0.65) return complexity >= 0.55 ? "product" : "abstract";
-  if (complexity >= 0.6) return "analytics";
-  if (complexity >= 0.4) return "dashboard";
-  return "website";
-}
-
+// This is the most expensive endpoint in the product: one real LLM call, ~3k tokens of
+// prompt, up to 8k of output, every time. It used to be fully anonymous - the only
+// protection was a per-IP rate limiter that (a) falls back to in-memory when Upstash
+// isn't configured, so it counts nothing across serverless instances, and (b) is
+// trivially bypassed by rotating IPs. Anyone with a script could bill the project's
+// OpenAI account indefinitely. Sign-in is now required BEFORE any spend, and the rate
+// limit key is the user id rather than a spoofable header, so the limit follows the
+// account instead of the network path.
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, message: "Sign in required." }, { status: 401 });
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -38,8 +33,7 @@ export async function POST(request: Request) {
     }
 
     const rateLimiter = getGenerateRateLimiter();
-    const clientKey = getClientKey(request);
-    const { allowed, retryAfterSeconds } = await rateLimiter.check(clientKey);
+    const { allowed, retryAfterSeconds } = await rateLimiter.check(session.user.id);
 
     if (!allowed) {
       return NextResponse.json(
@@ -55,55 +49,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: validation.error }, { status: 400 });
     }
 
-    const prompt = validation.value;
-
-    // STEPS 1-4 (business profile, knowledge, design, prompt) live in buildPipeline()
-    const pipeline = buildPipeline(prompt);
-
     const openai = new OpenAI({ apiKey });
+    const generated = await generateLandingPage(validation.value, openai);
 
-    // STEP 5
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-
-      response_format: {
-        type: "json_object",
-      },
-
-      messages: [
-        {
-          role: "user",
-          content: pipeline.finalPrompt,
-        },
-      ],
-    });
-
-    const content = response.choices[0].message.content;
-
-    if (!content) {
-      throw new Error("Empty response from model.");
-    }
-
-    const landingPage = JSON.parse(content);
-
-    // Override, not merge: dna/imageStyle are replaced with the pipeline's own
-    // deterministic values rather than left to whatever the LLM happened to pick.
-    // landingPage.dna is now the full continuous StrategyDNA object - a direct
-    // passthrough, not a lookup translating one vocabulary into another, since the
-    // renderer compiles this object directly (see app/styles/theme.ts / layout.ts).
-    landingPage.dna = pipeline.dna;
-
-    if (landingPage.hero) {
-      landingPage.hero.imageStyle = imageStyleFor(pipeline.dna.heroImageryProminence, pipeline.dna.complexity);
-    }
-
-    landingPage.sections = pipeline.sections;
-
-    // Already computed deterministically, pre-LLM, by buildPipeline() - returning it
-    // alongside the page lets the client build a Project (app/editor/project.ts)
-    // without a second round trip. Not part of the LandingPage wire schema itself
-    // (app/types/landing.ts stays untouched), just an additional top-level field.
-    landingPage.businessProfile = pipeline.businessProfile;
+    // finalPrompt is server-side only (exposed to code that imports generateLandingPage
+    // directly, e.g. the benchmark's Noctra adapter) - never shipped to the browser.
+    // It's prompt-engineering detail, not something a client needs to render the page
+    // or explain its own decisions (see app/ai/builders/ExplainWhy.ts, which works from
+    // businessIntelligence/signals instead).
+    const { finalPrompt, ...landingPage } = generated;
+    void finalPrompt;
 
     return NextResponse.json(landingPage);
 

@@ -1,7 +1,9 @@
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
-import { resolveSectionSpacing } from "@/app/styles/layout";
-import type { SectionRhythm } from "@/app/types/landing";
+import { responsiveSectionSpacing } from "@/app/styles/layout";
+import type { SectionRhythm, FooterData } from "@/app/types/landing";
+import { updateFooterField } from "@/app/editor/contentEdits";
+import EditableText from "./editor/EditableText";
 
 type FooterProps = {
   company: string;
@@ -10,6 +12,7 @@ type FooterProps = {
   theme: ThemeConfig;
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
+  onUpdateContent?: (content: FooterData) => void;
 };
 
 export default function Footer({
@@ -19,25 +22,26 @@ export default function Footer({
   theme,
   layout,
   rhythm,
+  onUpdateContent,
 }: FooterProps) {
+  const content: FooterData = { company, email, copyright };
+
+  function commit(field: keyof FooterData): ((value: string) => void) | undefined {
+    return onUpdateContent && ((value: string) => onUpdateContent(updateFooterField(content, field, value)));
+  }
+
   return (
-    <footer style={{ marginTop: resolveSectionSpacing(layout.sectionSpacingPx, rhythm) }}>
+    <footer style={{ marginTop: responsiveSectionSpacing(layout.sectionSpacingPx, rhythm) }}>
       <div
         className="mx-auto border-t py-12 text-center"
         style={{ maxWidth: layout.sectionWidthPx, borderColor: theme.colors.border, color: theme.colors.secondary }}
       >
 
-        <div className="font-bold">
-          {company}
-        </div>
+        <EditableText as="div" className="font-bold" value={company} onCommit={commit("company")} />
 
-        <div className="mt-2">
-          {email}
-        </div>
+        <EditableText as="div" className="mt-2" value={email} onCommit={commit("email")} />
 
-        <div className="mt-6 text-sm">
-          {copyright}
-        </div>
+        <EditableText as="div" className="mt-6 text-sm" value={copyright} onCommit={commit("copyright")} />
 
       </div>
     </footer>

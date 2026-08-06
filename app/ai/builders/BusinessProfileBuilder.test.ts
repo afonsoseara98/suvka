@@ -212,3 +212,34 @@ describe("BusinessProfileBuilder - mixed-industry / adversarial cases (provider 
     ).toBe("agency");
   });
 });
+
+// Misclassification used to be invisible: every industry rendered the same fake software
+// mockup, so it made no visible difference whether a psychologist was recognised as
+// medical or fell through to `generic`. Once the hero started showing what the business
+// actually is (app/ai/builders/VisualIntelligence.ts), a `generic` classification became
+// a visibly wrong photograph on a real customer's page - which is how these three were
+// found, by auditing the 20-business benchmark corpus rather than by a failing test.
+describe("BusinessProfileBuilder - industries that used to fall through to generic", () => {
+  it("classifies a psychologist offering therapy as medical", () => {
+    expect(
+      industryOf("A licensed psychologist offering individual therapy sessions for anxiety, stress and personal growth.")
+    ).toBe("medical");
+  });
+
+  it("classifies a physiotherapist as medical", () => {
+    expect(industryOf("A physiotherapist helping patients recover from sports injuries.")).toBe("medical");
+  });
+
+  it("classifies an aesthetics studio as beauty", () => {
+    // Named beauty three times ("skincare treatments", "facials", "beauty services") and
+    // still scored generic, because the lexicon only knew salons and barbershops.
+    expect(industryOf("An aesthetics studio offering skincare treatments, facials and beauty services.")).toBe("beauty");
+  });
+
+  it("does not drag ordinary clinical language into medical", () => {
+    // The medical lexicon grew; it must not start swallowing neighbours. A gym offering
+    // "treatment" plans or a spa offering "massage" is not a clinic.
+    expect(industryOf("A neighbourhood gym with personal training and group fitness classes.")).toBe("fitness");
+    expect(industryOf("A hair salon offering cuts, colour and blowouts.")).toBe("beauty");
+  });
+});

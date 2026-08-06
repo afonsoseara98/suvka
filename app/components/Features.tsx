@@ -1,20 +1,25 @@
 import type { LandingPage, SectionRhythm } from "@/app/types/landing";
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
+import { updateArrayItemField } from "@/app/editor/contentEdits";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
+import EditableText from "./editor/EditableText";
+
+type Items = LandingPage["features"];
 
 type FeaturesProps = {
-  items: LandingPage["features"];
+  items: Items;
   theme: ThemeConfig;
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
   variant?: string;
+  onUpdateContent?: (content: Items) => void;
 };
 
-type ListProps = { items: LandingPage["features"]; theme: ThemeConfig; layout: LayoutPersonality };
+type ListProps = { items: Items; theme: ThemeConfig; layout: LayoutPersonality; onUpdateContent?: (content: Items) => void };
 
-function FeaturesGrid({ items, theme, layout }: ListProps) {
+function FeaturesGrid({ items, theme, layout, onUpdateContent }: ListProps) {
   return (
     <div className={`mt-20 grid gap-8 ${layout.gridColumns}`}>
       {items.map((feature, index) => (
@@ -42,9 +47,21 @@ function FeaturesGrid({ items, theme, layout }: ListProps) {
               {feature.icon}
             </div>
 
-            <h3 className="mt-8 text-2xl font-bold">{feature.title}</h3>
+            <EditableText
+              as="h3"
+              className="mt-8 text-2xl font-bold"
+              value={feature.title}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "title", v)))}
+            />
 
-            <p className="mt-4 leading-7" style={{ color: theme.colors.secondary }}>{feature.description}</p>
+            <EditableText
+              as="p"
+              className="mt-4 leading-7"
+              style={{ color: theme.colors.secondary }}
+              value={feature.description}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "description", v)))}
+              multiline
+            />
 
             <div className="mt-8 flex items-center gap-2 text-sm font-medium" style={{ color: theme.colors.accent }}>
               Learn more
@@ -57,7 +74,7 @@ function FeaturesGrid({ items, theme, layout }: ListProps) {
   );
 }
 
-function FeaturesList({ items, theme }: ListProps) {
+function FeaturesList({ items, theme, onUpdateContent }: ListProps) {
   return (
     <div className="mt-20 divide-y border-t" style={{ borderColor: theme.colors.border }}>
       {items.map((feature, index) => (
@@ -70,8 +87,20 @@ function FeaturesList({ items, theme }: ListProps) {
           </div>
 
           <div>
-            <h3 className="text-xl font-bold">{feature.title}</h3>
-            <p className="mt-2 leading-7" style={{ color: theme.colors.secondary }}>{feature.description}</p>
+            <EditableText
+              as="h3"
+              className="text-xl font-bold"
+              value={feature.title}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "title", v)))}
+            />
+            <EditableText
+              as="p"
+              className="mt-2 leading-7"
+              style={{ color: theme.colors.secondary }}
+              value={feature.description}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "description", v)))}
+              multiline
+            />
           </div>
         </div>
       ))}
@@ -82,7 +111,7 @@ function FeaturesList({ items, theme }: ListProps) {
 // Editorial treatment: each feature is its own full-width row, icon and copy
 // alternating sides down the page - a considered read rather than a scan, the
 // "editorial"/"elegant"/"highEndAgency" design families' natural fit.
-function FeaturesAlternating({ items, theme }: ListProps) {
+function FeaturesAlternating({ items, theme, onUpdateContent }: ListProps) {
   return (
     <div className="mt-20 space-y-16">
       {items.map((feature, index) => {
@@ -97,10 +126,20 @@ function FeaturesAlternating({ items, theme }: ListProps) {
             </div>
 
             <div className={reversed ? "md:text-right" : ""}>
-              <h3 className="text-2xl font-bold">{feature.title}</h3>
-              <p className="mt-3 max-w-xl leading-7" style={{ color: theme.colors.secondary }}>
-                {feature.description}
-              </p>
+              <EditableText
+                as="h3"
+                className="text-2xl font-bold"
+                value={feature.title}
+                onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "title", v)))}
+              />
+              <EditableText
+                as="p"
+                className="mt-3 max-w-xl leading-7"
+                style={{ color: theme.colors.secondary }}
+                value={feature.description}
+                onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "description", v)))}
+                multiline
+              />
             </div>
           </div>
         );
@@ -112,7 +151,7 @@ function FeaturesAlternating({ items, theme }: ListProps) {
 // Bento treatment: the first feature spans the full width as a headline card, the
 // rest sit in a tighter grid beneath it - an asymmetric, high-density layout that
 // suits the "bold"/"startupDashboard"/"playful" families' more energetic identity.
-function FeaturesBento({ items, theme, layout }: ListProps) {
+function FeaturesBento({ items, theme, layout, onUpdateContent }: ListProps) {
   const [lead, ...rest] = items;
 
   return (
@@ -128,33 +167,56 @@ function FeaturesBento({ items, theme, layout }: ListProps) {
           >
             {lead.icon}
           </div>
-          <h3 className="mt-6 text-3xl font-bold">{lead.title}</h3>
-          <p className="mt-3 max-w-2xl leading-7" style={{ color: theme.colors.secondary }}>
-            {lead.description}
-          </p>
+          <EditableText
+            as="h3"
+            className="mt-6 text-3xl font-bold"
+            value={lead.title}
+            onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, 0, "title", v)))}
+          />
+          <EditableText
+            as="p"
+            className="mt-3 max-w-2xl leading-7"
+            style={{ color: theme.colors.secondary }}
+            value={lead.description}
+            onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, 0, "description", v)))}
+            multiline
+          />
         </div>
       )}
 
       {rest.length > 0 && (
         <div className={`grid gap-6 ${layout.gridColumns}`}>
-          {rest.map((feature, index) => (
-            <div
-              key={index}
-              className="border p-6"
-              style={{ borderColor: theme.colors.border, background: theme.colors.card, borderRadius: theme.radius.lg }}
-            >
+          {rest.map((feature, index) => {
+            const itemIndex = index + 1; // rest[] is items[] minus the lead item at 0
+            return (
               <div
-                className="flex h-12 w-12 items-center justify-center text-xl text-white"
-                style={{ backgroundImage: theme.gradients.button, borderRadius: theme.radius.md }}
+                key={index}
+                className="border p-6"
+                style={{ borderColor: theme.colors.border, background: theme.colors.card, borderRadius: theme.radius.lg }}
               >
-                {feature.icon}
+                <div
+                  className="flex h-12 w-12 items-center justify-center text-xl text-white"
+                  style={{ backgroundImage: theme.gradients.button, borderRadius: theme.radius.md }}
+                >
+                  {feature.icon}
+                </div>
+                <EditableText
+                  as="h3"
+                  className="mt-4 text-lg font-bold"
+                  value={feature.title}
+                  onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, itemIndex, "title", v)))}
+                />
+                <EditableText
+                  as="p"
+                  className="mt-2 text-sm leading-6"
+                  style={{ color: theme.colors.secondary }}
+                  value={feature.description}
+                  onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, itemIndex, "description", v)))}
+                  multiline
+                />
               </div>
-              <h3 className="mt-4 text-lg font-bold">{feature.title}</h3>
-              <p className="mt-2 text-sm leading-6" style={{ color: theme.colors.secondary }}>
-                {feature.description}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -168,7 +230,7 @@ const FEATURES_VARIANTS: Record<string, (props: ListProps) => React.ReactElement
   grid: FeaturesGrid,
 };
 
-export default function Features({ items, theme, layout, rhythm, variant }: FeaturesProps) {
+export default function Features({ items, theme, layout, rhythm, variant, onUpdateContent }: FeaturesProps) {
   const Variant = (variant && FEATURES_VARIANTS[variant]) || FeaturesGrid;
 
   return (
@@ -187,7 +249,7 @@ export default function Features({ items, theme, layout, rhythm, variant }: Feat
         description="Every landing page generated by Noctra is designed to maximize trust, engagement and conversion."
       />
 
-      <Variant items={items} theme={theme} layout={layout} />
+      <Variant items={items} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />
     </SectionShell>
   );
 }

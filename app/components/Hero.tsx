@@ -11,18 +11,19 @@ type HeroProps = {
   theme: ThemeConfig;
   layout: LayoutPersonality;
   variant?: string;
+  onUpdateContent?: (content: HeroData) => void;
 };
 
-export default function Hero({ data, theme, layout, variant }: HeroProps) {
+export default function Hero({ data, theme, layout, variant, onUpdateContent }: HeroProps) {
   switch (variant) {
     case "centered":
-      return <HeroCenteredLayout data={data} theme={theme} layout={layout} />;
+      return <HeroCenteredLayout data={data} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />;
 
     case "minimal":
-      return <HeroMinimalLayout data={data} theme={theme} layout={layout} />;
+      return <HeroMinimalLayout data={data} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />;
 
     case "split":
     default:
-      return <HeroSplitLayout data={data} theme={theme} layout={layout} />;
+      return <HeroSplitLayout data={data} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />;
   }
 }

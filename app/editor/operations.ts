@@ -262,5 +262,18 @@ export function applyOperation(state: PageState, operation: Operation, now: numb
       const instance = state.sections[index];
       return { ...state, sections: replaceAt(state.sections, index, touch({ ...instance, locked: false }, now)) };
     }
+
+    default: {
+      // Every real Operation kind is handled above - TypeScript proves this switch
+      // exhaustive at compile time (`operation` is typed `never` here). But this
+      // function's actual callers include HTTP request bodies (see
+      // app/api/projects/[id]/pages/[pageId]/operations/route.ts), where nothing
+      // guarantees `kind` is one of the 13 known values at runtime. Without this
+      // branch, an unrecognized kind fell through the switch silently and returned
+      // `undefined` instead of the next PageState - a real bug found while wiring up
+      // persistence, not a hypothetical one.
+      const unknown = operation as { kind?: unknown };
+      throw new OperationError(operation, `Unknown operation kind: "${String(unknown.kind)}"`);
+    }
   }
 }

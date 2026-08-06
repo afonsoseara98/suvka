@@ -1,4 +1,5 @@
 import type { GatedRole } from "../builders/LayoutIntelligence";
+import { GATED_ROLES } from "../builders/LayoutIntelligence";
 
 // STRATEGY DNA
 //
@@ -69,4 +70,74 @@ export interface StrategyDNA {
   priceEmphasis: number; // 0 understated - 1 prominent
   priceAnchoring: number; // 0 no anchor - 1 strong anchor framing
   priceComplexityLean: number; // 0 exact numbers - 1 custom-quote framing
+}
+
+// The neutral midpoint of every axis. buildPipeline() always produces a complete DNA, so
+// this is never needed for a freshly generated page - it exists for DNA that has been
+// through storage and back.
+//
+// That case became load-bearing the moment publishing started persisting a materialized
+// PageState (prisma/schema.prisma's Page.publishedState): a published snapshot is frozen
+// JSON written by whatever version of this type existed on the day it was published. Add
+// one field to StrategyDNA next month and every already-published site would compile
+// `lerp(a, b, undefined)` -> NaN and render `clamp(NaNrem, NaNvw, NaNrem)` - which is
+// exactly what a live check of the served HTML caught before this existed.
+//
+// So the compilers normalize before they read (see compileTheme/compileLayout): a missing
+// axis falls back to neutral instead of poisoning every CSS value derived from it.
+const NEUTRAL_AXIS = 0.5;
+
+// Derived from GATED_ROLES rather than written out by hand: a role added there must not
+// be able to silently go missing here, which is the same class of drift this whole
+// defaulting mechanism exists to absorb.
+export const DEFAULT_SECTION_WEIGHT: Record<GatedRole, number> = Object.fromEntries(
+  GATED_ROLES.map((role) => [role, NEUTRAL_AXIS])
+) as Record<GatedRole, number>;
+
+export const DEFAULT_DNA: StrategyDNA = {
+  sectionWeight: DEFAULT_SECTION_WEIGHT,
+  urgency: NEUTRAL_AXIS,
+  complexity: NEUTRAL_AXIS,
+  colorTemperature: NEUTRAL_AXIS,
+  saturation: NEUTRAL_AXIS,
+  brightness: NEUTRAL_AXIS,
+  accentIntensity: NEUTRAL_AXIS,
+  roundedness: NEUTRAL_AXIS,
+  elevation: NEUTRAL_AXIS,
+  decorationDensity: NEUTRAL_AXIS,
+  density: NEUTRAL_AXIS,
+  contentWidth: NEUTRAL_AXIS,
+  typeScale: NEUTRAL_AXIS,
+  typeWeight: NEUTRAL_AXIS,
+  heroSplitLean: NEUTRAL_AXIS,
+  heroImageryProminence: NEUTRAL_AXIS,
+  emotionalIntensity: NEUTRAL_AXIS,
+  credibilityRationalLean: NEUTRAL_AXIS,
+  proofDensity: NEUTRAL_AXIS,
+  authorityEmphasis: NEUTRAL_AXIS,
+  objectionProactivity: NEUTRAL_AXIS,
+  ctaUrgency: NEUTRAL_AXIS,
+  ctaCommitmentWeight: NEUTRAL_AXIS,
+  priceEmphasis: NEUTRAL_AXIS,
+  priceAnchoring: NEUTRAL_AXIS,
+  priceComplexityLean: NEUTRAL_AXIS,
+};
+
+// Fills in any axis that is missing or not a finite number. Deliberately checks
+// Number.isFinite rather than `?? default`: a stored null, a string that survived a JSON
+// round trip, or an already-NaN value are all just as damaging as an absent key, and all
+// three would slip past a nullish check.
+export function withDnaDefaults(dna: Partial<StrategyDNA> | null | undefined): StrategyDNA {
+  const source = dna ?? {};
+  const result = { ...DEFAULT_DNA, sectionWeight: { ...DEFAULT_SECTION_WEIGHT, ...(source.sectionWeight ?? {}) } };
+
+  for (const key of Object.keys(DEFAULT_DNA) as (keyof StrategyDNA)[]) {
+    if (key === "sectionWeight") continue;
+    const value = source[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      (result[key] as number) = value;
+    }
+  }
+
+  return result;
 }

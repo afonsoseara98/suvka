@@ -359,6 +359,17 @@ describe("applyOperation - LockSection / UnlockSection", () => {
   });
 });
 
+describe("applyOperation - unrecognized kind (runtime, not just compile-time, safety)", () => {
+  it("throws OperationError instead of silently returning undefined for an unknown kind", () => {
+    const state = basePage();
+    // Simulates an HTTP request body that isn't a real Operation - `as unknown as
+    // Operation` because TypeScript itself would (correctly) reject this literal.
+    const bogus = { kind: "DoSomethingMadeUp", sectionId: idOf(state, "stats") } as unknown as Operation;
+    expect(() => applyOperation(state, bogus)).toThrow(OperationError);
+    expect(() => applyOperation(state, bogus)).toThrow(/DoSomethingMadeUp/);
+  });
+});
+
 describe("applyOperation - purity", () => {
   it("never mutates the input state", () => {
     const state = basePage();

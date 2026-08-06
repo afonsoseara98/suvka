@@ -1,20 +1,25 @@
 import type { LandingPage, SectionRhythm } from "@/app/types/landing";
 import type { ThemeConfig } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
+import { updateArrayItemField } from "@/app/editor/contentEdits";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
+import EditableText from "./editor/EditableText";
+
+type Items = LandingPage["benefits"];
 
 type BenefitsProps = {
-  items: LandingPage["benefits"];
+  items: Items;
   theme: ThemeConfig;
   layout: LayoutPersonality;
   rhythm: SectionRhythm;
   variant?: string;
+  onUpdateContent?: (content: Items) => void;
 };
 
-type ListProps = { items: LandingPage["benefits"]; theme: ThemeConfig; layout: LayoutPersonality };
+type ListProps = { items: Items; theme: ThemeConfig; layout: LayoutPersonality; onUpdateContent?: (content: Items) => void };
 
-function BenefitsCards({ items, theme, layout }: ListProps) {
+function BenefitsCards({ items, theme, layout, onUpdateContent }: ListProps) {
   return (
     <div className={`mt-20 grid gap-8 ${layout.gridColumns}`}>
       {items.map((benefit, index) => (
@@ -43,9 +48,21 @@ function BenefitsCards({ items, theme, layout }: ListProps) {
               {benefit.icon}
             </div>
 
-            <h3 className="mt-8 text-2xl font-bold">{benefit.title}</h3>
+            <EditableText
+              as="h3"
+              className="mt-8 text-2xl font-bold"
+              value={benefit.title}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "title", v)))}
+            />
 
-            <p className="mt-4 leading-7" style={{ color: theme.colors.secondary }}>{benefit.description}</p>
+            <EditableText
+              as="p"
+              className="mt-4 leading-7"
+              style={{ color: theme.colors.secondary }}
+              value={benefit.description}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "description", v)))}
+              multiline
+            />
 
             <div className="mt-8 flex items-center gap-2 text-sm font-medium" style={{ color: theme.colors.accent }}>
               Discover more
@@ -58,7 +75,7 @@ function BenefitsCards({ items, theme, layout }: ListProps) {
   );
 }
 
-function BenefitsList({ items, theme }: ListProps) {
+function BenefitsList({ items, theme, onUpdateContent }: ListProps) {
   return (
     <div className="mt-20 divide-y border-t" style={{ borderColor: theme.colors.border }}>
       {items.map((benefit, index) => (
@@ -71,8 +88,20 @@ function BenefitsList({ items, theme }: ListProps) {
           </div>
 
           <div>
-            <h3 className="text-xl font-bold">{benefit.title}</h3>
-            <p className="mt-2 leading-7" style={{ color: theme.colors.secondary }}>{benefit.description}</p>
+            <EditableText
+              as="h3"
+              className="text-xl font-bold"
+              value={benefit.title}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "title", v)))}
+            />
+            <EditableText
+              as="p"
+              className="mt-2 leading-7"
+              style={{ color: theme.colors.secondary }}
+              value={benefit.description}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "description", v)))}
+              multiline
+            />
           </div>
         </div>
       ))}
@@ -83,7 +112,7 @@ function BenefitsList({ items, theme }: ListProps) {
 // Numbered, no card chrome, two-column - the same restrained/editorial treatment
 // StatsInline and FAQTwoColumn already give their sections, so a "minimal"/"editorial"
 // design family reads consistently restrained across every section, not just some.
-function BenefitsMinimal({ items, theme }: ListProps) {
+function BenefitsMinimal({ items, theme, onUpdateContent }: ListProps) {
   return (
     <div className="mt-20 grid gap-x-12 gap-y-10 md:grid-cols-2">
       {items.map((benefit, index) => (
@@ -93,8 +122,21 @@ function BenefitsMinimal({ items, theme }: ListProps) {
           </span>
 
           <div>
-            <h3 className="text-lg font-bold" style={{ color: theme.colors.primary }}>{benefit.title}</h3>
-            <p className="mt-2 leading-7" style={{ color: theme.colors.secondary }}>{benefit.description}</p>
+            <EditableText
+              as="h3"
+              className="text-lg font-bold"
+              style={{ color: theme.colors.primary }}
+              value={benefit.title}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "title", v)))}
+            />
+            <EditableText
+              as="p"
+              className="mt-2 leading-7"
+              style={{ color: theme.colors.secondary }}
+              value={benefit.description}
+              onCommit={onUpdateContent && ((v) => onUpdateContent(updateArrayItemField(items, index, "description", v)))}
+              multiline
+            />
           </div>
         </div>
       ))}
@@ -108,7 +150,7 @@ const BENEFITS_VARIANTS: Record<string, (props: ListProps) => React.ReactElement
   minimal: BenefitsMinimal,
 };
 
-export default function Benefits({ items, theme, layout, rhythm, variant }: BenefitsProps) {
+export default function Benefits({ items, theme, layout, rhythm, variant, onUpdateContent }: BenefitsProps) {
   const Variant = (variant && BENEFITS_VARIANTS[variant]) || BenefitsCards;
 
   return (
@@ -127,7 +169,7 @@ export default function Benefits({ items, theme, layout, rhythm, variant }: Bene
         description="Designed to help businesses build trust, increase conversions and deliver a better experience to every visitor."
       />
 
-      <Variant items={items} theme={theme} layout={layout} />
+      <Variant items={items} theme={theme} layout={layout} onUpdateContent={onUpdateContent} />
     </SectionShell>
   );
 }

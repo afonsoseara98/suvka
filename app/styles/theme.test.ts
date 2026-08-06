@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { compileTheme } from "./theme";
+import { compileLayout } from "./layout";
 import { neutralStrategyDna } from "@/app/ai/testFixtures";
 
 describe("compileTheme", () => {
@@ -45,8 +46,119 @@ describe("compileTheme", () => {
   it("scales hero/title font sizes with typeScale", () => {
     const restrained = compileTheme(neutralStrategyDna({ typeScale: 0 }));
     const dramatic = compileTheme(neutralStrategyDna({ typeScale: 1 }));
-    expect(parseFloat(dramatic.typography.hero.fontSize as string)).toBeGreaterThan(
-      parseFloat(restrained.typography.hero.fontSize as string)
+    expect(clampMax(dramatic.typography.hero.fontSize as string)).toBeGreaterThan(
+      clampMax(restrained.typography.hero.fontSize as string)
     );
   });
 });
+
+// A generated page is read mostly on phones, by people who did not build it. Typography
+// used to be a fixed rem value derived from the DNA, which meant a 5.5rem headline hit a
+// 375px screen at full size and overflowed it. These assert the responsive contract that
+// replaced it - and they live here rather than in a component test because happy-dom
+// discards inline styles containing clamp() entirely, so the DOM cannot be asked.
+describe("compileTheme - responsive typography", () => {
+  const SCALES = [0, 0.25, 0.5, 0.75, 1];
+
+  it("emits clamp() for hero, title and subtitle at every typeScale", () => {
+    for (const typeScale of SCALES) {
+      const theme = compileTheme(neutralStrategyDna({ typeScale }));
+      expect(theme.typography.hero.fontSize as string).toMatch(/^clamp\(/);
+      expect(theme.typography.title.fontSize as string).toMatch(/^clamp\(/);
+      expect(theme.typography.subtitle.fontSize as string).toMatch(/^clamp\(/);
+    }
+  });
+
+  it("never lets the mobile floor exceed the desktop ceiling", () => {
+    for (const typeScale of SCALES) {
+      const theme = compileTheme(neutralStrategyDna({ typeScale }));
+      for (const token of [theme.typography.hero, theme.typography.title, theme.typography.subtitle]) {
+        const value = token.fontSize as string;
+        expect(clampMin(value)).toBeLessThanOrEqual(clampMax(value));
+      }
+    }
+  });
+
+  it("keeps the desktop ceiling at the size the DNA asked for", () => {
+    // The clamp is additive: it constrains small viewports without shrinking the design
+    // the DNA computed for a large one.
+    const dramatic = compileTheme(neutralStrategyDna({ typeScale: 1 }));
+    expect(clampMax(dramatic.typography.hero.fontSize as string)).toBeCloseTo(5.5, 2);
+  });
+
+  it("keeps the mobile floor small enough to fit a narrow screen", () => {
+    // 2.6rem ~ 42px: a headline at that size still fits a 375px viewport across two or
+    // three lines, which the previous fixed 5.5rem (88px) could not.
+    const dramatic = compileTheme(neutralStrategyDna({ typeScale: 1 }));
+    expect(clampMin(dramatic.typography.hero.fontSize as string)).toBeLessThanOrEqual(2.6);
+  });
+
+  it("gives the hero a line-height that survives wrapping", () => {
+    // lineHeight 1 was fine for a single desktop line and cramped the moment a headline
+    // wrapped to two lines on a phone.
+    const theme = compileTheme(neutralStrategyDna({ typeScale: 1 }));
+    expect(Number(theme.typography.hero.lineHeight)).toBeGreaterThan(1);
+  });
+});
+
+// A published page is a frozen JSON snapshot (prisma/schema.prisma's Page.publishedState)
+// written by whatever version of StrategyDNA existed the day it was published. The day a
+// new axis is added, every existing snapshot is missing it - and lerp(a, b, undefined)
+// produces NaN, which reaches the visitor as `clamp(NaNrem, NaNvw, NaNrem)` and silently
+// unstyles the whole page. That exact string was found in real served HTML, which is why
+// these assertions test malformed input rather than only well-formed DNA.
+describe("compileTheme / compileLayout - malformed or outdated DNA", () => {
+  const INCOMPLETE = [
+    ["empty object", {}],
+    ["missing typography axes", { colorTemperature: 0.5, saturation: 0.5 }],
+    ["explicit undefined", { typeScale: undefined, density: undefined }],
+    ["null values", { typeScale: null, density: null }],
+    ["NaN values", { typeScale: NaN, density: NaN }],
+    ["string that survived a JSON round trip", { typeScale: "0.8" }],
+  ] as const;
+
+  function everyCssValue(value: unknown, seen: string[] = []): string[] {
+    if (typeof value === "string" || typeof value === "number") {
+      seen.push(String(value));
+    } else if (value && typeof value === "object") {
+      for (const nested of Object.values(value)) everyCssValue(nested, seen);
+    }
+    return seen;
+  }
+
+  for (const [label, partial] of INCOMPLETE) {
+    it(`never emits NaN from compileTheme for ${label}`, () => {
+      const theme = compileTheme(partial as never);
+      const offending = everyCssValue(theme).filter((v) => v.includes("NaN"));
+      expect(offending).toEqual([]);
+    });
+
+    it(`never emits NaN from compileLayout for ${label}`, () => {
+      const layout = compileLayout(partial as never);
+      const offending = everyCssValue(layout).filter((v) => v.includes("NaN"));
+      expect(offending).toEqual([]);
+    });
+  }
+
+  it("still honours the axes that ARE present", () => {
+    // Degrading gracefully must not mean ignoring real data: a snapshot missing some
+    // fields should keep the styling of the fields it does have.
+    const dark = compileTheme({ brightness: 0 } as never);
+    const light = compileTheme({ brightness: 1 } as never);
+    expect(dark.colors.background).not.toBe(light.colors.background);
+  });
+});
+
+function clampParts(value: string): [number, number, number] {
+  const inner = value.replace(/^clamp\(/, "").replace(/\)$/, "");
+  const parts = inner.split(",").map((p) => parseFloat(p.trim()));
+  return [parts[0], parts[1], parts[2]];
+}
+
+function clampMin(value: string): number {
+  return clampParts(value)[0];
+}
+
+function clampMax(value: string): number {
+  return clampParts(value)[2];
+}

@@ -1,5 +1,6 @@
-import type { SectionInstance, PageState } from "@/app/editor/pageState";
+import type { SectionInstance, PageState, SectionContent } from "@/app/editor/pageState";
 import { mergeDna, EMPTY_HERO } from "@/app/editor/pageState";
+import type { Operation } from "@/app/editor/operations";
 import type { ThemeConfig } from "@/app/styles/theme";
 import { compileTheme } from "@/app/styles/theme";
 import type { LayoutPersonality } from "@/app/styles/layout";
@@ -22,6 +23,7 @@ type Props = {
   page: PageState;
   theme: ThemeConfig;
   layout: LayoutPersonality;
+  onDispatchOperation?: (operation: Operation) => void;
 };
 
 // Renders exactly one SectionInstance. `theme`/`layout` are the page-level compiled
@@ -35,16 +37,101 @@ type Props = {
 // regardless of what SectionPlanner.ts chose), which meant the "inline"/"twoColumn"
 // variants added by the Diversity Engine work never actually reached the page. Fixed as
 // part of this rewrite, not carried forward.
-export default function SectionRenderer({ instance, page, theme: pageTheme, layout: pageLayout }: Props) {
+export default function SectionRenderer({ instance, page, theme: pageTheme, layout: pageLayout, onDispatchOperation }: Props) {
   const hasOverride = Object.keys(instance.themeOverrides).length > 0;
   const effectiveDna = hasOverride ? mergeDna(page.dna, instance.themeOverrides) : page.dna;
   const theme = hasOverride ? compileTheme(effectiveDna) : pageTheme;
   const layout = hasOverride ? compileLayout(effectiveDna) : pageLayout;
   const { rhythm } = instance.layout;
 
+  // Bound once per instance, here - the one place instance.id is in scope. Every
+  // section component below receives this same bound closure as `onUpdateContent`,
+  // never `instance.id` or `onDispatchOperation` directly.
+  const onUpdateContent = onDispatchOperation
+    ? (content: SectionContent) => onDispatchOperation({ kind: "UpdateContent", sectionId: instance.id, content })
+    : undefined;
+
+  const rendered = renderSection(instance, page, theme, layout, rhythm, onUpdateContent);
+
+  // Read-only callers (app/benchmark/page.tsx, Landing.test.tsx) never pass
+  // onDispatchOperation - no wrapper at all, so their DOM is byte-identical to before
+  // this reordering toolbar existed.
+  if (!onDispatchOperation) return rendered;
+
+  const index = page.sections.findIndex((s) => s.id === instance.id);
+
+  return (
+    <div className="group relative">
+      <div className="pointer-events-none absolute -top-3 right-4 z-10 flex gap-1 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          disabled={index <= 0}
+          onClick={() => onDispatchOperation({ kind: "MoveSection", sectionId: instance.id, toIndex: index - 1 })}
+          className="pointer-events-auto rounded-full border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300 shadow-lg transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="Move section up"
+        >
+          ↑
+        </button>
+        <button
+          type="button"
+          disabled={index === -1 || index >= page.sections.length - 1}
+          onClick={() => onDispatchOperation({ kind: "MoveSection", sectionId: instance.id, toIndex: index + 1 })}
+          className="pointer-events-auto rounded-full border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300 shadow-lg transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="Move section down"
+        >
+          ↓
+        </button>
+      </div>
+      {rendered}
+    </div>
+  );
+}
+
+// Every list-shaped section used to be handed to its component through a bare
+// `instance.content as T[]` - a cast that asserts a shape rather than checking one. When
+// the value underneath was not actually an array, the component destructured it
+// (`const [lead, ...rest] = items`) and threw "items is not iterable" during server
+// render, which on a PUBLISHED page is a 500 for every visitor to a paying customer's
+// live site. The same class of defect already took down every save once, when the model
+// omitted `site` and createProjectFromGeneration read `landing.site.branding`.
+//
+// The content of a stored page is not under this renderer's control: it is JSON written
+// by a language model, possibly months ago, possibly by an older schema, and then frozen
+// into a published snapshot. Treating it as untrusted input is the only honest option.
+// A malformed section renders as empty; it never takes the page down with it.
+function asList<T>(content: unknown, wrapperKey: string): T[] {
+  if (Array.isArray(content)) return content as T[];
+
+  // Tolerate the `{ items: [...] }` / `{ plans: [...] }` wrapper. It is the shape the
+  // LandingPage type uses for these sections, so a page built from one without going
+  // through fromLandingPage lands here rather than crashing.
+  if (content && typeof content === "object") {
+    const wrapped = (content as Record<string, unknown>)[wrapperKey];
+    if (Array.isArray(wrapped)) return wrapped as T[];
+  }
+
+  return [];
+}
+
+function renderSection(
+  instance: SectionInstance,
+  page: PageState,
+  theme: ThemeConfig,
+  layout: LayoutPersonality,
+  rhythm: SectionInstance["layout"]["rhythm"],
+  onUpdateContent: ((content: SectionContent) => void) | undefined
+) {
   switch (instance.type) {
     case "hero":
-      return <Hero data={instance.content as HeroData} theme={theme} layout={layout} variant={instance.variant} />;
+      return (
+        <Hero
+          data={instance.content as HeroData}
+          theme={theme}
+          layout={layout}
+          variant={instance.variant}
+          onUpdateContent={onUpdateContent}
+        />
+      );
 
     case "logoCloud":
       return <LogoCloudSection theme={theme} layout={layout} rhythm={rhythm} />;
@@ -52,61 +139,73 @@ export default function SectionRenderer({ instance, page, theme: pageTheme, layo
     case "stats":
       return (
         <Stats
-          items={instance.content as StatsItem[]}
+          items={asList<StatsItem>(instance.content, "items")}
           theme={theme}
           layout={layout}
           rhythm={rhythm}
           variant={instance.variant}
+          onUpdateContent={onUpdateContent}
         />
       );
 
     case "features":
       return (
         <Features
-          items={instance.content as FeatureItem[]}
+          items={asList<FeatureItem>(instance.content, "items")}
           theme={theme}
           layout={layout}
           rhythm={rhythm}
           variant={instance.variant}
+          onUpdateContent={onUpdateContent}
         />
       );
 
     case "benefits":
       return (
         <Benefits
-          items={instance.content as FeatureItem[]}
+          items={asList<FeatureItem>(instance.content, "items")}
           theme={theme}
           layout={layout}
           rhythm={rhythm}
           variant={instance.variant}
+          onUpdateContent={onUpdateContent}
         />
       );
 
     case "testimonials":
       return (
         <Testimonials
-          items={instance.content as Testimonial[]}
+          items={asList<Testimonial>(instance.content, "items")}
           theme={theme}
           layout={layout}
           rhythm={rhythm}
           variant={instance.variant}
+          onUpdateContent={onUpdateContent}
         />
       );
 
     case "pricing":
       return (
         <Pricing
-          plans={instance.content as PricingPlan[]}
+          plans={asList<PricingPlan>(instance.content, "plans")}
           theme={theme}
           layout={layout}
           rhythm={rhythm}
           variant={instance.variant}
+          onUpdateContent={onUpdateContent}
         />
       );
 
     case "faq":
       return (
-        <FAQ items={instance.content as FAQItem[]} theme={theme} layout={layout} rhythm={rhythm} variant={instance.variant} />
+        <FAQ
+          items={asList<FAQItem>(instance.content, "items")}
+          theme={theme}
+          layout={layout}
+          rhythm={rhythm}
+          variant={instance.variant}
+          onUpdateContent={onUpdateContent}
+        />
       );
 
     case "cta": {
@@ -128,6 +227,7 @@ export default function SectionRenderer({ instance, page, theme: pageTheme, layo
           theme={theme}
           layout={layout}
           rhythm={rhythm}
+          onUpdateContent={onUpdateContent}
         />
       );
     }
