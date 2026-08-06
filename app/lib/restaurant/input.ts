@@ -73,34 +73,98 @@ function isBlank(value: unknown): boolean {
 // ways, and rejecting a real number because it has a space in it is a worse failure than
 // accepting an odd one. The only hard requirements are the facts the page cannot be
 // truthful without.
+// Field ceilings. Not arbitrary: each is roughly twice the longest real value, so a
+// genuine restaurant never meets one, while a paste of an entire menu into the name box -
+// which is exactly what happens when someone is filling a form on a phone in a busy
+// kitchen - is caught here instead of arriving as a 4000-character headline that breaks
+// the page layout and the slug.
+export const LIMITS = {
+  name: 80,
+  address: 160,
+  phone: 40,
+  schedule: 400,
+  email: 120,
+  existingWebsite: 200,
+  dishName: 80,
+  dishPrice: 20,
+  dishDescription: 200,
+} as const;
+
+// Every message is in Portuguese because the person reading it runs a restaurant in
+// Portugal, and a form that asks in one language and complains in another is a form that
+// looks broken. Each says what to do rather than what went wrong.
 export function validateRestaurantInput(input: Partial<RestaurantInput>): FieldErrors {
   const errors: FieldErrors = {};
 
-  if (isBlank(input.name)) errors.name = "The restaurant needs a name.";
-  if (!input.cuisine || !CUISINES.includes(input.cuisine)) errors.cuisine = "Choose a cuisine.";
-  if (!input.style || !STYLES.includes(input.style)) errors.style = "Choose a style.";
-  if (isBlank(input.address)) errors.address = "An address is the most looked-up thing on the page.";
-  if (isBlank(input.phone)) errors.phone = "A phone number is how most people will book.";
-  if (isBlank(input.schedule)) errors.schedule = "Opening hours are why people visit the site.";
+  if (isBlank(input.name)) errors.name = "Escreva o nome do restaurante.";
+  else if (String(input.name).trim().length > LIMITS.name) errors.name = `O nome é demasiado longo (máximo ${LIMITS.name} caracteres).`;
+
+  if (!input.cuisine || !CUISINES.includes(input.cuisine)) errors.cuisine = "Escolha o tipo de cozinha.";
+  if (!input.style || !STYLES.includes(input.style)) errors.style = "Escolha um estilo.";
+
+  if (isBlank(input.address)) errors.address = "A morada é o que os clientes mais procuram no site.";
+  else if (String(input.address).trim().length > LIMITS.address) errors.address = `A morada é demasiado longa (máximo ${LIMITS.address} caracteres).`;
+
+  if (isBlank(input.phone)) errors.phone = "O telefone é como a maioria vai reservar.";
+  else if (String(input.phone).trim().length > LIMITS.phone) errors.phone = "Esse número parece demasiado longo.";
+
+  if (isBlank(input.schedule)) errors.schedule = "O horário é uma das razões pelas quais visitam o site.";
+  else if (String(input.schedule).trim().length > LIMITS.schedule) errors.schedule = `O horário é demasiado longo (máximo ${LIMITS.schedule} caracteres).`;
 
   // Deliberately the loosest possible check. An address with an @ and a dot is almost
   // certainly a real attempt; a stricter pattern rejects valid addresses and teaches the
   // owner that the form is fighting them.
-  if (isBlank(input.email)) errors.email = "We need an email to reach you.";
-  else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(input.email).trim())) errors.email = "That does not look like an email address.";
+  if (isBlank(input.email)) errors.email = "Precisamos de um email para o contactar.";
+  else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(input.email).trim())) errors.email = "Isso não parece um endereço de email.";
+  else if (String(input.email).trim().length > LIMITS.email) errors.email = "Esse email parece demasiado longo.";
+
+  if (typeof input.existingWebsite === "string" && input.existingWebsite.trim().length > LIMITS.existingWebsite) {
+    errors.existingWebsite = "Esse endereço parece demasiado longo.";
+  }
 
   const dishes = Array.isArray(input.dishes) ? input.dishes : [];
   const complete = dishes.filter((dish) => !isBlank(dish?.name) && !isBlank(dish?.price));
   if (complete.length === 0) {
     // A menu with no dishes is not a menu, and the page would fall back to being a poster.
-    errors.dishes = "Add at least one dish, with a name and a price.";
+    errors.dishes = "Adicione pelo menos um prato, com nome e preço.";
+  } else if (
+    complete.some(
+      (dish) =>
+        dish.name.trim().length > LIMITS.dishName ||
+        dish.price.trim().length > LIMITS.dishPrice ||
+        (dish.description ?? "").trim().length > LIMITS.dishDescription
+    )
+  ) {
+    errors.dishes = "Um dos pratos tem texto a mais. Use nomes e descrições curtas.";
   }
 
   if (typeof input.description === "string" && input.description.length > DESCRIPTION_MAX) {
-    errors.description = `Keep it under ${DESCRIPTION_MAX} characters.`;
+    errors.description = `Use menos de ${DESCRIPTION_MAX} caracteres.`;
   }
 
   return errors;
+}
+
+// The order the form shows the fields in. Used to move the person to the FIRST thing that
+// needs their attention after a failed submit - on a phone, an error four fields above the
+// button is invisible, and a form that appears to do nothing when you press the button is
+// a form people abandon.
+export const FIELD_ORDER: ReadonlyArray<keyof FieldErrors> = [
+  "name",
+  "cuisine",
+  "style",
+  "language",
+  "address",
+  "phone",
+  "schedule",
+  "dishes",
+  "email",
+  "existingWebsite",
+  "description",
+];
+
+export function firstErrorField(errors: FieldErrors): keyof FieldErrors | null {
+  return FIELD_ORDER.find((field) => errors[field]) ?? null;
 }
 
 export function isValid(errors: FieldErrors): boolean {

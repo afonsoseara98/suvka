@@ -10,6 +10,8 @@ import {
   DESCRIPTION_MAX,
   validateRestaurantInput,
   isValid,
+  firstErrorField,
+  LIMITS,
   type FieldErrors,
   type RestaurantInput,
 } from "@/app/lib/restaurant/input";
@@ -71,7 +73,16 @@ function RestaurantForm() {
 
     const found = validateRestaurantInput(input);
     setErrors(found);
-    if (!isValid(found)) return;
+    if (!isValid(found)) {
+      // Move to the first thing that needs attention. On a phone an error four fields
+      // above the button is invisible, and a button that appears to do nothing is a form
+      // people abandon.
+      const field = firstErrorField(found);
+      const element = field ? document.getElementById(String(field)) : null;
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (element as HTMLElement | null)?.focus?.();
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -110,12 +121,13 @@ function RestaurantForm() {
           classificações nem números em seu nome.
         </p>
 
+        <fieldset disabled={submitting} className="contents">
         <form onSubmit={submit} className="mt-10 space-y-8" noValidate>
           <div>
             <label className={label} htmlFor="name">
               Nome do restaurante
             </label>
-            <input id="name" className={field} value={input.name} onChange={(e) => set("name", e.target.value)} placeholder="Taberna do Bairro" />
+            <input id="name" maxLength={LIMITS.name} className={field} value={input.name} onChange={(e) => set("name", e.target.value)} placeholder="Taberna do Bairro" />
             {errors.name && <p className={errorText}>{errors.name}</p>}
           </div>
 
@@ -170,7 +182,7 @@ function RestaurantForm() {
             <label className={label} htmlFor="address">
               Morada
             </label>
-            <input id="address" className={field} value={input.address} onChange={(e) => set("address", e.target.value)} placeholder="Rua das Flores 112, Porto" />
+            <input id="address" maxLength={LIMITS.address} className={field} value={input.address} onChange={(e) => set("address", e.target.value)} placeholder="Rua das Flores 112, Porto" />
             {errors.address && <p className={errorText}>{errors.address}</p>}
           </div>
 
@@ -179,7 +191,7 @@ function RestaurantForm() {
               <label className={label} htmlFor="phone">
                 Telefone
               </label>
-              <input id="phone" className={field} value={input.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+351 220 145 880" />
+              <input id="phone" maxLength={LIMITS.phone} className={field} value={input.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+351 220 145 880" />
               {errors.phone && <p className={errorText}>{errors.phone}</p>}
             </div>
 
@@ -190,6 +202,7 @@ function RestaurantForm() {
               <textarea
                 id="schedule"
                 rows={3}
+                maxLength={LIMITS.schedule}
                 className={field}
                 value={input.schedule}
                 onChange={(e) => set("schedule", e.target.value)}
@@ -243,6 +256,7 @@ function RestaurantForm() {
               <input
                 id="email"
                 type="email"
+                maxLength={LIMITS.email}
                 className={field}
                 value={input.email}
                 onChange={(e) => set("email", e.target.value)}
@@ -258,6 +272,7 @@ function RestaurantForm() {
               </label>
               <input
                 id="existingWebsite"
+                maxLength={LIMITS.existingWebsite}
                 className={field}
                 value={input.existingWebsite}
                 onChange={(e) => set("existingWebsite", e.target.value)}
@@ -314,7 +329,14 @@ function RestaurantForm() {
           >
             {submitting ? "A criar o seu site…" : "Criar o meu site"}
           </button>
+
+          {/* Says what is happening during the couple of seconds the photographs are being
+              fetched, so the wait reads as work rather than as a hang. */}
+          {submitting && (
+            <p className="text-center text-sm text-zinc-500">A escolher fotografias e a montar as páginas. Demora poucos segundos.</p>
+          )}
         </form>
+        </fieldset>
       </div>
     </main>
   );

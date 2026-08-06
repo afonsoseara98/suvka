@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateRestaurantInput, isValid, normaliseRestaurantInput, type RestaurantInput } from "./input";
+import { validateRestaurantInput, isValid, normaliseRestaurantInput, firstErrorField, type RestaurantInput } from "./input";
 import { buildRestaurantPage, dnaForRestaurant } from "./buildPage";
 
 function input(overrides: Partial<RestaurantInput> = {}): RestaurantInput {
@@ -215,5 +215,40 @@ describe("the calls to action actually do something", () => {
   it("sends it to the address instead when there is no menu", () => {
     const built = buildRestaurantPage(input({ dishes: [] }), { hero: null, gallery: [] });
     expect(built.hero.secondaryHref).toBe("#hours");
+  });
+});
+
+// The form asks in Portuguese. A form that complains in English looks broken, and the
+// person filling it in runs a restaurant in Portugal.
+describe("errors a real owner can act on", () => {
+  it("speaks Portuguese", () => {
+    const errors = validateRestaurantInput({ dishes: [] });
+    for (const [field, message] of Object.entries(errors)) {
+      expect(message, field).not.toMatch(/^(The|Choose|An|A phone|Opening|We need|That does|Add|Keep)\b/);
+    }
+    expect(errors.name).toBe("Escreva o nome do restaurante.");
+    expect(errors.dishes).toBe("Adicione pelo menos um prato, com nome e preço.");
+  });
+
+  it("catches a paste that would break the page", () => {
+    // Someone filling this in on a phone in a busy kitchen pastes their whole menu into
+    // the name box. Caught here, not as a 4000-character headline and a broken slug.
+    expect(validateRestaurantInput(input({ name: "a".repeat(500) })).name).toBeTruthy();
+    expect(validateRestaurantInput(input({ address: "a".repeat(500) })).address).toBeTruthy();
+    expect(validateRestaurantInput(input({ schedule: "a".repeat(2000) })).schedule).toBeTruthy();
+  });
+
+  it("catches an over-long dish without rejecting a normal one", () => {
+    expect(validateRestaurantInput(input({ dishes: [{ name: "a".repeat(200), price: "10", description: "" }] })).dishes).toBeTruthy();
+    expect(validateRestaurantInput(input()).dishes).toBeUndefined();
+  });
+
+  it("points at the first field that needs attention, in form order", () => {
+    // Not the first error found - the first one the person will SCROLL to. On a phone an
+    // error four fields above the button is invisible.
+    expect(firstErrorField(validateRestaurantInput({ dishes: [] }))).toBe("name");
+    expect(firstErrorField(validateRestaurantInput(input({ email: "nope", name: "" })))).toBe("name");
+    expect(firstErrorField(validateRestaurantInput(input({ email: "nope" })))).toBe("email");
+    expect(firstErrorField(validateRestaurantInput(input()))).toBeNull();
   });
 });

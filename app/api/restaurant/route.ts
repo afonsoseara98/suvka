@@ -14,7 +14,7 @@ import type { BusinessProfile } from "@/app/ai/types";
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ success: false, message: "Sign in required." }, { status: 401 });
+    return NextResponse.json({ success: false, message: "Inicie sessão para continuar." }, { status: 401 });
   }
 
   try {
@@ -70,6 +70,6 @@ export async function POST(request: Request) {
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error("Restaurant site creation failed:", error);
-    return NextResponse.json({ success: false, message: "Something went wrong. Please try again." }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Algo correu mal ao criar o site. Tente novamente." }, { status: 500 });
   }
 }
