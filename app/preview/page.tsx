@@ -57,6 +57,11 @@ export default function ContactSheet() {
                 borderRadius: 4,
               }}
             >
+              {/* Twenty iframes loading at once made every one of them blank: each is a
+                  server render that resolves a stock photo, and twenty simultaneous
+                  requests to the same image API get throttled. Deferring the off-screen
+                  ones lets the browser stagger them, which is the difference between an
+                  instrument that works and one that quietly reports nothing. */}
               <iframe
                 src={`/preview/${cell.id}`}
                 width={FRAME_WIDTH}
@@ -67,7 +72,7 @@ export default function ContactSheet() {
                   transformOrigin: "top left",
                   pointerEvents: "none",
                 }}
-                loading="eager"
+                loading="lazy"
               />
             </div>
           </div>

@@ -87,16 +87,112 @@ const DESIGN_FAMILIES: Record<DesignFamilyName, DnaAdjustments> = {
 // "excluded", so in practice it never is) - what varies who ACTUALLY wins is how many
 // families clear a meaningful fit, which is normal: most businesses genuinely suit two
 // or three visual languages, not exactly one.
-const FAMILY_FIT: Record<DesignFamilyName, (bi: BusinessIntelligenceProfile) => number> = {
-  minimal: (bi) => clamp01(bi.pricePositioning * 0.4 + (1 - bi.visualImportance) * 0.3 + (1 - bi.emotionalVsRational) * 0.3),
-  editorial: (bi) => clamp01(bi.pricePositioning * 0.3 + bi.visualImportance * 0.3 + (1 - bi.purchaseUrgency) * 0.4),
-  bold: (bi) => clamp01(bi.purchaseUrgency * 0.4 + bi.emotionalVsRational * 0.3 + (1 - bi.pricePositioning) * 0.3),
-  corporate: (bi) => clamp01(bi.authorityRequirement * 0.4 + bi.trustDifficulty * 0.35 + (1 - bi.visualImportance) * 0.25),
-  playful: (bi) => clamp01(bi.emotionalVsRational * 0.4 + (1 - bi.authorityRequirement) * 0.3 + (1 - bi.pricePositioning) * 0.3),
-  elegant: (bi) => clamp01(bi.pricePositioning * 0.5 + bi.visualImportance * 0.25 + (1 - bi.purchaseUrgency) * 0.25),
-  highEndAgency: (bi) => clamp01(bi.visualImportance * 0.45 + bi.competitionLevel * 0.25 + bi.pricePositioning * 0.3),
-  startupDashboard: (bi) => clamp01(bi.offerComplexity * 0.4 + bi.decisionComplexity * 0.3 + (1 - bi.visualImportance) * 0.3),
+// DOMINANCE, NOT AVERAGING
+//
+// Each fit used to be a weighted average of three dimensions with weights summing to 1.0.
+// Averaging n roughly-independent terms retains only sqrt(sum(w^2)) of a single term's
+// spread - about 58% for three equal terms - and because all eight fits averaged
+// OVERLAPPING dimensions, they moved together and their differences shrank further.
+//
+// Measured consequence: sweeping 400 seeds per business gave mean entropy 2.87 of a
+// possible 3.00 bits. The selection was a near-uniform lottery over seven of eight
+// families; 18 of 20 businesses did not receive their own best fit. Amplifying the
+// analysers upstream (see signalCalibration.ts) barely moved it - 2.87 to 2.72 - because
+// the averaging here re-compressed what had just been amplified.
+//
+// A family now wins on the ONE dimension that defines it, at full amplitude, with the
+// others modulating rather than diluting. `highEndAgency` is the family for a business
+// whose visuals are the product - that should be decided by visualImportance, not by
+// visualImportance averaged with two things that have nothing to do with it.
+//
+// The eight primaries are deliberately four opposed pairs, so the vocabulary spans real
+// disagreements rather than eight variations of the same preference:
+//   visualImportance   highEndAgency <-> minimal
+//   purchaseUrgency    bold          <-> editorial
+//   pricePositioning   elegant       <-> (playful's inverse support)
+//   authorityRequirement corporate   <-> playful
+interface FamilyFit {
+  // The dimension that defines this family. Enters at full amplitude.
+  primary: (bi: BusinessIntelligenceProfile) => number;
+  // Modulate the primary between SUPPORT_FLOOR and 1. A family with a strong primary and
+  // weak supports still scores respectably; strong on both dominates.
+  supports: ReadonlyArray<(bi: BusinessIntelligenceProfile) => number>;
+}
+
+// How far weak supports may pull a strong primary down. At 0 the supports would be able to
+// veto the primary entirely, which reintroduces averaging by another name.
+const SUPPORT_FLOOR = 0.55;
+
+const FAMILY_FIT_SPEC: Record<DesignFamilyName, FamilyFit> = {
+  minimal: {
+    primary: (bi) => 1 - bi.visualImportance,
+    supports: [(bi) => bi.pricePositioning, (bi) => 1 - bi.emotionalVsRational],
+  },
+  editorial: {
+    primary: (bi) => 1 - bi.purchaseUrgency,
+    supports: [(bi) => bi.pricePositioning, (bi) => bi.visualImportance],
+  },
+  bold: {
+    primary: (bi) => bi.purchaseUrgency,
+    supports: [(bi) => bi.emotionalVsRational, (bi) => 1 - bi.pricePositioning],
+  },
+  corporate: {
+    primary: (bi) => bi.authorityRequirement,
+    supports: [(bi) => bi.trustDifficulty, (bi) => 1 - bi.visualImportance],
+  },
+  playful: {
+    primary: (bi) => bi.emotionalVsRational,
+    supports: [(bi) => 1 - bi.authorityRequirement, (bi) => 1 - bi.pricePositioning],
+  },
+  elegant: {
+    primary: (bi) => bi.pricePositioning,
+    supports: [(bi) => bi.visualImportance, (bi) => 1 - bi.purchaseUrgency],
+  },
+  highEndAgency: {
+    primary: (bi) => bi.visualImportance,
+    supports: [(bi) => bi.competitionLevel, (bi) => bi.pricePositioning],
+  },
+  startupDashboard: {
+    primary: (bi) => bi.offerComplexity,
+    supports: [(bi) => bi.decisionComplexity, (bi) => 1 - bi.visualImportance],
+  },
 };
+
+// RELATIVE, NOT ABSOLUTE
+//
+// Scoring the primary on its raw value made `corporate` win for 7 of 20 businesses - a
+// lawyer, a dentist, a psychologist, a consultant, a physiotherapist and two trades - for
+// the mundane reason that authorityRequirement runs high across service businesses
+// generally (corpus centre 0.558, the highest of any dimension). Absolute height says
+// "this business needs authority". It does not say "authority is what this business is
+// ABOUT", and only the second is a reason to choose a visual language.
+//
+// A family therefore wins when its defining dimension is the business's OWN most
+// distinctive trait, measured against that business's other traits. Every business has a
+// different strongest characteristic, so this spreads for a principled reason rather than
+// by injecting randomness - which is what the seeded lottery was doing, and why it sent a
+// wedding planner to `corporate`.
+const DISTINCTIVENESS_GAIN = 1.9;
+
+function profileMean(bi: BusinessIntelligenceProfile): number {
+  const values = Object.values(bi).filter((v): v is number => typeof v === "number");
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+const FAMILY_FIT: Record<DesignFamilyName, (bi: BusinessIntelligenceProfile) => number> = Object.fromEntries(
+  (Object.keys(FAMILY_FIT_SPEC) as DesignFamilyName[]).map((name) => {
+    const { primary, supports } = FAMILY_FIT_SPEC[name];
+    return [
+      name,
+      (bi: BusinessIntelligenceProfile) => {
+        // How far this dimension stands out from the rest of this business's profile.
+        const distinctiveness = clamp01(0.5 + (clamp01(primary(bi)) - profileMean(bi)) * DISTINCTIVENESS_GAIN);
+        const support = supports.reduce((sum, f) => sum + clamp01(f(bi)), 0) / supports.length;
+        return clamp01(distinctiveness * (SUPPORT_FLOOR + (1 - SUPPORT_FLOOR) * support));
+      },
+    ];
+  })
+) as Record<DesignFamilyName, (bi: BusinessIntelligenceProfile) => number>;
 
 // Fit scores are cubed before weighting the draw: with 8 competing families, a flat
 // proportional draw would let a business that fits "corporate" decisively (say 0.85)
@@ -106,7 +202,23 @@ const FAMILY_FIT: Record<DesignFamilyName, (bi: BusinessIntelligenceProfile) => 
 // making a genuinely dominant fit dominate the draw, so the seed's influence is
 // concentrated where it belongs: breaking ties among families that fit ALMOST equally
 // well, not overriding a business whose signals clearly point one way.
-const FIT_SHARPENING_POWER = 3;
+// Swept against two acceptance criteria in tension: the business must actually decide
+// (measured as the winning family holding >50% of the draw) and the corpus must not
+// collapse onto one family. At 3 only 5 of 20 businesses decided their own direction - the
+// seed did. At 14, all 20 decide, and the distribution is unchanged from the deterministic
+// argmax, which means the remaining spread is signal rather than noise.
+//
+// The seeded draw is deliberately kept rather than replaced with a plain argmax: two
+// families that genuinely fit equally well should still be separable, and the seed is the
+// honest way to break that tie. What changed is that near-parity is now rare instead of
+// universal.
+const FIT_SHARPENING_POWER = 14;
+
+export function familyFitScores(bi: BusinessIntelligenceProfile): Record<DesignFamilyName, number> {
+  return Object.fromEntries(
+    (Object.keys(FAMILY_FIT) as DesignFamilyName[]).map((n) => [n, FAMILY_FIT[n](bi)])
+  ) as Record<DesignFamilyName, number>;
+}
 
 export function resolveDesignFamily(bi: BusinessIntelligenceProfile, random: () => number): DesignFamilyName {
   const options = (Object.keys(DESIGN_FAMILIES) as DesignFamilyName[]).map((name) => ({
