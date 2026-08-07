@@ -5,6 +5,7 @@ import Landing from "@/app/components/Landing";
 import { fromLandingPage } from "@/app/editor/pageState";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import PublishBar from "./PublishBar";
+import PhotoManager from "./PhotoManager";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,9 @@ export default async function DraftPreview({ params }: { params: Promise<{ draft
           sits above rather than inside, so what the owner is judging is exactly what a
           customer would see. */}
       <PublishBar draftId={draft.id} name={draft.input.name}>
+        {/* The last thing on the page that belonged to somebody else. Until an owner can
+            put their own dish here, every preview is a demo. */}
+        <PhotoManager draftId={draft.id} gallery={draft.landing.gallery ?? []} />
         <Landing state={fromLandingPage(draft.landing)} />
       </PublishBar>
     </>
