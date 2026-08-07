@@ -44,8 +44,8 @@ export interface RestaurantInput {
   style: RestaurantStyle;
   description: string;
 
-  // Reaching the owner. Shown on the published page as a contact address, which is what a
-  // restaurant site is expected to carry - and how we reach them back during the pilot.
+  // Filled from the account at publish time, never asked for in the public form: a visitor
+  // who has not decided to sign up should not be handing over contact details.
   email: string;
 
   // Optional, and never rendered. Asked because knowing whether a restaurant already has a

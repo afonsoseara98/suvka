@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import RequireAuth from "@/app/components/RequireAuth";
 import {
   CUISINES,
   STYLES,
@@ -31,8 +30,10 @@ const EMPTY: RestaurantInput = {
   hasDelivery: false,
   style: "Modern",
   description: "",
-  email: "",
   language: DEFAULT_LANGUAGE,
+  // Never collected here. The published site uses the account address - see the publish
+  // route - so the public form asks for nothing personal.
+  email: "",
   existingWebsite: "",
 };
 
@@ -86,7 +87,7 @@ function RestaurantForm() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/restaurant", {
+      const response = await fetch("/api/restaurant/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -99,7 +100,8 @@ function RestaurantForm() {
         return;
       }
 
-      router.push(`/editor/${data.id}`);
+      // Straight to the preview. No account yet - that is asked for at Publish.
+      router.push(`/preview/d/${data.id}`);
     } catch (error) {
       console.error(error);
       setFailure("Não foi possível contactar o servidor. Tente novamente.");
@@ -117,8 +119,8 @@ function RestaurantForm() {
 
         <h1 className="mt-6 text-3xl font-bold">O site do seu restaurante</h1>
         <p className="mt-2 text-zinc-400">
-          Tudo o que escrever aqui aparece no site. Mais nada. Não inventamos avaliações,
-          classificações nem números em seu nome.
+          Preencha e veja o site em segundos. Sem conta, sem cartão. Tudo o que escrever
+          aqui aparece no site — e mais nada: não inventamos avaliações nem números em seu nome.
         </p>
 
         <fieldset disabled={submitting} className="contents">
@@ -250,23 +252,6 @@ function RestaurantForm() {
 
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <label className={label} htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                maxLength={LIMITS.email}
-                className={field}
-                value={input.email}
-                onChange={(e) => set("email", e.target.value)}
-                placeholder="reservas@tabernadobairro.pt"
-              />
-              <p className="mt-1 text-xs text-zinc-500">Aparece no site para os clientes o contactarem.</p>
-              {errors.email && <p className={errorText}>{errors.email}</p>}
-            </div>
-
-            <div>
               <label className={label} htmlFor="existingWebsite">
                 Site atual <span className="font-normal text-zinc-500">— opcional</span>
               </label>
@@ -342,10 +327,7 @@ function RestaurantForm() {
   );
 }
 
+// PUBLIC. The account is asked for at Publish, not here - see PublishBar.
 export default function NewRestaurantPage() {
-  return (
-    <RequireAuth>
-      <RestaurantForm />
-    </RequireAuth>
-  );
+  return <RestaurantForm />;
 }
