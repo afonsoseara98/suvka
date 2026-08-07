@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Landing from "@/app/components/Landing";
 import { repos } from "@/app/lib/repos";
 import { loadPublishedSite } from "@/app/lib/publishService";
+import RestaurantSchema from "./RestaurantSchema";
 
 // THE PUBLIC SITE
 //
@@ -69,6 +70,10 @@ export default async function PublishedSitePage({ params }: Props) {
 
   return (
     <main className="min-h-screen">
+      {/* What turns a blue link into a card with the address, the hours and a call button
+          on the phone of someone standing on the street. For a local business that card is
+          the search result that matters. */}
+      <RestaurantSchema state={site.state} siteUrl={`/s/${slug}`} />
       <Landing state={site.state} />
     </main>
   );

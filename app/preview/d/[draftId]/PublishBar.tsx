@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 type Props = {
   draftId: string;
   name: string;
+  children: React.ReactNode;
 };
 
 // PUBLISHING IS WHERE THE ACCOUNT IS ASKED FOR
@@ -15,11 +16,15 @@ type Props = {
 // a reason to sign up; a visitor staring at an empty form has only a cost. The draft id
 // travels through sign-in in the return URL, so coming back lands here with ?publish=1 and
 // the publish happens without them pressing anything twice.
-export default function PublishBar({ draftId, name }: Props) {
+export default function PublishBar({ draftId, name, children }: Props) {
   const { status } = useSession();
   const router = useRouter();
   const params = useSearchParams();
   const [publishing, setPublishing] = useState(false);
+  // Mobile first, and not as a preference: a person looking up a restaurant is almost
+  // always on a phone, and an owner who has only seen their site at 1440px has not seen
+  // what their customers see.
+  const [viewport, setViewport] = useState<"mobile" | "desktop">("mobile");
   const [error, setError] = useState<string | null>(null);
 
   const wantsToPublish = params.get("publish") === "1";
@@ -87,6 +92,21 @@ export default function PublishBar({ draftId, name }: Props) {
 
         {error && <p className="w-full text-sm text-red-400 sm:w-auto">{error}</p>}
 
+        <div className="flex overflow-hidden rounded-lg border border-zinc-700">
+          {(["mobile", "desktop"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setViewport(option)}
+              className={`px-3 py-1.5 text-xs transition ${
+                viewport === option ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              {option === "mobile" ? "Telemóvel" : "Computador"}
+            </button>
+          ))}
+        </div>
+
         <button
           onClick={start}
           disabled={publishing}
@@ -94,6 +114,16 @@ export default function PublishBar({ draftId, name }: Props) {
         >
           {publishing ? "A publicar…" : "Publicar este site"}
         </button>
+      </div>
+
+      {/* A real 375px viewport, not a scaled screenshot, so the clamp()-based type and
+          spacing resolve exactly as they will on a phone. */}
+      <div className={viewport === "mobile" ? "flex justify-center bg-zinc-900 py-6" : ""}>
+        <div
+          className={viewport === "mobile" ? "w-[375px] overflow-hidden rounded-2xl border border-zinc-700 bg-black" : ""}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

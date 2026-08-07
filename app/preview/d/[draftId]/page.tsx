@@ -49,8 +49,9 @@ export default async function DraftPreview({ params }: { params: Promise<{ draft
       {/* The bar is the only thing on the page that is not the restaurant's own site. It
           sits above rather than inside, so what the owner is judging is exactly what a
           customer would see. */}
-      <PublishBar draftId={draft.id} name={draft.input.name} />
-      <Landing state={fromLandingPage(draft.landing)} />
+      <PublishBar draftId={draft.id} name={draft.input.name}>
+        <Landing state={fromLandingPage(draft.landing)} />
+      </PublishBar>
     </>
   );
 }

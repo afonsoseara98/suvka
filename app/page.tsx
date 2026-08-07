@@ -22,6 +22,27 @@ export const metadata: Metadata = {
     "Preencha os dados do seu restaurante e veja o site pronto em segundos. Sem conta, sem cartão. Só cria conta se quiser publicar.",
 };
 
+// The questions a restaurant owner actually asks before spending two minutes on a form.
+// Not feature marketing - the four things that decide whether they start.
+const FAQ = [
+  {
+    q: "Preciso de perceber de computadores?",
+    a: "Não. Preenche um formulário com o nome, a morada, o horário e três pratos. O site aparece feito.",
+  },
+  {
+    q: "Posso ver antes de pagar?",
+    a: "Sim. Cria o site, vê-o todo e envia o link a quem quiser. Só cria conta se decidir publicá-lo.",
+  },
+  {
+    q: "E se quiser mudar alguma coisa depois?",
+    a: "Muda quando quiser. Preços da ementa, horário, telefone — está tudo editável e volta a ficar online.",
+  },
+  {
+    q: "As fotografias são do meu restaurante?",
+    a: "As iniciais são fotografias profissionais de comida, escolhidas pelo tipo de cozinha. Pode substituí-las pelas suas.",
+  },
+];
+
 const STEPS = [
   { n: "1", title: "Preencha os dados", body: "Nome, morada, telefone, horário e três pratos. Dois minutos." },
   { n: "2", title: "Veja o site", body: "Aparece em segundos, com fotografias. Sem conta, sem cartão." },
@@ -78,7 +99,7 @@ export default function Home() {
 
       {/* The one promise worth making on a page like this, because it is the one thing
           every other generator gets wrong: nothing on the finished site is invented. */}
-      <section className="mx-auto max-w-3xl px-6 pb-24 text-center">
+      <section className="mx-auto max-w-3xl px-6 pb-20 text-center">
         <p className="text-lg leading-relaxed text-zinc-300">
           Só aparece no site o que <span className="text-white">você</span> escrever.
         </p>
@@ -88,8 +109,69 @@ export default function Home() {
         </p>
       </section>
 
-      <footer className="border-t border-zinc-900 px-6 py-8 text-center text-sm text-zinc-600">
-        Noctra · Websites para restaurantes
+      {/* The price, stated plainly and early. A restaurant owner deciding whether to spend
+          two minutes on a form wants to know what it costs at the end of them. */}
+      <section className="mx-auto max-w-md px-6 pb-20">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
+          <div className="text-4xl font-bold">
+            19€<span className="text-lg font-normal text-zinc-500">/mês</span>
+          </div>
+          <p className="mt-2 text-sm text-zinc-400">Primeiro mês grátis. Cancela quando quiser.</p>
+
+          <ul className="mt-6 space-y-2 text-left text-sm text-zinc-400">
+            {[
+              "Site publicado e online",
+              "Ementa, morada, horário e telefone",
+              "Fotografias incluídas",
+              "Funciona no telemóvel",
+              "Alterações sempre que precisar",
+            ].map((line) => (
+              <li key={line} className="flex gap-2">
+                <span className="text-zinc-600">·</span>
+                {line}
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href="/new/restaurant"
+            className="mt-8 inline-block w-full rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-zinc-200"
+          >
+            Criar o meu site grátis
+          </Link>
+          <p className="mt-3 text-xs text-zinc-500">Não pedimos cartão para experimentar.</p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-2xl px-6 pb-24">
+        <h2 className="mb-8 text-center text-sm font-medium uppercase tracking-widest text-zinc-500">
+          Perguntas
+        </h2>
+        <dl className="space-y-6">
+          {FAQ.map((item) => (
+            <div key={item.q} className="border-b border-zinc-900 pb-6">
+              <dt className="font-semibold">{item.q}</dt>
+              <dd className="mt-2 text-sm leading-relaxed text-zinc-400">{item.a}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <footer className="border-t border-zinc-900 px-6 py-10">
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-sm text-zinc-600 sm:flex-row sm:justify-between">
+          <span>Noctra · Websites para restaurantes</span>
+          <nav className="flex gap-6">
+            <a href="mailto:ola@noctra.pt" className="transition hover:text-zinc-300">
+              Contacto
+            </a>
+            <Link href="/termos" className="transition hover:text-zinc-300">
+              Termos
+            </Link>
+            <Link href="/privacidade" className="transition hover:text-zinc-300">
+              Privacidade
+            </Link>
+          </nav>
+        </div>
       </footer>
     </main>
   );
