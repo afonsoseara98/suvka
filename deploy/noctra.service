@@ -1,0 +1,40 @@
+# Runs the Next server and brings it back if it dies. Install with:
+#
+#   sudo cp deploy/noctra.service /etc/systemd/system/noctra.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now noctra
+
+[Unit]
+Description=Noctra
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=noctra
+WorkingDirectory=/srv/noctra
+
+# Secrets live in a file readable only by the service user, never in this unit and never
+# in the repository. See deploy/README.md.
+EnvironmentFile=/srv/noctra/.env.production
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+ExecStart=/usr/bin/npm run start
+
+Restart=always
+RestartSec=3
+
+# ONE PROCESS, DELIBERATELY.
+#
+# Drafts live in memory (app/lib/restaurant/draftStore.ts) - a second worker would hold a
+# different map, and a visitor who generated a site on worker A would get a 404 opening
+# their own preview from worker B. Scaling past one process means moving drafts to Redis
+# first, not adding workers here.
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=noctra
+
+[Install]
+WantedBy=multi-user.target
