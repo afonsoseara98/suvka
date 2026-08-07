@@ -4,16 +4,18 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 
-// Signing in is no longer the front door - see app/page.tsx. This page exists for the
-// two moments an account genuinely buys something: coming back to a site you already
-// made, and publishing one you just generated.
+// Signing in is no longer the front door - see app/page.tsx. This page exists for the two
+// moments an account genuinely buys something: coming back to a site you already made, and
+// publishing one you just generated.
 //
-// The copy speaks to a restaurant owner, not to a developer. It used to read
-// "Continue building AI-powered websites that convert", which is a sentence nobody who
-// runs a restaurant has ever said. They think about bookings, or about looking good on
-// a phone.
-function SignInForm() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+// PUBLISHING IS A DIFFERENT VISIT FROM SIGNING IN
+//
+// Someone arriving here from a preview has just watched their restaurant appear on screen
+// and pressed Publish. They have never used this before, so they have no account - and the
+// page opened on "Entrar", which meant typing an email, being told the password was wrong,
+// and leaving. The default was right for the returning owner and wrong for every new one.
+function SignInForm({ publishing }: { publishing: boolean }) {
+  const [mode, setMode] = useState<"signin" | "signup">(publishing ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -42,8 +44,8 @@ function SignInForm() {
       if (result?.error) {
         setError("Email ou palavra-passe incorretos.");
       }
-      // On success, useSession()'s status flips to "authenticated" and Home's own
-      // effect below redirects to /dashboard - no navigation needed here.
+      // On success useSession() flips to "authenticated" and SignInRoute's effect below
+      // sends them where they were going - back to the preview, which publishes on arrival.
     } catch (err) {
       console.error(err);
       setError("Não foi possível contactar o servidor.");
@@ -55,18 +57,31 @@ function SignInForm() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-black text-white">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-        <h1 className="text-2xl font-bold">{mode === "signin" ? "Entre na sua conta" : "Crie a sua conta"}</h1>
+        {/* Says where they are in what they were already doing. Someone who pressed Publish
+            is not "signing up for Noctra", they are finishing one action. */}
+        <h1 className="text-2xl font-bold">
+          {publishing ? "Quase lá." : mode === "signin" ? "Entre na sua conta" : "Crie a sua conta"}
+        </h1>
         <p className="mt-2 text-sm text-zinc-400">
-          {mode === "signin" ? "Para gerir o website do seu restaurante." : "Para guardar e publicar o site que acabou de criar."}
+          {publishing
+            ? mode === "signup"
+              ? "Crie uma conta para publicar o seu site. Só precisamos de duas coisas."
+              : "Entre para publicar o seu site."
+            : mode === "signin"
+              ? "Para gerir o website do seu restaurante."
+              : "Para guardar e publicar o site que acabou de criar."}
         </p>
 
         <div className="mt-6 space-y-3">
-          {mode === "signup" && (
+          {/* Asked for only when someone is deliberately creating an account rather than
+              finishing a publish. Every field between pressing Publish and the site being
+              live is a field somebody abandons at. */}
+          {mode === "signup" && !publishing && (
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Name (optional)"
+              placeholder="Nome (opcional)"
               className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
             />
           )}
@@ -102,7 +117,15 @@ function SignInForm() {
           disabled={submitting || !email || !password}
           className="mt-6 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
         >
-          {submitting ? "Um momento…" : mode === "signin" ? "Entrar" : "Criar conta"}
+          {submitting
+            ? "Um momento…"
+            : publishing
+              ? mode === "signup"
+                ? "Criar conta e publicar"
+                : "Entrar e publicar"
+              : mode === "signin"
+                ? "Entrar"
+                : "Criar conta"}
         </button>
 
         <button
@@ -125,6 +148,11 @@ function SignInRoute() {
 
   const params = useSearchParams();
 
+  // Someone sent here by the Publish button, rather than someone signing in to come back.
+  // The two visits want different defaults and different words.
+  const next = params.get("next") ?? "";
+  const publishing = next.includes("publish=1");
+
   useEffect(() => {
     if (status !== "authenticated") return;
 
@@ -132,14 +160,13 @@ function SignInRoute() {
     // Sending them anywhere else loses the site they just made, as far as they can tell.
     // Only relative paths are honoured: an open redirect here would let a phishing link
     // borrow our sign-in page and bounce the person somewhere else afterwards.
-    const next = params.get("next");
     const safe = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
     router.replace(safe);
-  }, [status, router, params]);
+  }, [status, router, next]);
 
   if (status !== "authenticated") {
     return status === "unauthenticated" ? (
-      <SignInForm />
+      <SignInForm publishing={publishing} />
     ) : (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
         <p className="text-zinc-400">Um momento…</p>
