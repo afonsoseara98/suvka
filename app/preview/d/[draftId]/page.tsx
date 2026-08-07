@@ -8,12 +8,33 @@ import PublishBar from "./PublishBar";
 
 export const dynamic = "force-dynamic";
 
-// Never indexed. This is somebody's unpublished draft at a URL they have not chosen, and a
-// search engine holding a copy of it - or of an abandoned one - is a URL the owner never
+// The whole point of this URL is that it gets sent to somebody - a business partner, a
+// husband, the person who works the floor. Whatever WhatsApp or Messenger shows in the link
+// card IS the first impression, and it was showing "Noctra - AI Conversion System": our
+// product name, in English, in SaaS language, on what is supposed to be their restaurant.
+//
+// Never indexed, though. This is an unpublished draft at a URL the owner did not choose,
+// and a search engine holding a copy of it - or of an abandoned one - is a page they never
 // agreed to and cannot take down.
-export const metadata: Metadata = {
-  robots: { index: false, follow: false, nocache: true },
-};
+export async function generateMetadata({ params }: { params: Promise<{ draftId: string }> }): Promise<Metadata> {
+  const { draftId } = await params;
+  const draft = await draftStore.get(draftId);
+  const robots = { index: false, follow: false, nocache: true } as const;
+
+  if (!draft) return { title: "Pré-visualização expirada", robots };
+
+  const seo = draft.landing.site?.seo;
+  return {
+    title: seo?.title || draft.input.name,
+    description: seo?.description,
+    robots,
+    openGraph: {
+      title: seo?.ogTitle || draft.input.name,
+      description: seo?.ogDescription || seo?.description,
+      type: "website",
+    },
+  };
+}
 
 export default async function DraftPreview({ params }: { params: Promise<{ draftId: string }> }) {
   const { draftId } = await params;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,7 +14,7 @@ import {
   type FieldErrors,
   type RestaurantInput,
 } from "@/app/lib/restaurant/input";
-import { LANGUAGES, DEFAULT_LANGUAGE, type SiteLanguage } from "@/app/lib/restaurant/labels";
+import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, type SiteLanguage } from "@/app/lib/restaurant/labels";
 
 const EMPTY: RestaurantInput = {
   name: "",
@@ -52,6 +52,12 @@ function RestaurantForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+
+  // A client component cannot export metadata. Without this the tab read "Noctra —
+  // Websites para restaurantes" while the person was already filling in their own.
+  useEffect(() => {
+    document.title = "O site do seu restaurante — Noctra";
+  }, []);
 
   function set<K extends keyof RestaurantInput>(key: K, value: RestaurantInput[K]) {
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -125,7 +131,9 @@ function RestaurantForm() {
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-2xl px-6 py-12">
-        <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white">
+        {/* Home, not the dashboard: this form is public, and an anonymous visitor who
+            clicks Back should not land on a sign-in wall. */}
+        <Link href="/" className="text-sm text-zinc-500 hover:text-white">
           ← Voltar
         </Link>
 
@@ -153,7 +161,7 @@ function RestaurantForm() {
               <select id="cuisine" className={field} value={input.cuisine} onChange={(e) => set("cuisine", e.target.value as RestaurantInput["cuisine"])}>
                 {CUISINES.map((cuisine) => (
                   <option key={cuisine} value={cuisine}>
-                    {cuisine}
+                    {cuisineName(cuisine, input.language)}
                   </option>
                 ))}
               </select>
@@ -166,7 +174,7 @@ function RestaurantForm() {
               <select id="style" className={field} value={input.style} onChange={(e) => set("style", e.target.value as RestaurantInput["style"])}>
                 {STYLES.map((style) => (
                   <option key={style} value={style}>
-                    {style}
+                    {styleName(style)}
                   </option>
                 ))}
               </select>

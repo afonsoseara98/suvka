@@ -309,3 +309,62 @@ describe("the public form's own payload", () => {
     expect(firstErrorField(errors)).toBe("phone");
   });
 });
+
+// Every one of these was a decision of mine that only surfaces when a real Portuguese owner
+// uses the product: an English word on a site whose readers are looking for dinner in Porto.
+describe("nothing English reaches a Portuguese restaurant's site", () => {
+  const pt = (overrides: Partial<RestaurantInput> = {}) =>
+    buildRestaurantPage(input({ language: "pt", ...overrides }), { hero: null, gallery: [] });
+
+  it("names the cuisine in Portuguese on the badge", () => {
+    expect(pt({ cuisine: "Portuguese" }).hero.badge).toBe("Cozinha portuguesa");
+    expect(pt({ cuisine: "Italian" }).hero.badge).toBe("Cozinha italiana");
+    expect(pt({ cuisine: "Fine dining" }).hero.badge).toBe("Alta cozinha");
+  });
+
+  it("writes a page title the owner would recognise", () => {
+    // This is what shows in a browser tab and in Google. "Taberna do Bairro — Portuguese
+    // restaurant" is not a title a Portuguese restaurant would choose for itself.
+    // Reads as Portuguese, and agrees in gender - "restaurante portuguesa" does not.
+    expect(pt().site.seo.title).toBe("Taberna do Bairro — Cozinha portuguesa");
+  });
+
+  it("falls back to a Portuguese sentence when the owner writes no description", () => {
+    expect(pt({ description: "" }).hero.subtitle).toBe("Cozinha portuguesa.");
+  });
+
+  it("still speaks English when the owner asked for English", () => {
+    const en = buildRestaurantPage(input({ language: "en", description: "" }), { hero: null, gallery: [] });
+    expect(en.hero.badge).toBe("Portuguese");
+    expect(en.hero.subtitle).toBe("Portuguese cooking.");
+  });
+
+  it("leaves no English anywhere a customer reads", () => {
+    // Only what a visitor reads - keywords are metadata and deliberately keep the English
+    // cuisine key so search still matches it.
+    const page = JSON.stringify({ hero: pt().hero, hours: pt().hours, title: pt().site.seo.title });
+    for (const word of ["Find us", "Call to book", "Address", "Hours", "Phone", "cooking"]) {
+      expect(page, word).not.toContain(word);
+    }
+    expect(page).not.toMatch(/restaurant/);
+  });
+});
+
+// The owner ticked a box and nothing happened. It fed a fallback sentence that anyone who
+// wrote their own description never saw, so the question was asked and the answer discarded.
+describe("takeaway is answered on the page", () => {
+  it("tells customers they can collect", () => {
+    const built = buildRestaurantPage(input({ hasDelivery: true, language: "pt" }), { hero: null, gallery: [] });
+    expect(built.hours?.schedule).toContain("Take-away e entregas");
+  });
+
+  it("says nothing when the restaurant does not do it", () => {
+    const built = buildRestaurantPage(input({ hasDelivery: false, language: "pt" }), { hero: null, gallery: [] });
+    expect(built.hours?.schedule).not.toContain("Take-away");
+  });
+
+  it("keeps the owner's own hours untouched either way", () => {
+    const built = buildRestaurantPage(input({ hasDelivery: true }), { hero: null, gallery: [] });
+    expect(built.hours?.schedule).toContain("Tue-Sun 12:00-22:30");
+  });
+});

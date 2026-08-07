@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Noctra - AI Conversion System",
+  // The browser tab, on every page that does not set its own. "AI Conversion System" is
+  // what we call it internally; a restaurant owner filling in the form saw it in their tab
+  // and it told them nothing about what they were doing.
+  title: "Noctra — Websites para restaurantes",
   description:
     "Noctra generates high-converting landing pages using AI-driven business analysis, psychology and conversion strategy - not just a website builder.",
 };

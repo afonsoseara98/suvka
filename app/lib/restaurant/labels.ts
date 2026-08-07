@@ -23,6 +23,65 @@ export interface SiteLabels {
   phone: string;
   callToBook: string;
   seeMenu: string;
+
+  // The word for the business itself, used in the page title a customer sees in their
+  // browser tab and in Google. "Taberna do Bairro — Portuguese restaurant" is not a title a
+  // Portuguese restaurant would ever choose for itself.
+  restaurant: string;
+
+  // Shown when the owner ticked takeaway. Before this it changed nothing they could see:
+  // it fed a fallback sentence that any owner who wrote a description never saw, so the
+  // question was being asked and the answer discarded.
+  takeaway: string;
+
+  // Only used when the owner leaves the description blank.
+  fallbackSubtitle: (cuisine: string) => string;
+}
+
+// Cuisines are stored in English because that is the stable key the image queries and the
+// warmth table are written against. What the owner and their customers SEE has to be their
+// own language - a Portuguese restaurant badged "✨ Portuguese" reads as a translation of
+// itself.
+const CUISINE_NAMES: Record<SiteLanguage, Record<string, string>> = {
+  pt: {
+    Portuguese: "Cozinha portuguesa",
+    Italian: "Cozinha italiana",
+    Japanese: "Cozinha japonesa",
+    "Fast-casual": "Refeições rápidas",
+    Café: "Café",
+    "Fine dining": "Alta cozinha",
+    Burgers: "Hambúrgueres",
+    Pizza: "Pizzaria",
+  },
+  en: {
+    Portuguese: "Portuguese",
+    Italian: "Italian",
+    Japanese: "Japanese",
+    "Fast-casual": "Fast-casual",
+    Café: "Café",
+    "Fine dining": "Fine dining",
+    Burgers: "Burgers",
+    Pizza: "Pizza",
+  },
+};
+
+export function cuisineName(cuisine: string, language: SiteLanguage): string {
+  return CUISINE_NAMES[language]?.[cuisine] ?? cuisine;
+}
+
+// Only ever shown in the form. The site never prints the style - it is expressed as the
+// design - so this exists purely so the owner is choosing between words they recognise.
+const STYLE_NAMES_PT: Record<string, string> = {
+  Modern: "Moderno",
+  Classic: "Clássico",
+  Minimal: "Minimalista",
+  Rustic: "Rústico",
+  Elegant: "Elegante",
+  Casual: "Descontraído",
+};
+
+export function styleName(style: string): string {
+  return STYLE_NAMES_PT[style] ?? style;
 }
 
 const LABELS: Record<SiteLanguage, SiteLabels> = {
@@ -34,6 +93,9 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     phone: "Telefone",
     callToBook: "Ligar para reservar",
     seeMenu: "Ver a ementa",
+    restaurant: "Restaurante",
+    takeaway: "Take-away e entregas",
+    fallbackSubtitle: (cuisine) => `${cuisine}.`,
   },
   en: {
     menu: "Menu",
@@ -43,6 +105,9 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     phone: "Phone",
     callToBook: "Call to book",
     seeMenu: "See the menu",
+    restaurant: "Restaurant",
+    takeaway: "Takeaway and delivery",
+    fallbackSubtitle: (cuisine) => `${cuisine} cooking.`,
   },
 };
 

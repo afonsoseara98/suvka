@@ -4,7 +4,7 @@ import type { ResolvedImage } from "@/app/ai/types/visual";
 import { DEFAULT_DNA } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
-import { labelsFor } from "./labels";
+import { labelsFor, cuisineName } from "./labels";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -83,19 +83,20 @@ export function buildRestaurantPage(
   images: { hero: ResolvedImage | null; gallery: ResolvedImage[] }
 ): LandingPage {
   const labels = labelsFor(input.language);
+  // What the owner and their customers read. The stored value stays English because it is
+  // the key the image queries and the warmth table are written against.
+  const cuisine = cuisineName(input.cuisine, input.language);
   const gallery = images.gallery.map((image) => ({ url: image.url, alt: image.alt, credit: image.credit }));
 
-  const subtitle =
-    input.description ||
-    `${input.cuisine} cooking${input.hasDelivery ? ", eat in or take away" : ""}.`;
+  const subtitle = input.description || labels.fallbackSubtitle(cuisine);
 
   return {
     dna: dnaForRestaurant(input),
     site: {
       seo: {
-        title: `${input.name} — ${input.cuisine} restaurant`,
+        title: `${input.name} — ${cuisine}`,
         description: subtitle,
-        keywords: [input.cuisine.toLowerCase(), "restaurant"],
+        keywords: [cuisine.toLowerCase(), labels.restaurant.toLowerCase(), input.cuisine.toLowerCase()],
         ogTitle: input.name,
         ogDescription: subtitle,
       },
@@ -104,7 +105,7 @@ export function buildRestaurantPage(
     },
     sections: sectionsFor(input, gallery.length),
     hero: {
-      badge: input.cuisine,
+      badge: cuisine,
       title: input.name,
       // Emphasise the last word of the name, which is usually the distinctive one.
       highlightWord: input.name.trim().split(/\s+/).slice(-1)[0] ?? "",
@@ -125,7 +126,7 @@ export function buildRestaurantPage(
         treatment: "photo",
         subject: `${input.cuisine.toLowerCase()} restaurant plated dish`,
         alternateSubjects: ["restaurant food", "restaurant interior"],
-        alt: `${input.name} — ${input.cuisine} cooking`,
+        alt: `${input.name} — ${cuisine}`,
         orientation: "landscape",
         variantSeed: 0,
         scene: "website",
@@ -145,7 +146,11 @@ export function buildRestaurantPage(
     hoursTitle: labels.findUs,
     gallery,
     hours: {
-      schedule: input.schedule,
+      // Takeaway used to change nothing the owner could see: it fed a fallback sentence
+      // that anyone who wrote their own description never saw. The question was asked and
+      // the answer thrown away. It belongs here, next to the address and the hours, because
+      // "can I collect?" is the same kind of question as "when are you open?".
+      schedule: input.hasDelivery ? `${input.schedule}\n\n${labels.takeaway}` : input.schedule,
       address: input.address,
       phone: input.phone,
       labels: { address: labels.address, hours: labels.hours, phone: labels.phone },

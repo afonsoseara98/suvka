@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 
@@ -119,7 +119,7 @@ function SignInForm() {
   );
 }
 
-export default function Home() {
+function SignInRoute() {
   const { status } = useSession();
   const router = useRouter();
 
@@ -142,16 +142,33 @@ export default function Home() {
       <SignInForm />
     ) : (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        <p className="text-zinc-400">Loading...</p>
+        <p className="text-zinc-400">Um momento…</p>
       </main>
     );
   }
 
-  // Authenticated: the effect above is already redirecting to /dashboard - this is only
-  // ever visible for the one frame between the redirect firing and the route changing.
+  // Authenticated: the effect above is already redirecting - this is only ever visible for
+  // the one frame between the redirect firing and the route changing.
   return (
     <main className="flex min-h-screen items-center justify-center bg-black text-white">
-      <p className="text-zinc-400">Loading...</p>
+      <p className="text-zinc-400">Um momento…</p>
     </main>
+  );
+}
+
+// useSearchParams needs a Suspense boundary or the page cannot be prerendered - it broke
+// the build the moment ?next= was added. The fallback is what shows for the instant before
+// the query string is readable, so it says the same thing the loading state says.
+export default function Entrar() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-black text-white">
+          <p className="text-zinc-400">Um momento…</p>
+        </main>
+      }
+    >
+      <SignInRoute />
+    </Suspense>
   );
 }
