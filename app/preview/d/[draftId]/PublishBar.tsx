@@ -56,7 +56,7 @@ export default function PublishBar({ draftId, name }: Props) {
     }
     // Carry the draft through sign-in. Without the return URL the person lands on a
     // dashboard and their site is gone as far as they can tell.
-    router.push(`/?next=${encodeURIComponent(`/preview/d/${draftId}?publish=1`)}`);
+    router.push(`/entrar?next=${encodeURIComponent(`/preview/d/${draftId}?publish=1`)}`);
   }
 
   // Coming back from sign-in: finish what they already asked for, rather than making them

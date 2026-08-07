@@ -1,4 +1,5 @@
-import { randomUUID } from "crypto";
+import { randomBytes } from "crypto";
+import { slugify } from "@/app/lib/publishService";
 import type { RestaurantInput } from "./input";
 import type { LandingPage } from "@/app/types/landing";
 
@@ -36,6 +37,21 @@ export interface DraftStore {
 // short enough that nothing is quietly retained about a person who never signed up.
 export const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 
+// A link somebody will actually send to their business partner.
+//
+// A raw UUID is unguessable but unsendable - nobody forwards
+// /preview/d/9ec347dc-5c8c-4cd7-b0cf-54e05bdd81e4 and expects to be taken seriously. A bare
+// name is sendable but enumerable: anyone could walk the list, and worse, could generate a
+// fake site for a real restaurant at the URL that restaurant would predict.
+//
+// Name plus a short random suffix is both. Six hex characters is 16 million per name -
+// enough that guessing is pointless, short enough that the link still reads as the
+// restaurant's own.
+export function previewId(name: string): string {
+  const base = slugify(name) || "site";
+  return `${base}-${randomBytes(3).toString("hex")}`;
+}
+
 export class InMemoryDraftStore implements DraftStore {
   private readonly drafts = new Map<string, Draft>();
 
@@ -44,9 +60,7 @@ export class InMemoryDraftStore implements DraftStore {
   async create(input: RestaurantInput, landing: LandingPage): Promise<Draft> {
     this.evictExpired();
 
-    // A UUID, not a sequential id: the preview URL is the only thing protecting a draft,
-    // and a guessable one would let anyone enumerate other people's unpublished sites.
-    const draft: Draft = { id: randomUUID(), input, landing, createdAt: this.now() };
+    const draft: Draft = { id: previewId(input.name), input, landing, createdAt: this.now() };
     this.drafts.set(draft.id, draft);
     return draft;
   }

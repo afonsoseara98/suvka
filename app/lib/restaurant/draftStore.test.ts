@@ -13,15 +13,24 @@ describe("draft store", () => {
     expect((await store.get(draft.id))?.input.name).toBe("Taberna do Bairro");
   });
 
-  it("gives every draft an unguessable id", async () => {
-    // The preview URL is the only thing protecting a draft. A sequential id would let
-    // anyone walk through other people's unpublished sites.
+  it("gives a link somebody can actually send, that nobody can guess", async () => {
+    // Both properties matter and they pull against each other. A raw UUID is unguessable
+    // and unsendable; a bare name is sendable and would let anyone generate a fake site
+    // for a real restaurant at the URL that restaurant would predict.
     const store = new InMemoryDraftStore();
     const ids = new Set<string>();
     for (let i = 0; i < 50; i++) ids.add((await store.create(input, landing)).id);
 
     expect(ids.size).toBe(50);
-    for (const id of ids) expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-/);
+    for (const id of ids) {
+      expect(id, "reads as the restaurant's own").toMatch(/^taberna-do-bairro-[0-9a-f]{6}$/);
+    }
+  });
+
+  it("still produces a usable id for a name that slugifies to nothing", async () => {
+    const store = new InMemoryDraftStore();
+    const draft = await store.create({ name: "***" } as RestaurantInput, landing);
+    expect(draft.id).toMatch(/^site-[0-9a-f]{6}$/);
   });
 
   it("forgets a draft nobody claimed", async () => {

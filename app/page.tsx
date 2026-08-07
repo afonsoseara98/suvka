@@ -1,144 +1,96 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+// THE FRONT DOOR
+//
+// This page used to be the sign-in form. Someone arriving from an ad was met with "Welcome
+// back", an email box and a password box, before knowing what this was, what they would
+// get, how long it takes or what it costs. They were being asked for commitment before
+// being shown anything.
+//
+// Now the first thing anyone sees is what they came for and a way to start. The account is
+// asked for at the one moment it buys something - publishing - which is the flow the rest
+// of the app already implements: /new/restaurant, /api/restaurant/draft and
+// /preview/d/[id] all work with no session at all.
+//
+// Everything on this page is aimed at a restaurant owner. Not "AI-powered websites that
+// convert" - a phrase nobody who runs a restaurant has ever said - but the three things
+// they actually care about: it is theirs, it takes minutes, it costs nothing to try.
+export const metadata: Metadata = {
+  title: "Website para o seu restaurante, em minutos — Noctra",
+  description:
+    "Preencha os dados do seu restaurante e veja o site pronto em segundos. Sem conta, sem cartão. Só cria conta se quiser publicar.",
+};
 
-// Functional only, no design pass - the point of this pass is the auth/persistence
-// wiring, not the sign-in experience. Toggles between sign-in and sign-up against the
-// Credentials provider (auth.ts) / the custom /api/auth/signup route.
-function SignInForm() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSubmit() {
-    setError(null);
-    setSubmitting(true);
-
-    try {
-      if (mode === "signup") {
-        const response = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, name: name || undefined }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setError(data.message || "Could not create your account.");
-          return;
-        }
-      }
-
-      const result = await signIn("credentials", { email, password, redirect: false });
-      if (result?.error) {
-        setError("Invalid email or password.");
-      }
-      // On success, useSession()'s status flips to "authenticated" and Home's own
-      // effect below redirects to /dashboard - no navigation needed here.
-    } catch (err) {
-      console.error(err);
-      setError("Unable to contact the server.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-black text-white">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-        <h1 className="text-2xl font-bold">{mode === "signin" ? "Welcome back." : "Create your first AI website in under 60 seconds."}</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          {mode === "signin" ? "Continue building AI-powered websites that convert." : "Sign up to start generating."}
-        </p>
-
-        <div className="mt-6 space-y-3">
-          {mode === "signup" && (
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Name (optional)"
-              className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
-            />
-          )}
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            aria-label="Email"
-            className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            aria-label="Password"
-            className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSubmit();
-            }}
-          />
-        </div>
-
-        {error && (
-          <p role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-            {error}
-          </p>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || !email || !password}
-          className="mt-6 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
-        >
-          {submitting ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
-        </button>
-
-        <button
-          onClick={() => {
-            setMode(mode === "signin" ? "signup" : "signin");
-            setError(null);
-          }}
-          className="mt-4 w-full text-center text-sm text-zinc-400 hover:text-white"
-        >
-          {mode === "signin" ? "No account yet? Sign up" : "Already have an account? Sign in"}
-        </button>
-      </div>
-    </main>
-  );
-}
+const STEPS = [
+  { n: "1", title: "Preencha os dados", body: "Nome, morada, telefone, horário e três pratos. Dois minutos." },
+  { n: "2", title: "Veja o site", body: "Aparece em segundos, com fotografias. Sem conta, sem cartão." },
+  { n: "3", title: "Publique", body: "Se gostar, cria conta e fica online. Se não, fecha a página." },
+];
 
 export default function Home() {
-  const { status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/dashboard");
-    }
-  }, [status, router]);
-
-  if (status !== "authenticated") {
-    return status === "unauthenticated" ? (
-      <SignInForm />
-    ) : (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        <p className="text-zinc-400">Loading...</p>
-      </main>
-    );
-  }
-
-  // Authenticated: the effect above is already redirecting to /dashboard - this is only
-  // ever visible for the one frame between the redirect firing and the route changing.
   return (
-    <main className="flex min-h-screen items-center justify-center bg-black text-white">
-      <p className="text-zinc-400">Loading...</p>
+    <main className="min-h-screen bg-black text-white">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
+        <span className="text-lg font-bold">Noctra</span>
+        <Link href="/entrar" className="text-sm text-zinc-400 transition hover:text-white">
+          Entrar
+        </Link>
+      </header>
+
+      <section className="mx-auto max-w-3xl px-6 pb-16 pt-10 text-center sm:pt-20">
+        <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">Para restaurantes</p>
+
+        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
+          O website do seu restaurante,
+          <br className="hidden sm:block" /> pronto em minutos
+        </h1>
+
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
+          Ementa, morada, horário e telefone — no telemóvel dos seus clientes. Veja o site
+          antes de decidir seja o que for.
+        </p>
+
+        {/* The only prominent action on the page, and it leads to the product rather than
+            to a form about the product. */}
+        <div className="mt-10">
+          <Link
+            href="/new/restaurant"
+            className="inline-block rounded-xl bg-white px-8 py-4 text-base font-semibold text-black transition hover:bg-zinc-200"
+          >
+            Criar o meu site gratuitamente
+          </Link>
+          <p className="mt-3 text-sm text-zinc-500">Sem conta. Sem cartão. Vê o resultado primeiro.</p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-6 pb-20">
+        <div className="grid gap-6 sm:grid-cols-3">
+          {STEPS.map((step) => (
+            <div key={step.n} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+              <div className="text-sm font-semibold text-zinc-500">{step.n}</div>
+              <h2 className="mt-3 text-lg font-semibold">{step.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* The one promise worth making on a page like this, because it is the one thing
+          every other generator gets wrong: nothing on the finished site is invented. */}
+      <section className="mx-auto max-w-3xl px-6 pb-24 text-center">
+        <p className="text-lg leading-relaxed text-zinc-300">
+          Só aparece no site o que <span className="text-white">você</span> escrever.
+        </p>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-500">
+          Não inventamos avaliações, estrelas nem números de clientes. O site diz o que o seu
+          restaurante é — não o que um computador imaginou.
+        </p>
+      </section>
+
+      <footer className="border-t border-zinc-900 px-6 py-8 text-center text-sm text-zinc-600">
+        Noctra · Websites para restaurantes
+      </footer>
     </main>
   );
 }
