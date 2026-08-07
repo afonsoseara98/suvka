@@ -219,3 +219,27 @@ model Asset {
 
   @@index([projectId])
 }
+
+// A generated site that nobody owns yet.
+//
+// Drafts lived in memory until now, which meant every deploy and every crash silently
+// destroyed the work of anyone mid-flow: they had filled the form, watched their restaurant
+// appear, sent the link to a partner - and the link 404s. For a closed beta with two real
+// restaurants that is not an edge case, it is the first thing that happens the first time
+// we deploy during service.
+//
+// Still not a Project. This row is deliberately shallow and disposable: no owner, no
+// relations, no cascade, and it is deleted the moment someone claims it. An anonymous
+// visitor who never returns leaves one row that a sweep removes after 24 hours.
+model Draft {
+  id        String   @id
+  // The nine form fields and the built page, exactly as the in-memory store held them.
+  // Stored as JSON rather than modelled: nothing queries inside a draft, and giving it a
+  // schema would mean migrating abandoned rows every time the form changes.
+  input     Json
+  landing   Json
+  createdAt DateTime @default(now())
+
+  // Swept by expiry, so the index is on the only thing ever filtered.
+  @@index([createdAt])
+}

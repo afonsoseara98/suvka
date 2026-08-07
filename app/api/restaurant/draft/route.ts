@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createImageProvider, resolveImageSafely } from "@/app/lib/images";
-import { getGenerateRateLimiter } from "@/app/lib/rateLimit";
+import { getRateLimiter, DRAFT_LIMIT, DRAFT_WINDOW_MS } from "@/app/lib/rateLimit";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import { validateRestaurantInput, isValid, normaliseRestaurantInput, type RestaurantInput } from "@/app/lib/restaurant/input";
 import { buildRestaurantPage, imageQueriesFor } from "@/app/lib/restaurant/buildPage";
@@ -23,10 +23,10 @@ export async function POST(request: Request) {
     request.headers.get("x-real-ip") ||
     "unknown";
 
-  const { allowed, retryAfterSeconds } = await getGenerateRateLimiter().check(`draft:${ip}`);
+  const { allowed, retryAfterSeconds } = await getRateLimiter("draft", DRAFT_LIMIT, DRAFT_WINDOW_MS).check(ip);
   if (!allowed) {
     return NextResponse.json(
-      { success: false, message: `Demasiados pedidos. Tente novamente em ${retryAfterSeconds} segundos.` },
+      { success: false, message: `Já criou vários sites nesta hora. Tente novamente em ${Math.ceil(retryAfterSeconds / 60)} minutos.` },
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
     );
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getGenerateRateLimiter } from "@/app/lib/rateLimit";
+import { getRateLimiter, PHOTO_LIMIT, PHOTO_WINDOW_MS } from "@/app/lib/rateLimit";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import { photoStore } from "@/app/lib/restaurant/photoStore";
 import { rejectPhoto, MAX_PHOTOS, isOwnPhoto, UPLOAD_PREFIX } from "@/app/lib/restaurant/photoLimits";
@@ -21,10 +21,10 @@ function clientKey(request: Request): string {
 }
 
 export async function POST(request: Request) {
-  const { allowed, retryAfterSeconds } = await getGenerateRateLimiter().check(`photo:${clientKey(request)}`);
+  const { allowed, retryAfterSeconds } = await getRateLimiter("photo", PHOTO_LIMIT, PHOTO_WINDOW_MS).check(clientKey(request));
   if (!allowed) {
     return NextResponse.json(
-      { success: false, message: `Demasiados envios. Tente novamente em ${retryAfterSeconds} segundos.` },
+      { success: false, message: `Enviou muitas fotografias nesta hora. Tente novamente em ${Math.ceil(retryAfterSeconds / 60)} minutos.` },
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
     );
   }
@@ -64,7 +64,10 @@ export async function POST(request: Request) {
     const stock = existing.filter((image) => !isOwnPhoto(image.url));
     const gallery = [...owned, uploaded, ...stock].slice(0, MAX_PHOTOS);
 
+    // Written back explicitly. With the in-memory store this was a reference and mutating
+    // it was enough; against the database the change would have been silently discarded.
     draft.landing.gallery = gallery;
+    await draftStore.update(draft.id, draft.landing);
 
     return NextResponse.json({ gallery, uploaded: owned.length + 1 }, { status: 201 });
   } catch (error) {
@@ -84,6 +87,7 @@ export async function DELETE(request: Request) {
 
     const existing = (draft.landing.gallery ?? []) as GalleryImage[];
     draft.landing.gallery = existing.filter((image) => image.url !== url);
+    await draftStore.update(draft.id, draft.landing);
 
     // Only ever removes files this store created. A URL pointing anywhere else is left
     // alone rather than being turned into a filesystem path.
