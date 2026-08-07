@@ -252,3 +252,60 @@ describe("errors a real owner can act on", () => {
     expect(firstErrorField(validateRestaurantInput(input()))).toBeNull();
   });
 });
+
+// THE BUG THIS EXISTS FOR
+//
+// The public form asks for nine things and an email is not one of them - it comes from the
+// account at publish time. Validating it as if it did produced an error for a field with no
+// input on screen, so the message had nowhere to render, the submit returned early, and
+// pressing "Criar o meu site" did nothing whatsoever. No request, no error, no loading
+// state. 765 tests passed while the button was dead, because every one of them called the
+// validator with an email present.
+describe("the public form's own payload", () => {
+  // Exactly what app/new/restaurant/page.tsx sends: every field it collects, and nothing
+  // it does not.
+  const publicFormPayload = {
+    name: "Taberna do Bairro",
+    cuisine: "Portuguese" as const,
+    address: "Rua das Flores 112, Porto",
+    phone: "+351 220 145 880",
+    schedule: "Terça a domingo 12:00-22:30",
+    dishes: [{ name: "Bacalhau", price: "18,50 €", description: "" }],
+    hasDelivery: false,
+    style: "Rustic" as const,
+    description: "",
+    language: "pt" as const,
+    existingWebsite: "",
+    email: "",
+  };
+
+  it("passes validation, so the button actually submits", () => {
+    const errors = validateRestaurantInput(publicFormPayload, { requireEmail: false });
+    expect(errors).toEqual({});
+    expect(isValid(errors)).toBe(true);
+  });
+
+  it("never produces an error for a field the form does not show", () => {
+    // The general form of the defect: an error the person cannot see and cannot fix.
+    const errors = validateRestaurantInput(publicFormPayload, { requireEmail: false });
+    expect(errors.email).toBeUndefined();
+  });
+
+  it("still requires an email where one is actually asked for", () => {
+    expect(validateRestaurantInput(publicFormPayload).email).toBeTruthy();
+  });
+
+  it("keeps every other rule intact on the public form", () => {
+    // Relaxing the email requirement must not relax anything else.
+    expect(validateRestaurantInput({ ...publicFormPayload, name: "" }, { requireEmail: false }).name).toBeTruthy();
+    expect(validateRestaurantInput({ ...publicFormPayload, dishes: [] }, { requireEmail: false }).dishes).toBeTruthy();
+    expect(validateRestaurantInput({ ...publicFormPayload, address: "" }, { requireEmail: false }).address).toBeTruthy();
+  });
+
+  it("points at a field that exists on the public form", () => {
+    // firstErrorField drives a getElementById. Naming a field the form does not render is
+    // what turned a validation failure into total silence.
+    const errors = validateRestaurantInput({ ...publicFormPayload, phone: "" }, { requireEmail: false });
+    expect(firstErrorField(errors)).toBe("phone");
+  });
+});

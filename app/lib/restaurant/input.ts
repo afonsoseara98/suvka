@@ -93,7 +93,16 @@ export const LIMITS = {
 // Every message is in Portuguese because the person reading it runs a restaurant in
 // Portugal, and a form that asks in one language and complains in another is a form that
 // looks broken. Each says what to do rather than what went wrong.
-export function validateRestaurantInput(input: Partial<RestaurantInput>): FieldErrors {
+export interface ValidationOptions {
+  // The public form never asks for an email - it comes from the account at publish time -
+  // so requiring one there produced an error for a field that does not exist on screen.
+  // The message had nowhere to render and the submit returned silently: the button looked
+  // broken. Making the caller state which form it is stops that recurring.
+  requireEmail?: boolean;
+}
+
+export function validateRestaurantInput(input: Partial<RestaurantInput>, options: ValidationOptions = {}): FieldErrors {
+  const { requireEmail = true } = options;
   const errors: FieldErrors = {};
 
   if (isBlank(input.name)) errors.name = "Escreva o nome do restaurante.";
@@ -114,7 +123,8 @@ export function validateRestaurantInput(input: Partial<RestaurantInput>): FieldE
   // Deliberately the loosest possible check. An address with an @ and a dot is almost
   // certainly a real attempt; a stricter pattern rejects valid addresses and teaches the
   // owner that the form is fighting them.
-  if (isBlank(input.email)) errors.email = "Precisamos de um email para o contactar.";
+  if (requireEmail && isBlank(input.email)) errors.email = "Precisamos de um email para o contactar.";
+  else if (isBlank(input.email)) { /* not asked for on this form */ }
   else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(input.email).trim())) errors.email = "Isso não parece um endereço de email.";
   else if (String(input.email).trim().length > LIMITS.email) errors.email = "Esse email parece demasiado longo.";
 

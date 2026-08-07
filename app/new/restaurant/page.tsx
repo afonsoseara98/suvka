@@ -72,16 +72,28 @@ function RestaurantForm() {
     event.preventDefault();
     setFailure(null);
 
-    const found = validateRestaurantInput(input);
+    // This form does not ask for an email - it comes from the account at publish time.
+    // Validating as if it did produced an error for a field that is not on screen, which
+    // had nowhere to render, so pressing the button did nothing at all and looked broken.
+    const found = validateRestaurantInput(input, { requireEmail: false });
     setErrors(found);
+
     if (!isValid(found)) {
       // Move to the first thing that needs attention. On a phone an error four fields
       // above the button is invisible, and a button that appears to do nothing is a form
       // people abandon.
       const field = firstErrorField(found);
       const element = field ? document.getElementById(String(field)) : null;
-      element?.scrollIntoView({ behavior: "smooth", block: "center" });
-      (element as HTMLElement | null)?.focus?.();
+
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.focus?.();
+      } else {
+        // Refusing to submit while showing nothing is the worst outcome this form can
+        // produce, and it is exactly what happened. If an error has no field on screen to
+        // attach to, say so next to the button rather than failing silently.
+        setFailure(Object.values(found).find(Boolean) ?? "Reveja os campos acima.");
+      }
       return;
     }
 

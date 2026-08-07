@@ -34,10 +34,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<RestaurantInput>;
 
-    // The public form does not ask for an email - that comes from the account, later - so
-    // it is excluded from what is required here.
-    const errors = validateRestaurantInput({ ...body, email: body.email || "pending@draft.local" });
-    delete errors.email;
+    // The public form does not ask for an email; it comes from the account at publish time.
+    const errors = validateRestaurantInput(body, { requireEmail: false });
     if (!isValid(errors)) {
       return NextResponse.json({ success: false, errors }, { status: 400 });
     }
