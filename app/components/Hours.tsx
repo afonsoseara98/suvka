@@ -6,6 +6,7 @@ import type { SectionHeading } from "./renderers/SectionRenderer";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
+import OpenNow from "./hours/OpenNow";
 import { tidyPhoneHref, whatsappHref, instagramHandle } from "@/app/lib/restaurant/tidy";
 
 type Props = {
@@ -112,8 +113,16 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
                 collapses those newlines, so the two facts ran together into one unreadable
                 sentence. Honouring the line breaks means the page shows the hours the way
                 the owner wrote them, which is also how a door sign shows them. */}
+            {/* Above the hours, never instead of them. Renders nothing at all unless the
+                schedule could be read with certainty - see openNow.ts. */}
+            {entry.field === "schedule" && !onUpdateContent && (
+              <div className="mt-2">
+                <OpenNow schedule={entry.value} theme={theme} />
+              </div>
+            )}
+
             <div
-              className="mt-2 leading-relaxed"
+              className={entry.field === "schedule" ? "leading-relaxed" : "mt-2 leading-relaxed"}
               style={{ color: theme.colors.primary, whiteSpace: entry.field === "schedule" ? "pre-line" : "normal" }}
             >
               {entry.href && !onUpdateContent ? (
