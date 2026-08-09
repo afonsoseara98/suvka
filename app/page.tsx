@@ -13,148 +13,227 @@ import Link from "next/link";
 // of the app already implements: /new/restaurant, /api/restaurant/draft and
 // /preview/d/[id] all work with no session at all.
 //
-// Everything on this page is aimed at a restaurant owner. Not "AI-powered websites that
-// convert" - a phrase nobody who runs a restaurant has ever said - but the three things
-// they actually care about: it is theirs, it takes minutes, it costs nothing to try.
+// Every line here is written to be one a restaurant owner would say out loud or type into
+// Google. Not "AI-powered websites that convert" - a phrase nobody who runs a restaurant
+// has ever said. The words "IA", "algoritmo" and "SEO" appear nowhere on purpose: the owner
+// is not buying a generator, they are buying the thing they keep meaning to get around to.
 export const metadata: Metadata = {
-  title: "Website para o seu restaurante, em minutos — Noctra",
+  title: "O restaurante já existe. Falta o website. | Noctra",
   description:
-    "Preencha os dados do seu restaurante e veja o site pronto em segundos. Sem conta, sem cartão. Só cria conta se quiser publicar.",
+    "Criamos o site do seu restaurante em minutos. Sem designer, sem código. Menu, fotos, horário e contacto. Primeiro mês gratuito.",
 };
 
-// The questions a restaurant owner actually asks before spending two minutes on a form.
-// Not feature marketing - the four things that decide whether they start.
-const FAQ = [
+// Terracotta rather than a tech blue. A restaurant is warmth, food and company, and the
+// accent is the only colour on an otherwise black page - so it has to mean something.
+const ACCENT = "#E2725B";
+
+// Two minutes, everywhere on the page. The form asks for nine things including three dishes
+// with prices, so "um minuto" is a number the owner disproves while still filling it in -
+// and the moment they notice, the price and the free month get re-read with suspicion.
+const HOW_LONG = "Menos de 2 minutos.";
+
+const STEPS = [
   {
-    q: "Preciso de perceber de computadores?",
-    a: "Não. Preenche um formulário com o nome, a morada, o horário e três pratos. O site aparece feito.",
+    n: "1",
+    title: "Conte-nos do seu restaurante",
+    body: "Menos de 2 minutos. Nome, tipo de cozinha, horário e 3 pratos.",
   },
   {
-    q: "Posso ver antes de pagar?",
-    a: "Sim. Cria o site, vê-o todo e envia o link a quem quiser. Só cria conta se decidir publicá-lo.",
+    n: "2",
+    title: "Veja o site pronto",
+    body: "Fotos, menu, contacto. Pode substituir pelas suas fotografias.",
   },
   {
-    q: "E se quiser mudar alguma coisa depois?",
-    a: "Muda quando quiser. Preços da ementa, horário, telefone — está tudo editável e volta a ficar online.",
-  },
-  {
-    q: "As fotografias são do meu restaurante?",
-    a: "As iniciais são fotografias profissionais de comida, escolhidas pelo tipo de cozinha. Pode substituí-las pelas suas.",
+    n: "3",
+    title: "Publique quando quiser",
+    body: "Um clique e o site fica online.",
   },
 ];
 
-const STEPS = [
-  { n: "1", title: "Preencha os dados", body: "Nome, morada, telefone, horário e três pratos. Dois minutos." },
-  { n: "2", title: "Veja o site", body: "Aparece em segundos, com fotografias. Sem conta, sem cartão." },
-  { n: "3", title: "Publique", body: "Se gostar, cria conta e fica online. Se não, fecha a página." },
+// Benefits, not features. Each line has to survive the owner asking "e eu com isso?" -
+// which is why none of them names a technology. "SSL" and "clicável" were both in here and
+// both failed that test: the first is a word he has never needed, the second describes the
+// mechanism instead of what happens, which is that somebody calls him.
+const BENEFITS = [
+  "Os clientes encontram o menu, o horário e o telefone em segundos",
+  "Tocam no número e ligam-lhe diretamente",
+  "O take-away e entregas ficam em destaque",
+  "Muda o menu, os preços e o horário quando quiser, sozinho",
+  "Fica bem no telemóvel e no computador",
+  "Fica online no momento em que carregar em Publicar",
+  "Alojamento e segurança incluídos — não tem de contratar mais nada",
+  "Troca as fotografias pelas suas sempre que quiser",
 ];
+
+const INCLUDED = [
+  "Site completo",
+  "Alojamento e segurança",
+  "Edições ilimitadas",
+  "Suporte por email",
+];
+
+// The five questions someone actually asks before spending a minute on a form.
+const FAQ = [
+  {
+    // "Programar" is not the word he uses or would type into Google. "Perceber de
+    // computadores" is the actual worry, and the actual search.
+    q: "Preciso de perceber de computadores?",
+    a: "Não. Só precisa de preencher um formulário sobre o seu restaurante. Nós fazemos o resto.",
+  },
+  {
+    q: "Posso usar as minhas fotografias?",
+    a: "Sim. Pode fazer upload das suas fotos e substituir as nossas a qualquer momento.",
+  },
+  {
+    q: "E se eu já tiver um website?",
+    a: "Podemos utilizá-lo como ponto de partida ou criar um novo. Decide depois qual prefere manter.",
+  },
+  {
+    q: "E se eu quiser mudar o menu ou o horário?",
+    a: "Pode editar o texto e as fotos diretamente no site. Sem precisar de ninguém.",
+  },
+  {
+    q: "Quanto tempo demora?",
+    a: "A maioria dos restaurantes termina em menos de 2 minutos.",
+  },
+];
+
+// The same offer, wherever the decision happens to land. Someone who has just read the price
+// and thought "isso é barato" should not have to go looking for the button.
+
+// The only action on the page, repeated once at the bottom. Same words both times, because
+// a person who scrolled to the end should not have to work out that it is the same offer.
+function PrimaryCta({ note, fullWidth = false }: { note: string; fullWidth?: boolean }) {
+  return (
+    <div>
+      <Link
+        href="/new/restaurant"
+        // Full width on a phone either way: a thumb should not have to aim.
+        className={`inline-block w-full rounded-xl px-8 py-4 text-center text-base font-semibold text-black transition hover:brightness-110 ${
+          fullWidth ? "" : "sm:w-auto"
+        }`}
+        style={{ background: ACCENT }}
+      >
+        Criar o meu site gratuitamente
+      </Link>
+      <p className="mt-4 text-sm text-zinc-500">{note}</p>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="text-lg font-bold">Noctra</span>
+        {/* "Entrar" sat top-right, where a first-time visitor looks for the way in - and it
+            led to a sign-in form, which is the one thing this page exists to avoid. Saying
+            who it is for stops him clicking it by mistake. */}
         <Link href="/entrar" className="text-sm text-zinc-400 transition hover:text-white">
-          Entrar
+          Já tenho conta
         </Link>
       </header>
 
-      <section className="mx-auto max-w-3xl px-6 pb-16 pt-10 text-center sm:pt-20">
-        <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">Para restaurantes</p>
-
-        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
-          O website do seu restaurante,
-          <br className="hidden sm:block" /> pronto em minutos
+      {/* The headline is the whole pitch: they already did the hard part. */}
+      <section className="mx-auto max-w-3xl px-6 pb-20 pt-12 text-center sm:pb-28 sm:pt-24">
+        <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
+          O restaurante já existe.
+          <br />
+          <span style={{ color: ACCENT }}>Falta o website.</span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
-          Ementa, morada, horário e telefone — no telemóvel dos seus clientes. Veja o site
-          antes de decidir seja o que for.
+        {/* "Sem código" answers a worry only someone who already knows websites involve code
+            would have. His worry is simpler and he says it in these words. */}
+        <p className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-zinc-400">
+          Criamos o site do seu restaurante em minutos. Não precisa de saber nada de
+          computadores. Só preenche, vê e publica.
         </p>
 
-        {/* The only prominent action on the page, and it leads to the product rather than
-            to a form about the product. */}
         <div className="mt-10">
-          <Link
-            href="/new/restaurant"
-            className="inline-block rounded-xl bg-white px-8 py-4 text-base font-semibold text-black transition hover:bg-zinc-200"
-          >
-            Criar o meu site gratuitamente
-          </Link>
-          <p className="mt-3 text-sm text-zinc-500">Sem conta. Sem cartão. Vê o resultado primeiro.</p>
+          <PrimaryCta note={`${HOW_LONG} Não precisa de cartão.`} />
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-6 pb-20">
+      <section className="mx-auto max-w-4xl px-6 pb-20 sm:pb-28">
         <div className="grid gap-6 sm:grid-cols-3">
           {STEPS.map((step) => (
-            <div key={step.n} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
-              <div className="text-sm font-semibold text-zinc-500">{step.n}</div>
-              <h2 className="mt-3 text-lg font-semibold">{step.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{step.body}</p>
+            <div key={step.n} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-7">
+              <div className="text-sm font-semibold" style={{ color: ACCENT }}>
+                {step.n}
+              </div>
+              <h2 className="mt-4 text-lg font-semibold leading-snug">{step.title}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-400">{step.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* The one promise worth making on a page like this, because it is the one thing
-          every other generator gets wrong: nothing on the finished site is invented. */}
-      <section className="mx-auto max-w-3xl px-6 pb-20 text-center">
+      {/* Naming the kinds of places out loud, so the reader recognises their own. */}
+      <section className="mx-auto max-w-2xl px-6 pb-20 text-center sm:pb-28">
         <p className="text-lg leading-relaxed text-zinc-300">
-          Só aparece no site o que <span className="text-white">você</span> escrever.
-        </p>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-500">
-          Não inventamos avaliações, estrelas nem números de clientes. O site diz o que o seu
-          restaurante é — não o que um computador imaginou.
+          Ideal para restaurantes independentes, cafés, tascas, pizzarias, hamburguerias e
+          take-away.
         </p>
       </section>
 
-      {/* The price, stated plainly and early. A restaurant owner deciding whether to spend
-          two minutes on a form wants to know what it costs at the end of them. */}
-      <section className="mx-auto max-w-md px-6 pb-20">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
-          <div className="text-4xl font-bold">
-            19€<span className="text-lg font-normal text-zinc-500">/mês</span>
-          </div>
-          <p className="mt-2 text-sm text-zinc-400">Primeiro mês grátis. Cancela quando quiser.</p>
+      <section className="mx-auto max-w-3xl px-6 pb-20 sm:pb-28">
+        <h2 className="mb-10 text-center text-2xl font-bold tracking-tight sm:text-3xl">
+          O que o site faz por si
+        </h2>
+        <ul className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
+          {BENEFITS.map((line) => (
+            <li key={line} className="flex gap-3 text-[15px] leading-relaxed text-zinc-300">
+              <span aria-hidden="true" className="mt-px shrink-0 font-semibold" style={{ color: ACCENT }}>
+                ✓
+              </span>
+              {line}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-          <ul className="mt-6 space-y-2 text-left text-sm text-zinc-400">
-            {[
-              "Site publicado e online",
-              "Ementa, morada, horário e telefone",
-              "Fotografias incluídas",
-              "Funciona no telemóvel",
-              "Alterações sempre que precisar",
-            ].map((line) => (
-              <li key={line} className="flex gap-2">
-                <span className="text-zinc-600">·</span>
+      {/* The price, stated plainly and compared to something the reader already buys. */}
+      <section className="mx-auto max-w-md px-6 pb-20 sm:pb-28">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
+          <div className="text-5xl font-bold">
+            19 €<span className="text-lg font-normal text-zinc-500">/mês</span>
+          </div>
+          <p className="mt-3 text-zinc-300">Menos do que um jantar para duas pessoas.</p>
+          <p className="mt-2 text-sm text-zinc-500">Primeiro mês gratuito. Cancele quando quiser.</p>
+
+          <ul className="mt-8 space-y-3 text-left text-sm text-zinc-400">
+            {INCLUDED.map((line) => (
+              <li key={line} className="flex gap-3">
+                <span aria-hidden="true" style={{ color: ACCENT }}>
+                  ✓
+                </span>
                 {line}
               </li>
             ))}
           </ul>
 
-          <Link
-            href="/new/restaurant"
-            className="mt-8 inline-block w-full rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-zinc-200"
-          >
-            Criar o meu site grátis
-          </Link>
-          <p className="mt-3 text-xs text-zinc-500">Não pedimos cartão para experimentar.</p>
+          <div className="mt-8">
+            <PrimaryCta note="Sem custos de instalação. Sem contrato." fullWidth />
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-2xl px-6 pb-24">
-        <h2 className="mb-8 text-center text-sm font-medium uppercase tracking-widest text-zinc-500">
+      <section className="mx-auto max-w-2xl px-6 pb-20 sm:pb-28">
+        <h2 className="mb-10 text-center text-2xl font-bold tracking-tight sm:text-3xl">
           Perguntas
         </h2>
-        <dl className="space-y-6">
+        <dl className="space-y-7">
           {FAQ.map((item) => (
-            <div key={item.q} className="border-b border-zinc-900 pb-6">
-              <dt className="font-semibold">{item.q}</dt>
-              <dd className="mt-2 text-sm leading-relaxed text-zinc-400">{item.a}</dd>
+            <div key={item.q} className="border-b border-zinc-900 pb-7">
+              <dt className="font-semibold leading-snug">{item.q}</dt>
+              <dd className="mt-3 text-[15px] leading-relaxed text-zinc-400">{item.a}</dd>
             </div>
           ))}
         </dl>
+      </section>
+
+      <section className="mx-auto max-w-2xl px-6 pb-24 text-center sm:pb-32">
+        <PrimaryCta note={HOW_LONG} />
       </section>
 
       <footer className="border-t border-zinc-900 px-6 py-10">
