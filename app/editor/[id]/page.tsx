@@ -348,16 +348,29 @@ function EditorContent() {
             </div>
           </div>
 
-          {/* The phone frame is a real 375px viewport, not a scaled screenshot, so the
-              clamp()-based typography and spacing resolve exactly as they will on a phone. */}
-          <div className={viewport === "mobile" ? "flex justify-center bg-zinc-900 py-8" : ""}>
-            <div
-              className={viewport === "mobile" ? "overflow-hidden rounded-2xl border border-zinc-700 bg-black" : ""}
-              style={viewport === "mobile" ? { width: 375 } : undefined}
-            >
-              <Landing state={currentState(history)} onDispatchOperation={onDispatchOperation} />
+          {/* EDIT AT DESKTOP, CHECK AT PHONE
+              This claimed to be "a real 375px viewport". It was a 375px-wide div, which is
+              not a viewport at all: `sm:` and every vw-based clamp() kept resolving against
+              the desktop window, and the opening hours sat in three 70px columns inside a
+              276px box - a layout no phone renders.
+
+              Only an iframe has its own viewport, and an iframe cannot carry inline editing,
+              which needs the React tree in this document. So the two views split roles:
+              desktop is where you edit, phone is where you check - which is what the phone
+              view was always for. Keyed on the save counter so it reloads once the edit it
+              is meant to show has actually been persisted. */}
+          {viewport === "mobile" ? (
+            <div className="flex justify-center bg-zinc-900 py-8">
+              <iframe
+                key={`${project.id}-${saveStatus}`}
+                src={`/editor/${project.id}/frame`}
+                title={`${project.name} — como aparece num telemóvel`}
+                className="h-[812px] w-[375px] rounded-2xl border border-zinc-700 bg-black"
+              />
             </div>
-          </div>
+          ) : (
+            <Landing state={currentState(history)} onDispatchOperation={onDispatchOperation} />
+          )}
         </div>
       </div>
     </main>
