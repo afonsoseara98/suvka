@@ -240,6 +240,11 @@ model Draft {
   landing   Json
   createdAt DateTime @default(now())
 
-  // Swept by expiry, so the index is on the only thing ever filtered.
+  // Expiry runs from here, not from createdAt. Someone who creates a site today and comes
+  // back tomorrow to show a business partner has not abandoned anything, and the clock
+  // should not have been running against them the whole time.
+  lastViewedAt DateTime @default(now())
+
   @@index([createdAt])
+  @@index([lastViewedAt])
 }

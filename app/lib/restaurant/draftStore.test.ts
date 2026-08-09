@@ -33,15 +33,14 @@ describe("draft store", () => {
     expect(draft.id).toMatch(/^site-[0-9a-f]{6}$/);
   });
 
-  it("forgets a draft nobody claimed", async () => {
+  it("forgets a draft nobody came back to", async () => {
+    // Written without an intermediate read on purpose: looking at a draft now renews it,
+    // so checking it just before the deadline would be what kept it alive.
     let now = 1_000_000;
     const store = new InMemoryDraftStore(DRAFT_TTL_MS, () => now);
     const draft = await store.create(input, landing);
 
-    now += DRAFT_TTL_MS - 1000;
-    expect(await store.get(draft.id)).not.toBeNull();
-
-    now += 2000;
+    now += DRAFT_TTL_MS + 1;
     expect(await store.get(draft.id)).toBeNull();
   });
 
@@ -73,5 +72,48 @@ describe("draft store", () => {
     const draft = await store.create(input, landing);
     await store.delete(draft.id);
     expect(await store.get(draft.id)).toBeNull();
+  });
+});
+
+// Expiry used to run from creation, so a restaurant that made a site on Monday evening and
+// came back on Tuesday to show a business partner found a 404 - having abandoned nothing.
+describe("looking at a draft keeps it alive", () => {
+  it("renews the clock on every view", async () => {
+    let now = 1_000_000;
+    const store = new InMemoryDraftStore(DRAFT_TTL_MS, () => now);
+    const draft = await store.create(input, landing);
+
+    // Visited every twenty hours for three days.
+    for (let day = 0; day < 3; day++) {
+      now += 20 * 60 * 60 * 1000;
+      expect(await store.get(draft.id), `day ${day}`).not.toBeNull();
+    }
+  });
+
+  it("still expires once nobody has looked for a full day", async () => {
+    let now = 1_000_000;
+    const store = new InMemoryDraftStore(DRAFT_TTL_MS, () => now);
+    const draft = await store.create(input, landing);
+
+    now += 20 * 60 * 60 * 1000;
+    expect(await store.get(draft.id)).not.toBeNull();
+
+    // Silence from that visit, not from creation.
+    now += DRAFT_TTL_MS + 1;
+    expect(await store.get(draft.id)).toBeNull();
+  });
+
+  it("sweeps on silence rather than on age", async () => {
+    let now = 1_000_000;
+    const store = new InMemoryDraftStore(DRAFT_TTL_MS, () => now);
+    const old = await store.create(input, landing);
+
+    now += 20 * 60 * 60 * 1000;
+    await store.get(old.id);
+
+    // Old enough to be swept if age were the rule, recent enough that it is not.
+    now += 10 * 60 * 60 * 1000;
+    await store.create(input, landing);
+    expect(await store.get(old.id)).not.toBeNull();
   });
 });

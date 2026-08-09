@@ -25,6 +25,8 @@ export interface Draft {
   input: RestaurantInput;
   landing: LandingPage;
   createdAt: number;
+  // Expiry runs from here. Viewing a draft renews it - see PrismaDraftStore.get.
+  lastViewedAt: number;
 }
 
 export interface DraftStore {
@@ -63,7 +65,8 @@ export class InMemoryDraftStore implements DraftStore {
   async create(input: RestaurantInput, landing: LandingPage): Promise<Draft> {
     this.evictExpired();
 
-    const draft: Draft = { id: previewId(input.name), input, landing, createdAt: this.now() };
+    const now = this.now();
+    const draft: Draft = { id: previewId(input.name), input, landing, createdAt: now, lastViewedAt: now };
     this.drafts.set(draft.id, draft);
     return draft;
   }
@@ -72,12 +75,14 @@ export class InMemoryDraftStore implements DraftStore {
     const draft = this.drafts.get(id);
     if (!draft) return null;
 
-    if (this.now() - draft.createdAt > this.ttlMs) {
+    if (this.now() - draft.lastViewedAt > this.ttlMs) {
       this.drafts.delete(id);
       return null;
     }
 
-    return draft;
+    const touched = { ...draft, lastViewedAt: this.now() };
+    this.drafts.set(id, touched);
+    return touched;
   }
 
   async delete(id: string): Promise<void> {
@@ -95,7 +100,7 @@ export class InMemoryDraftStore implements DraftStore {
   private evictExpired(): void {
     const cutoff = this.now() - this.ttlMs;
     for (const [id, draft] of this.drafts) {
-      if (draft.createdAt < cutoff) this.drafts.delete(id);
+      if (draft.lastViewedAt < cutoff) this.drafts.delete(id);
     }
   }
 
@@ -121,8 +126,10 @@ export class PrismaDraftStore implements DraftStore {
   async create(input: RestaurantInput, landing: LandingPage): Promise<Draft> {
     // Opportunistic sweep on write, same as the in-memory store: no timer to keep alive and
     // no cron to install for a table that is only ever a few hundred rows.
+    //
+    // Swept on lastViewedAt, so the clock measures silence rather than age.
     await this.client.draft
-      .deleteMany({ where: { createdAt: { lt: new Date(Date.now() - this.ttlMs) } } })
+      .deleteMany({ where: { lastViewedAt: { lt: new Date(Date.now() - this.ttlMs) } } })
       .catch(() => undefined);
 
     const row = await this.client.draft.create({
@@ -133,7 +140,7 @@ export class PrismaDraftStore implements DraftStore {
       },
     });
 
-    return { id: row.id, input, landing, createdAt: row.createdAt.getTime() };
+    return { id: row.id, input, landing, createdAt: row.createdAt.getTime(), lastViewedAt: row.lastViewedAt.getTime() };
   }
 
   async get(id: string): Promise<Draft | null> {
@@ -144,16 +151,27 @@ export class PrismaDraftStore implements DraftStore {
 
     // Expiry is enforced on read as well as by the sweep, so a row the sweep has not
     // reached yet is still gone as far as anyone asking is concerned.
-    if (Date.now() - row.createdAt.getTime() > this.ttlMs) {
+    if (Date.now() - row.lastViewedAt.getTime() > this.ttlMs) {
       await this.delete(id);
       return null;
     }
+
+    // Looking at it counts as still wanting it. Someone who sends the link to a partner
+    // and comes back the next evening finds their site where they left it, and the clock
+    // starts again from that visit rather than from when they filled the form.
+    //
+    // Fire-and-forget on purpose: a failed touch means the draft expires on its original
+    // schedule, which is the old behaviour - not a reason to fail the page load.
+    void this.client.draft
+      .update({ where: { id }, data: { lastViewedAt: new Date() } })
+      .catch(() => undefined);
 
     return {
       id: row.id,
       input: row.input as unknown as RestaurantInput,
       landing: row.landing as unknown as LandingPage,
       createdAt: row.createdAt.getTime(),
+      lastViewedAt: row.lastViewedAt.getTime(),
     };
   }
 

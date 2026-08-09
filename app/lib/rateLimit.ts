@@ -76,9 +76,14 @@ const GENERATE_WINDOW_MS = 60_000;
 // Generating: five Pexels lookups per site (one hero, four gallery). At the old ten per
 // minute that is 3,000 requests an hour against a free tier of 200, so a single visitor
 // holding the button exhausts the quota in four minutes and every site generated after
-// that comes out without photographs. A real restaurant generates once and maybe retries
-// twice; five an hour is generous for them and caps us at 25 lookups an hour per address.
-export const DRAFT_LIMIT = 5;
+// that comes out without photographs.
+//
+// Set to 15 rather than the 5 the quota alone would argue for. Frustrating somebody on
+// their first contact costs a customer; the quota only breaks under traffic that does not
+// exist yet, and lowering a limit later is trivial where recovering a lost first impression
+// is not. Worth watching: 15 an hour is 75 lookups per address, so three simultaneous
+// visitors at the ceiling would exhaust the free tier.
+export const DRAFT_LIMIT = 15;
 export const DRAFT_WINDOW_MS = 60 * 60_000;
 
 // Uploading: ten megabytes each. At the old rate one address could write 100 MB a minute,
