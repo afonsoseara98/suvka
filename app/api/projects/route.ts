@@ -16,7 +16,17 @@ export async function GET() {
 
   const records = await repos.projects.listByOwner(session.user.id);
   const projects = records
-    .map((r) => ({ id: r.id, name: r.name, createdAt: r.createdAt, updatedAt: r.updatedAt }))
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      // Whether the site is actually online, and where. The list carried neither, so the
+      // dashboard could not say the one thing an owner opens it to check, and the address
+      // of his own website was two clicks away inside the editor.
+      published: r.settings.publishing.published,
+      slug: r.slug,
+    }))
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
   return NextResponse.json({ projects });

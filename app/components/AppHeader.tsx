@@ -30,7 +30,7 @@ export default function AppHeader() {
           disabled={signingOut}
           className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-zinc-900 disabled:opacity-50"
         >
-          {signingOut ? "Signing out..." : "Sign out"}
+          {signingOut ? "A sair…" : "Sair"}
         </button>
       </div>
     </header>
