@@ -66,6 +66,27 @@ export function whatsappHref(raw: string, message?: string): string | undefined 
   return `https://wa.me/${digits}${text}`;
 }
 
+// Asked "qual é o seu Instagram?", a person answers "@tabernadosal", or "tabernadosal", or
+// pastes the whole URL. All three mean the same account, and rejecting two of them teaches
+// the owner that the form is fighting him. Turned into a link once, here, so nothing
+// downstream has to know which of the three arrived.
+export function instagramUrl(raw: string): string {
+  const value = raw.trim();
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+
+  const handle = value.replace(/^@/, "").replace(/^instagram\.com\//i, "").replace(/\/+$/, "");
+  return handle ? `https://instagram.com/${handle}` : "";
+}
+
+// What the page shows for an Instagram account. The link has to be a full URL; printing one
+// is not what anybody says out loud, and "https://instagram.com/tabernadosal" sitting in a
+// column next to a phone number reads as a mistake.
+export function instagramHandle(url: string): string {
+  const handle = url.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/+$/, "");
+  return handle ? `@${handle.replace(/^@/, "")}` : "";
+}
+
 // A Portuguese landline or mobile is nine digits. Written without the country code it dials
 // perfectly from inside Portugal and not at all from the German tourist's phone standing
 // outside the door in August - which for a restaurant in Aveiro is the call that matters.

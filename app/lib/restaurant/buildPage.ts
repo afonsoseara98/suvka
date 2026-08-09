@@ -5,7 +5,7 @@ import { DEFAULT_DNA } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
 import { labelsFor, cuisineName } from "./labels";
-import { tidyPrice, tidyPhoneHref, mapsHref } from "./tidy";
+import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref } from "./tidy";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -59,7 +59,7 @@ export function dnaForRestaurant(input: RestaurantInput): StrategyDNA {
 
 // The architecture. A section is here because the owner gave content for it: no dishes
 // means no menu, no photos means no gallery. Nothing is padded to make the page look long.
-function sectionsFor(input: RestaurantInput, galleryCount: number): Section[] {
+function sectionsFor(input: RestaurantInput, galleryCount: number, orderCount: number): Section[] {
   const sections: Section[] = [{ type: "hero", variant: "centered", prominence: "primary", rhythm: "standard" }];
 
   if (galleryCount > 0) {
@@ -69,10 +69,48 @@ function sectionsFor(input: RestaurantInput, galleryCount: number): Section[] {
     sections.push({ type: "menu", variant: "list", prominence: "primary", rhythm: "breather" });
   }
 
+  // Right after the menu: the customer has just read the dishes and wants to order.
+  if (orderCount > 0) {
+    sections.push({ type: "orders", variant: "buttons", prominence: "primary", rhythm: "standard" });
+  }
+
   sections.push({ type: "hours", variant: "columns", prominence: "standard", rhythm: "standard" });
   sections.push({ type: "footer", variant: "simple", prominence: "compact", rhythm: "standard" });
 
   return sections;
+}
+
+// THE BOOKING BUTTON, IN ORDER OF HOW WELL IT CONVERTS
+//
+// Their own booking page is best: the customer finishes without leaving the flow. WhatsApp
+// is second and beats the phone by a distance - the message is already written, it works at
+// 23:40, and it costs the customer nothing to send. The phone is the honest floor for a
+// tasca that has neither.
+//
+// Never returns undefined for a restaurant that gave a phone number, which validation makes
+// mandatory - so the hero's main button always goes somewhere.
+export function bookingHref(input: RestaurantInput): string | undefined {
+  if (input.bookingUrl) return input.bookingUrl;
+
+  const viaWhatsapp = input.whatsapp
+    ? whatsappHref(input.whatsapp, labelsFor(input.language).bookingMessage(input.name))
+    : undefined;
+  if (viaWhatsapp) return viaWhatsapp;
+
+  return input.phone ? `tel:${tidyPhoneHref(input.phone)}` : undefined;
+}
+
+// The platforms, in the order a Portuguese restaurant is most likely to be on them. Built
+// already filtered: an empty array is how buildPage knows there is no section to add, so a
+// restaurant with no delivery never gets a heading over nothing.
+function orderLinksFor(input: RestaurantInput, title: string): { title: string; links: Array<{ label: string; url: string }> } {
+  const links = [
+    { label: "Uber Eats", url: input.uberEats },
+    { label: "Glovo", url: input.glovo },
+    { label: "Bolt Food", url: input.boltFood },
+  ].filter((link): link is { label: string; url: string } => Boolean(link.url));
+
+  return { title, links };
 }
 
 // The headline is the restaurant's name and the subtitle is the owner's own sentence. This
@@ -90,6 +128,7 @@ export function buildRestaurantPage(
   const gallery = images.gallery.map((image) => ({ url: image.url, alt: image.alt, credit: image.credit }));
 
   const subtitle = input.description || labels.fallbackSubtitle(cuisine);
+  const orders = orderLinksFor(input, labels.orderNow);
 
   return {
     dna: dnaForRestaurant(input),
@@ -104,23 +143,28 @@ export function buildRestaurantPage(
       branding: { primaryColor: "", secondaryColor: "", accentColor: "", fontHeading: "", fontBody: "", logoPrompt: "" },
       images: { heroPrompt: "", ogImagePrompt: "" },
     },
-    sections: sectionsFor(input, gallery.length),
+    sections: sectionsFor(input, gallery.length, orders.links.length),
     hero: {
       badge: cuisine,
       title: input.name,
       // Emphasise the last word of the name, which is usually the distinctive one.
       highlightWord: input.name.trim().split(/\s+/).slice(-1)[0] ?? "",
       subtitle,
-      // A booking link, when the restaurant has one, beats a phone call: it is the action
-      // the customer came to take and it works at 23:40. Without one the phone is not a
-      // fallback, it is the honest answer for most tascas - so the words change with it
-      // rather than promising a booking system that does not exist.
-      primaryCTA: input.bookingUrl ? labels.bookTable : labels.callToBook,
-      secondaryCTA: input.dishes.length > 0 ? labels.seeMenu : labels.findUs,
-      // Real destinations. The phone dials on a mobile - the single most valuable action a
-      // restaurant page can offer - and the secondary jumps to the menu further down.
-      primaryHref: input.bookingUrl || (input.phone ? `tel:${tidyPhoneHref(input.phone)}` : undefined),
-      secondaryHref: input.dishes.length > 0 ? "#menu" : "#hours",
+      // TWO BUTTONS, BOTH ACTIONS
+      //
+      // The hero is not a toolbar. "Ver a ementa" used to sit here, and scrolling down the
+      // page is not something a customer came to do - it is something they do on the way to
+      // booking or to finding the door. So the two slots go to the only two actions that
+      // matter at the top: reserve, and get here.
+      //
+      // The booking button degrades through what the restaurant actually has, in order of
+      // how well it converts: their own booking page, then a WhatsApp message already
+      // written, then the phone. It never promises a booking system that does not exist -
+      // the words change with the destination.
+      primaryCTA: input.bookingUrl || input.whatsapp ? labels.bookTable : labels.callToBook,
+      secondaryCTA: labels.howToGetThere,
+      primaryHref: bookingHref(input),
+      secondaryHref: mapsHref(input.address),
       imageStyle: "website",
       imagePrompt: "",
       // Load-bearing. planHeroVisual falls back to a rendered software mockup unless the
@@ -151,6 +195,7 @@ export function buildRestaurantPage(
     // is his; only the way they line up changes. See tidy.ts.
     menu: input.dishes.map((dish) => ({ ...dish, price: tidyPrice(dish.price) })),
     menuTitle: labels.menu,
+    orders: orders.links.length > 0 ? orders : undefined,
     hoursTitle: labels.findUs,
     gallery,
     hours: {
@@ -169,13 +214,16 @@ export function buildRestaurantPage(
       // is worse than no button.
       whatsapp: input.whatsapp || undefined,
       email: input.email || undefined,
+      instagram: input.instagram || undefined,
       labels: {
         address: labels.address,
         hours: labels.hours,
         phone: labels.phone,
         whatsapp: labels.whatsapp,
         email: labels.email,
+        instagram: labels.instagram,
         openInMaps: labels.openInMaps,
+        contactSubject: labels.contactSubject,
       },
     },
     footer: {

@@ -10,6 +10,7 @@
 // businesses; this is a second entry point, not a replacement.
 
 import type { SiteLanguage } from "./labels";
+import { instagramUrl } from "./tidy";
 
 export interface RestaurantDish {
   name: string;
@@ -48,22 +49,29 @@ export interface RestaurantInput {
   // who has not decided to sign up should not be handing over contact details.
   email: string;
 
-  // Optional, and never rendered. Asked because knowing whether a restaurant already has a
-  // site is the difference between replacing something and being someone's first website,
-  // and those are different products.
-  existingWebsite: string;
-
-  // BOOKING AND MESSAGING, BOTH OPTIONAL
+  // EVERY OPTIONAL FIELD IS A BUTTON THAT DOES SOMETHING
+  //
+  // "Site atual" used to live here. It was never rendered - it existed so we would know
+  // whether a restaurant already had a website - and it cost the owner a field. A form that
+  // charges the owner attention for our research is a form with a lower completion rate,
+  // and completion is the only number that matters on this screen.
+  //
+  // What replaced it all converts: each one becomes a link the visitor can act on, and each
+  // appears only if it was filled in. A button that goes nowhere is worse than no button.
   //
   // The only way to reach a restaurant used to be its phone number, which is the one channel
   // a person will not use at 23:40 to ask about a table on Saturday.
-  //
-  // Optional because the honest default for a tasca IS the phone, and a booking button that
-  // goes nowhere is worse than no booking button. Each one appears on the site only if the
-  // owner supplied it - the same rule every other section follows.
   whatsapp: string;
-  // TheFork, Zomato, their own system. Whatever they already use; we integrate with nothing.
+  // TheFork, CoverManager, their own system. Whatever they already use; we integrate with
+  // nothing and store nothing.
   bookingUrl: string;
+  instagram: string;
+  // The three platforms a Portuguese restaurant is actually on. Deliberately three named
+  // fields rather than a generic list: the owner recognises the name of the app he already
+  // gets orders from, and a "add a link" builder is a feature, not a conversion.
+  uberEats: string;
+  glovo: string;
+  boltFood: string;
 
   // Which language the finished SITE speaks. Portugal is the market, so the default is
   // Portuguese - an owner who wants English can switch.
@@ -96,9 +104,9 @@ export const LIMITS = {
   phone: 40,
   schedule: 400,
   email: 120,
-  existingWebsite: 200,
   whatsapp: 40,
-  bookingUrl: 300,
+  link: 300,
+  instagram: 120,
   dishName: 80,
   dishPrice: 20,
   dishDescription: 200,
@@ -146,19 +154,30 @@ export function validateRestaurantInput(input: Partial<RestaurantInput>, options
     errors.whatsapp = "Esse número parece demasiado longo.";
   }
 
-  // A booking link that goes to the wrong place is worse than none, and the owner is going
-  // to paste this from TheFork or from their own system. Checked as a URL rather than left
-  // to fail silently on a customer's tap.
-  if (!isBlank(input.bookingUrl)) {
-    const value = String(input.bookingUrl).trim();
-    if (value.length > LIMITS.bookingUrl) errors.bookingUrl = "Esse link é demasiado longo.";
+  // A link that goes to the wrong place is worse than none, and every one of these is
+  // pasted from somewhere else. Checked here rather than left to fail silently under a
+  // customer's thumb.
+  for (const [field, what] of [
+    ["bookingUrl", "O link de reservas"],
+    ["uberEats", "O link do Uber Eats"],
+    ["glovo", "O link do Glovo"],
+    ["boltFood", "O link do Bolt Food"],
+  ] as const) {
+    const raw = input[field];
+    if (isBlank(raw)) continue;
+
+    const value = String(raw).trim();
+    if (value.length > LIMITS.link) errors[field] = `${what} é demasiado longo.`;
     else if (!/^https?:\/\/[^\s.]+\.[^\s]{2,}$/i.test(value)) {
-      errors.bookingUrl = "O link de reservas tem de começar por https:// e ser um endereço completo.";
+      errors[field] = `${what} tem de começar por https:// e ser um endereço completo.`;
     }
   }
 
-  if (typeof input.existingWebsite === "string" && input.existingWebsite.trim().length > LIMITS.existingWebsite) {
-    errors.existingWebsite = "Esse endereço parece demasiado longo.";
+  // Accepts "@tabernadosal", "tabernadosal" or the full URL, because all three are what a
+  // person means when asked for their Instagram. normaliseRestaurantInput turns whichever
+  // they typed into a link.
+  if (!isBlank(input.instagram) && String(input.instagram).trim().length > LIMITS.instagram) {
+    errors.instagram = "Esse Instagram parece demasiado longo.";
   }
 
   const dishes = Array.isArray(input.dishes) ? input.dishes : [];
@@ -198,9 +217,12 @@ export const FIELD_ORDER: ReadonlyArray<keyof FieldErrors> = [
   "schedule",
   "whatsapp",
   "bookingUrl",
+  "instagram",
+  "uberEats",
+  "glovo",
+  "boltFood",
   "dishes",
   "email",
-  "existingWebsite",
   "description",
 ];
 
@@ -224,9 +246,12 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     schedule: input.schedule.trim(),
     description: (input.description ?? "").trim(),
     email: (input.email ?? "").trim(),
-    existingWebsite: (input.existingWebsite ?? "").trim(),
     whatsapp: (input.whatsapp ?? "").trim(),
     bookingUrl: (input.bookingUrl ?? "").trim(),
+    instagram: instagramUrl(input.instagram ?? ""),
+    uberEats: (input.uberEats ?? "").trim(),
+    glovo: (input.glovo ?? "").trim(),
+    boltFood: (input.boltFood ?? "").trim(),
     language: input.language ?? "pt",
     dishes: input.dishes
       .filter((dish) => !isBlank(dish.name) && !isBlank(dish.price))

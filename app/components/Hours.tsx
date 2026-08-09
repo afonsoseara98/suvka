@@ -6,7 +6,7 @@ import type { SectionHeading } from "./renderers/SectionRenderer";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
-import { tidyPhoneHref, whatsappHref } from "@/app/lib/restaurant/tidy";
+import { tidyPhoneHref, whatsappHref, instagramHandle } from "@/app/lib/restaurant/tidy";
 
 type Props = {
   data: OpeningHours;
@@ -33,7 +33,7 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
 
   type Entry = {
     label: string;
-    field: "address" | "schedule" | "phone" | "whatsapp" | "email";
+    field: "address" | "schedule" | "phone" | "whatsapp" | "email" | "instagram";
     value: string;
     href?: string;
     // What tapping it does, said out loud. An underlined address is not obviously a button
@@ -64,7 +64,22 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
       href: data.whatsapp ? whatsappHref(data.whatsapp) : undefined,
       external: true,
     },
-    { label: data.labels?.email ?? "Email", field: "email", value: data.email ?? "", href: data.email ? `mailto:${data.email}` : undefined },
+    {
+      label: data.labels?.email ?? "Email",
+      field: "email",
+      value: data.email ?? "",
+      // The subject is pre-filled so the message arrives already sorted from the rest of
+      // the owner inbox, and the customer starts from a blank body rather than a blank page.
+      href: data.email ? `mailto:${data.email}?subject=${encodeURIComponent(data.labels?.contactSubject ?? "Website")}` : undefined,
+    },
+    {
+      label: data.labels?.instagram ?? "Instagram",
+      field: "instagram",
+      // The handle, not the URL: nobody reads a full instagram.com address out loud.
+      value: data.instagram ? instagramHandle(data.instagram) : "",
+      href: data.instagram || undefined,
+      external: true,
+    },
   ] as Entry[]).filter((entry) => entry.value && entry.value.trim().length > 0);
 
   if (entries.length === 0) return null;

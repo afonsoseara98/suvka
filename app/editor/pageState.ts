@@ -1,4 +1,5 @@
 import type {
+  OrderLinks,
   LandingPage,
   Section,
   SectionType,
@@ -49,6 +50,7 @@ export type SectionContent =
   | MenuItem[]
   | GalleryImage[]
   | OpeningHours
+  | OrderLinks
   | null; // "cta" and "logoCloud" have no content of their own today (see SectionRenderer.tsx)
 
 export type CreatedBy = "ai" | "user" | "template";
@@ -125,6 +127,8 @@ function contentFor(landing: LandingPage, type: SectionType): SectionContent {
       return landing.gallery ?? [];
     case "hours":
       return landing.hours ? { ...landing.hours, title: landing.hoursTitle } as unknown as SectionContent : null;
+    case "orders":
+      return (landing.orders ?? null) as unknown as SectionContent;
     case "footer":
       return landing.footer;
     case "logoCloud":

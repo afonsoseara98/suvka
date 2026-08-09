@@ -1,4 +1,5 @@
 import type { SectionInstance, PageState, SectionContent } from "@/app/editor/pageState";
+import type { OrderLinks } from "@/app/types/landing";
 import { mergeDna, EMPTY_HERO } from "@/app/editor/pageState";
 import type { Operation } from "@/app/editor/operations";
 import type { ThemeConfig } from "@/app/styles/theme";
@@ -20,6 +21,7 @@ import LogoCloudSection from "../LogoCloudSection";
 import Menu from "../Menu";
 import Gallery from "../Gallery";
 import Hours from "../Hours";
+import Orders from "../Orders";
 
 type Props = {
   instance: SectionInstance;
@@ -206,6 +208,16 @@ function renderSection(
           rhythm={rhythm}
           variant={instance.variant}
           onUpdateContent={onUpdateContent as ((content: OpeningHours) => void) | undefined}
+        />
+      );
+
+    case "orders":
+      return (
+        <Orders
+          data={instance.content as unknown as OrderLinks}
+          theme={theme}
+          layout={layout}
+          rhythm={rhythm}
         />
       );
 

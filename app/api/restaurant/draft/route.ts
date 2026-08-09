@@ -40,7 +40,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, errors }, { status: 400 });
     }
 
-    const input = normaliseRestaurantInput({ ...(body as RestaurantInput), email: "" });
+    // The email used to be blanked here, because the public form never asked for one and an
+    // anonymous visitor should not be handing over contact details before deciding to sign
+    // up. That reasoning does not cover this field any more: what the form now asks for
+    // optionally is the RESTAURANT's public contact address, typed to be printed on its own
+    // website. Blanking it threw away something the owner deliberately filled in, and the
+    // Email row silently never appeared.
+    const input = normaliseRestaurantInput(body as RestaurantInput);
     const queries = imageQueriesFor(input);
     const provider = createImageProvider();
 

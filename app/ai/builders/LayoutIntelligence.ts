@@ -119,7 +119,11 @@ const ROLE_PHASE: Record<GatedRole, NarrativePhase> = {
 // Their presence is a fact about the owner's input, not a rhetorical judgement, and
 // running them through a persuasion model would be the category error this whole
 // vocabulary change exists to correct.
-export type GatedRole = Exclude<SectionType, "hero" | "footer" | "cta" | "menu" | "gallery" | "hours">;
+// "orders" joins menu/gallery/hours on the excluded list for the same reason they are on
+// it: these appear because the owner supplied the content, not because a composition model
+// decided the page needed persuading at that point. There is nothing to weigh - a
+// restaurant is on Glovo or it is not.
+export type GatedRole = Exclude<SectionType, "hero" | "footer" | "cta" | "menu" | "gallery" | "hours" | "orders">;
 
 export const GATED_ROLES: readonly GatedRole[] = [
   "logoCloud",

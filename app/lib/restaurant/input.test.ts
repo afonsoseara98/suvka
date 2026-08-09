@@ -13,9 +13,12 @@ function input(overrides: Partial<RestaurantInput> = {}): RestaurantInput {
     hasDelivery: false,
     style: "Rustic",
     email: "reservas@tabernadobairro.pt",
-    existingWebsite: "",
     whatsapp: "",
     bookingUrl: "",
+    instagram: "",
+    uberEats: "",
+    glovo: "",
+    boltFood: "",
     language: "pt",
     description: "A small dining room.",
     ...overrides,
@@ -128,14 +131,10 @@ describe("contact details", () => {
     }
   });
 
-  it("puts the email on the page and keeps the existing website off it", () => {
-    const built = buildRestaurantPage(input({ existingWebsite: "https://old-site.pt" }), { hero: null, gallery: [] });
-    expect(built.footer.email).toBe("reservas@tabernadobairro.pt");
-    expect(JSON.stringify(built)).not.toContain("old-site.pt");
-  });
-
-  it("treats the existing website as optional", () => {
-    expect(validateRestaurantInput(input({ existingWebsite: "" })).existingWebsite).toBeUndefined();
+  it("puts the email on the page", () => {
+    expect(buildRestaurantPage(input(), { hero: null, gallery: [] }).footer.email).toBe(
+      "reservas@tabernadobairro.pt"
+    );
   });
 });
 
@@ -182,13 +181,13 @@ describe("the page speaks the restaurant's language", () => {
   it("labels a Portuguese restaurant in Portuguese", () => {
     const built = buildRestaurantPage(input({ language: "pt" }), { hero: null, gallery: [] });
     expect(built.hero.primaryCTA).toBe("Ligar para reservar");
-    expect(built.hero.secondaryCTA).toBe("Ver a ementa");
-    expect(built.hours?.labels).toEqual({
+    expect(built.hero.secondaryCTA).toBe("Como chegar");
+    // Asserted loosely rather than exhaustively: this used to be a full deep-equal, so
+    // every new contact channel broke a test about language for no reason.
+    expect(built.hours?.labels).toMatchObject({
       address: "Morada",
       hours: "Horário",
       phone: "Telefone",
-      whatsapp: "WhatsApp",
-      email: "Email",
       openInMaps: "Abrir no mapa",
     });
   });
@@ -217,13 +216,65 @@ describe("the calls to action actually do something", () => {
     expect(built.hero.primaryHref).toBe("tel:+351220145880");
   });
 
-  it("sends the second button to the menu", () => {
-    expect(buildRestaurantPage(input(), { hero: null, gallery: [] }).hero.secondaryHref).toBe("#menu");
+  // The hero is not a toolbar. It used to offer "Ver a ementa", which scrolls - something
+  // the customer does on the way to an action, not an action. Both slots now go to the only
+  // two things somebody wants from a restaurant's front page: book, and get there.
+  it("sends the second button to the map, not further down the page", () => {
+    const built = buildRestaurantPage(input(), { hero: null, gallery: [] });
+    expect(built.hero.secondaryCTA).toBe("Como chegar");
+    expect(built.hero.secondaryHref).toContain("google.com/maps");
+    expect(built.hero.secondaryHref).toContain(encodeURIComponent("Rua das Flores 112, Porto"));
   });
 
-  it("sends it to the address instead when there is no menu", () => {
-    const built = buildRestaurantPage(input({ dishes: [] }), { hero: null, gallery: [] });
-    expect(built.hero.secondaryHref).toBe("#hours");
+  it("prefers the restaurant's own booking page over everything else", () => {
+    const built = buildRestaurantPage(
+      input({ bookingUrl: "https://thefork.pt/taberna", whatsapp: "912345678" }),
+      { hero: null, gallery: [] }
+    );
+    expect(built.hero.primaryCTA).toBe("Reservar mesa");
+    expect(built.hero.primaryHref).toBe("https://thefork.pt/taberna");
+  });
+
+  it("falls to WhatsApp with the message already written", () => {
+    // Second best, and well ahead of a phone call: it works at 23:40 and costs the customer
+    // nothing to send.
+    const built = buildRestaurantPage(input({ whatsapp: "912345678" }), { hero: null, gallery: [] });
+    expect(built.hero.primaryCTA).toBe("Reservar mesa");
+    expect(built.hero.primaryHref).toContain("wa.me/351912345678");
+    expect(built.hero.primaryHref).toContain(encodeURIComponent("reservar uma mesa no Taberna do Bairro"));
+  });
+
+  it("says 'Ligar para reservar' when the phone is all there is", () => {
+    // The words follow the destination. Promising a booking system a tasca does not have is
+    // the one thing this button must never do.
+    const built = buildRestaurantPage(input(), { hero: null, gallery: [] });
+    expect(built.hero.primaryCTA).toBe("Ligar para reservar");
+    expect(built.hero.primaryHref).toBe("tel:+351220145880");
+  });
+});
+
+describe("ordering platforms", () => {
+  it("has no section at all when the restaurant is on none of them", () => {
+    const built = buildRestaurantPage(input(), { hero: null, gallery: [] });
+    expect(built.sections.map((s) => s.type)).not.toContain("orders");
+    expect(built.orders).toBeUndefined();
+  });
+
+  it("shows only the ones the owner filled in", () => {
+    const built = buildRestaurantPage(
+      input({ glovo: "https://glovoapp.com/taberna", boltFood: "https://food.bolt.eu/taberna" }),
+      { hero: null, gallery: [] }
+    );
+    expect(built.orders?.links.map((l) => l.label)).toEqual(["Glovo", "Bolt Food"]);
+  });
+
+  it("puts them straight after the menu, where the customer has just read the dishes", () => {
+    const built = buildRestaurantPage(input({ uberEats: "https://ubereats.com/taberna" }), {
+      hero: null,
+      gallery: [],
+    });
+    const types = built.sections.map((s) => s.type);
+    expect(types.indexOf("orders")).toBe(types.indexOf("menu") + 1);
   });
 });
 

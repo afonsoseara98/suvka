@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref } from "./tidy";
+import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref, instagramUrl, instagramHandle } from "./tidy";
 
 // A real owner filled these three in, one after the other, and got a menu with three
 // different price formats on it.
@@ -91,5 +91,25 @@ describe("whatsappHref", () => {
     // restaurant's name.
     expect(whatsappHref("1820")).toBeUndefined();
     expect(whatsappHref("234 390")).toBeUndefined();
+  });
+});
+
+describe("instagram", () => {
+  it("accepts the three ways a person answers 'qual é o seu Instagram?'", () => {
+    for (const typed of ["@tabernadosal", "tabernadosal", "https://instagram.com/tabernadosal"]) {
+      expect(instagramUrl(typed), typed).toBe("https://instagram.com/tabernadosal");
+    }
+  });
+
+  it("shows the handle rather than the URL", () => {
+    // "https://instagram.com/tabernadosal" in a column next to a phone number reads as a
+    // mistake; nobody says a full URL out loud.
+    expect(instagramHandle("https://instagram.com/tabernadosal")).toBe("@tabernadosal");
+    expect(instagramHandle("https://www.instagram.com/tabernadosal/")).toBe("@tabernadosal");
+  });
+
+  it("has nothing to show when it was left blank", () => {
+    expect(instagramUrl("")).toBe("");
+    expect(instagramUrl("  @  ")).toBe("");
   });
 });

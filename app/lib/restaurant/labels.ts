@@ -25,9 +25,16 @@ export interface SiteLabels {
   seeMenu: string;
   // Shown only when the owner supplied the channel. See OpeningHours.
   bookTable: string;
+  howToGetThere: string;
   whatsapp: string;
   email: string;
+  instagram: string;
   openInMaps: string;
+  orderNow: string;
+  // Already written for the customer, so booking costs them a tap instead of composing a
+  // message at 23:40.
+  bookingMessage: (restaurant: string) => string;
+  contactSubject: string;
 
   // The word for the business itself, used in the page title a customer sees in their
   // browser tab and in Google. "Taberna do Bairro — Portuguese restaurant" is not a title a
@@ -118,9 +125,14 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     callToBook: "Ligar para reservar",
     seeMenu: "Ver a ementa",
     bookTable: "Reservar mesa",
+    howToGetThere: "Como chegar",
     whatsapp: "WhatsApp",
     email: "Email",
+    instagram: "Instagram",
     openInMaps: "Abrir no mapa",
+    orderNow: "Encomendar",
+    bookingMessage: (restaurant) => `Olá! Gostaria de reservar uma mesa no ${restaurant}.`,
+    contactSubject: "Contacto através do website",
     restaurant: "Restaurante",
     takeaway: "Take-away e entregas",
     fallbackSubtitle: (cuisine) => `${cuisine}.`,
@@ -134,9 +146,14 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     callToBook: "Call to book",
     seeMenu: "See the menu",
     bookTable: "Book a table",
+    howToGetThere: "How to get there",
     whatsapp: "WhatsApp",
     email: "Email",
+    instagram: "Instagram",
     openInMaps: "Open in maps",
+    orderNow: "Order now",
+    bookingMessage: (restaurant) => `Hello! I would like to book a table at ${restaurant}.`,
+    contactSubject: "Enquiry from the website",
     restaurant: "Restaurant",
     takeaway: "Takeaway and delivery",
     fallbackSubtitle: (cuisine) => `${cuisine} cooking.`,

@@ -32,12 +32,58 @@ const EMPTY: RestaurantInput = {
   description: "",
   whatsapp: "",
   bookingUrl: "",
+  instagram: "",
+  uberEats: "",
+  glovo: "",
+  boltFood: "",
   language: DEFAULT_LANGUAGE,
   // Never collected here. The published site uses the account address - see the publish
   // route - so the public form asks for nothing personal.
   email: "",
-  existingWebsite: "",
 };
+
+// Every one of these becomes a button on the finished site, and none of them appears if it
+// is left blank. Ordered by how much each converts: booking first, then the channel people
+// actually message on, then the platforms that take payment.
+const OPTIONAL_FIELDS = [
+  {
+    key: "bookingUrl",
+    label: "Link de reservas",
+    placeholder: "https://thefork.pt/...",
+    hint: "Se já usa TheFork ou outro. Passa a ser o botão principal do site.",
+    max: LIMITS.link,
+  },
+  {
+    key: "whatsapp",
+    label: "WhatsApp",
+    placeholder: "912 345 678",
+    hint: "Muita gente prefere mandar mensagem a ligar.",
+    max: LIMITS.whatsapp,
+  },
+  {
+    key: "email",
+    label: "Email",
+    placeholder: "geral@orestaurante.pt",
+    hint: "Para quem prefere escrever.",
+    max: LIMITS.email,
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    placeholder: "@orestaurante",
+    hint: "Onde já põe as fotos da comida.",
+    max: LIMITS.instagram,
+  },
+  { key: "uberEats", label: "Uber Eats", placeholder: "https://ubereats.com/...", hint: "Para encomendarem sem sair do site.", max: LIMITS.link },
+  { key: "glovo", label: "Glovo", placeholder: "https://glovoapp.com/...", hint: "Aparece só se preencher.", max: LIMITS.link },
+  { key: "boltFood", label: "Bolt Food", placeholder: "https://food.bolt.eu/...", hint: "Aparece só se preencher.", max: LIMITS.link },
+] as const satisfies ReadonlyArray<{
+  key: "bookingUrl" | "whatsapp" | "email" | "instagram" | "uberEats" | "glovo" | "boltFood";
+  label: string;
+  placeholder: string;
+  hint: string;
+  max: number;
+}>;
 
 const label = "block text-sm font-medium text-zinc-300";
 const field =
@@ -239,48 +285,6 @@ function RestaurantForm() {
             </div>
           </div>
 
-          {/* COMO OS CLIENTES FALAM CONSIGO
-              Both optional, and asked here because this is where the owner is already
-              thinking about being reached. Neither is invented if left blank: the site
-              simply does not show a channel the restaurant does not have. */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <label className={label} htmlFor="whatsapp">
-                WhatsApp <span className="font-normal text-zinc-500">— opcional</span>
-              </label>
-              <input
-                id="whatsapp"
-                maxLength={LIMITS.whatsapp}
-                className={field}
-                value={input.whatsapp}
-                onChange={(e) => set("whatsapp", e.target.value)}
-                placeholder="912 345 678"
-              />
-              <p className="mt-2 text-sm text-zinc-500">
-                Muita gente prefere mandar mensagem a ligar. Ponha o telemóvel que atende.
-              </p>
-              {errors.whatsapp && <p className={errorText}>{errors.whatsapp}</p>}
-            </div>
-
-            <div>
-              <label className={label} htmlFor="bookingUrl">
-                Link de reservas <span className="font-normal text-zinc-500">— opcional</span>
-              </label>
-              <input
-                id="bookingUrl"
-                maxLength={LIMITS.bookingUrl}
-                className={field}
-                value={input.bookingUrl}
-                onChange={(e) => set("bookingUrl", e.target.value)}
-                placeholder="https://thefork.pt/..."
-              />
-              <p className="mt-2 text-sm text-zinc-500">
-                Se já usa TheFork ou outro. Sem isto, o botão do site liga-lhe pelo telefone.
-              </p>
-              {errors.bookingUrl && <p className={errorText}>{errors.bookingUrl}</p>}
-            </div>
-          </div>
-
           <div>
             {/* "Três pratos mais pedidos / Ficam na ementa" read as a limit: an owner with
                 forty dishes concluded his site would show three. Saying that the rest come
@@ -323,26 +327,6 @@ function RestaurantForm() {
             {errors.dishes && <p className={errorText}>{errors.dishes}</p>}
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <label className={label} htmlFor="existingWebsite">
-                Site atual <span className="font-normal text-zinc-500">— opcional</span>
-              </label>
-              <input
-                id="existingWebsite"
-                maxLength={LIMITS.existingWebsite}
-                className={field}
-                value={input.existingWebsite}
-                onChange={(e) => set("existingWebsite", e.target.value)}
-                placeholder="tabernadobairro.pt"
-              />
-              {/* Never rendered on the finished site. Asked because replacing a site and
-                  being someone's first site are different products, and we do not yet know
-                  which one this is. */}
-              <p className="mt-1 text-xs text-zinc-500">Não aparece em lado nenhum. É só para sabermos se já tem site.</p>
-            </div>
-          </div>
-
           <label className="flex items-center gap-3 text-sm text-zinc-300">
             <input
               type="checkbox"
@@ -373,6 +357,43 @@ function RestaurantForm() {
             />
             {errors.description && <p className={errorText}>{errors.description}</p>}
           </div>
+
+          {/* MAIS INFORMAÇÕES — FECHADO POR OMISSÃO
+              Seven optional fields sitting open would double the visible length of this
+              form, and length is what people abandon. Collapsed, the owner who has none of
+              these walks past one line; the owner who has them opens it because he wants
+              those buttons on his site.
+
+              A <details> rather than state: it works before hydration, and the browser
+              already knows how to do this. */}
+          <details className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-5 py-4">
+            <summary className="cursor-pointer list-none text-sm font-medium text-zinc-300">
+              Mais informações{" "}
+              <span className="font-normal text-zinc-500">— opcional, dá mais botões ao seu site</span>
+            </summary>
+
+            <div className="mt-6 space-y-6">
+              <div className="grid gap-6 sm:grid-cols-2">
+                {OPTIONAL_FIELDS.map((optional) => (
+                  <div key={optional.key}>
+                    <label className={label} htmlFor={optional.key}>
+                      {optional.label}
+                    </label>
+                    <input
+                      id={optional.key}
+                      maxLength={optional.max}
+                      className={field}
+                      value={input[optional.key]}
+                      onChange={(e) => set(optional.key, e.target.value)}
+                      placeholder={optional.placeholder}
+                    />
+                    <p className="mt-2 text-sm text-zinc-500">{optional.hint}</p>
+                    {errors[optional.key] && <p className={errorText}>{errors[optional.key]}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </details>
 
           {failure && (
             <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">

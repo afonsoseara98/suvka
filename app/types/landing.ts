@@ -26,6 +26,10 @@ export type SectionType =
   | "menu"
   | "gallery"
   | "hours"
+  // Ordering platforms the restaurant is already on. Not a feature - a row of links to
+  // where the customer can already pay them. Appears only when at least one is filled in,
+  // so a restaurant with no delivery has no empty section.
+  | "orders"
   | "logoCloud"
   | "stats"
   | "features"
@@ -79,6 +83,17 @@ export interface GalleryImage {
   credit?: { name: string; url: string; source: string } | null;
 }
 
+// WHERE THE CUSTOMER CAN ALREADY PAY THEM
+//
+// The restaurant is on Uber Eats, Glovo or Bolt Food, or it is on none of them. This is not
+// an integration and stores nothing: it is the set of links the owner pasted, rendered as
+// buttons. `links` is built already filtered, so an empty array means the section does not
+// exist rather than rendering a heading over nothing.
+export interface OrderLinks {
+  title: string;
+  links: Array<{ label: string; url: string }>;
+}
+
 export interface OpeningHours {
   // Free text - one line per day, or a summary. Whatever the owner actually typed.
   schedule: string;
@@ -101,10 +116,23 @@ export interface OpeningHours {
   // landline in the dining room does not have WhatsApp, the owner's mobile does.
   whatsapp?: string;
   email?: string;
+  // Where a restaurant already posts its food. A link, never an embed: an Instagram embed
+  // loads Meta's trackers onto the customer's site, which app/privacidade promises it does
+  // not do.
+  instagram?: string;
 
   // The column headings. Carried on the content rather than hardcoded in the component,
   // because a restaurant in Porto shows its customers Portuguese words.
-  labels?: { address: string; hours: string; phone: string; whatsapp: string; email: string; openInMaps: string };
+  labels?: {
+    address: string;
+    hours: string;
+    phone: string;
+    whatsapp: string;
+    email: string;
+    instagram: string;
+    openInMaps: string;
+    contactSubject: string;
+  };
 }
 
 export interface HeroStat {
@@ -239,6 +267,7 @@ export interface LandingPage {
   // to the English noun.
   menuTitle?: string;
   hoursTitle?: string;
+  orders?: OrderLinks;
   gallery?: GalleryImage[];
   hours?: OpeningHours;
 
