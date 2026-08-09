@@ -274,3 +274,49 @@ describe("unpublishProject", () => {
     expect((await publishProject(repos, project.id)).slug).toBe("acme");
   });
 });
+
+// The address is the thing the owner reads out over the phone. It used to be derived from
+// the restaurant's name behind their back, and silently suffixed if that name was taken.
+describe("the address the owner chose", () => {
+  it("publishes at the requested address rather than at the restaurant's name", async () => {
+    const project = await newProject("Tasca do Sameiro");
+    const { slug } = await publishProject(repos, project.id, new Date(), "sameiro-braga");
+
+    expect(slug).toBe("sameiro-braga");
+    expect((await loadPublishedSite(repos, "sameiro-braga"))).not.toBeNull();
+  });
+
+  it("still slugs from the name when no address was chosen", async () => {
+    // Every project published before the address step existed came through this path.
+    const project = await newProject("Tasca do Sameiro");
+    expect((await publishProject(repos, project.id)).slug).toBe("tasca-do-sameiro");
+  });
+
+  it("tidies up what was typed rather than rejecting it", async () => {
+    const project = await newProject("Acme");
+    expect((await publishProject(repos, project.id, new Date(), "  Café  Central!! ")).slug).toBe("cafe-central");
+  });
+
+  it("does not hand one restaurant an address another already owns", async () => {
+    // The availability check on screen is a moment old, and two people can be choosing the
+    // same name at once - so the claim has to be resolved again at publish time.
+    const first = await newProject("Primeiro");
+    await publishProject(repos, first.id, new Date(), "tasca");
+
+    const second = await newProject("Segundo");
+    const { slug } = await publishProject(repos, second.id, new Date(), "tasca");
+
+    expect(slug).toBe("tasca-2");
+    expect((await loadPublishedSite(repos, "tasca"))?.projectName).toBe("Primeiro");
+  });
+
+  it("keeps the address it already has when re-publishing", async () => {
+    // Re-publishing happens every time an owner edits their hours. Changing the URL there
+    // would break every link they had already given out.
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id, new Date(), "acme-porto");
+    const again = await publishProject(repos, project.id, new Date(), "outra-coisa");
+
+    expect(again.slug).toBe("acme-porto");
+  });
+});

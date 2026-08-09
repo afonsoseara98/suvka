@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { draftId } = (await request.json()) as { draftId?: string };
+    const { draftId, slug: desiredSlug } = (await request.json()) as { draftId?: string; slug?: string };
     if (!draftId) {
       return NextResponse.json({ success: false, message: "Pedido inválido." }, { status: 400 });
     }
@@ -52,7 +52,10 @@ export async function POST(request: Request) {
       name: draft.input.name,
     });
 
-    const published = await publishProject(repos, project.id);
+    // The address the owner chose, if they came through the address step. Still resolved
+    // against what is actually free - the check on that screen is a moment old, and two
+    // people can be choosing the same name at once.
+    const published = await publishProject(repos, project.id, new Date(), desiredSlug);
 
     // The draft has done its job. Keeping it would leave a second, unowned copy of a site
     // that now has an owner.

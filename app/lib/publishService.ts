@@ -39,7 +39,7 @@ export function slugify(input: string): string {
 
 // Reserved because they are (or will be) real routes on the same origin - a project
 // slugged "dashboard" would shadow the app itself.
-const RESERVED_SLUGS = new Set([
+export const RESERVED_SLUGS = new Set([
   "api", "dashboard", "editor", "new", "benchmark", "login", "logout", "signup",
   "settings", "admin", "s", "static", "public", "assets", "_next", "about", "pricing",
   "terms", "privacy", "support", "help", "docs", "blog", "app", "www",
@@ -90,7 +90,11 @@ export interface PublishResult {
 export async function publishProject(
   repos: RepositoryBundle,
   projectId: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  // What the owner typed on the address step, when there is one. Only consulted on first
+  // publish - see the slug rule below. Falls back to the restaurant's name, which is what
+  // every project published before this step existed was slugged from.
+  desiredSlug?: string
 ): Promise<PublishResult> {
   return repos.transaction(async (tx) => {
     const project = await tx.projects.findById(projectId);
@@ -100,7 +104,7 @@ export async function publishProject(
 
     // A slug is claimed once, on first publish, and then kept forever - re-publishing
     // must never change a URL someone may already have shared.
-    const slug = project.slug ?? (await resolveAvailableSlug(tx, project.name, projectId));
+    const slug = project.slug ?? (await resolveAvailableSlug(tx, desiredSlug || project.name, projectId));
     if (project.slug !== slug) {
       await tx.projects.update(projectId, { slug });
     }

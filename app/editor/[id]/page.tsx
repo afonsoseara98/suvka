@@ -15,7 +15,7 @@ type SaveStatus = "saved" | "saving" | "error";
 // comment there for why it isn't a field on the domain Project type.
 type EditorProject = Project & { slug: string | null };
 
-const SAVE_STATUS_LABEL: Record<SaveStatus, string> = { saved: "Saved", saving: "Saving...", error: "Save failed" };
+const SAVE_STATUS_LABEL: Record<SaveStatus, string> = { saved: "Guardado", saving: "A guardar…", error: "Não foi possível guardar" };
 const SAVE_STATUS_CLASS: Record<SaveStatus, string> = {
   saved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
   saving: "border-amber-500/30 bg-amber-500/10 text-amber-400",
@@ -40,6 +40,8 @@ function EditorContent() {
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  // Edits made since the live site was last built from this project.
+  const [pendingChanges, setPendingChanges] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   // Mobile first: this is what the owner should be judging by default.
   const [viewport, setViewport] = useState<"mobile" | "desktop">("mobile");
@@ -61,7 +63,7 @@ function EditorContent() {
           return;
         }
         if (!response.ok) {
-          setError("Couldn't load this project.");
+          setError("Não foi possível abrir este site.");
           return;
         }
         const data = (await response.json()) as EditorProject;
@@ -70,7 +72,7 @@ function EditorContent() {
       } catch (err) {
         if (!cancelled) {
           console.error(err);
-          setError("Unable to contact the server.");
+          setError("Não foi possível contactar o servidor.");
         }
       }
     }
@@ -99,6 +101,11 @@ function EditorContent() {
       // runs - never from a value captured when the callback was created, which would
       // drop edits made between renders.
       setHistory((prev) => (prev ? dispatch(prev, operation, "user") : prev));
+
+      // Saved and published are two different things, and conflating them is what stranded
+      // people's edits: the badge said "Guardado" while the live site still showed last
+      // week's prices, and nothing on screen said so.
+      setPendingChanges(true);
 
       inFlightRef.current += 1;
       setSaveStatus("saving");
@@ -154,9 +161,10 @@ function EditorContent() {
           : prev
       );
       setJustCopied(false);
+      setPendingChanges(false);
     } catch (err) {
       console.error(err);
-      setPublishError("Couldn't publish. Please try again.");
+      setPublishError("Não foi possível publicar. Tente novamente.");
     } finally {
       setPublishing(false);
     }
@@ -175,7 +183,7 @@ function EditorContent() {
       );
     } catch (err) {
       console.error(err);
-      setPublishError("Couldn't take the site offline. Please try again.");
+      setPublishError("Não foi possível tirar o site de linha. Tente novamente.");
     } finally {
       setPublishing(false);
     }
@@ -186,7 +194,7 @@ function EditorContent() {
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black text-white">
         <p className="text-zinc-400">Project not found.</p>
         <Link href="/dashboard" className="text-sm text-indigo-400 hover:underline">
-          ← Back to Dashboard
+          ← Voltar aos meus sites
         </Link>
       </main>
     );
@@ -197,7 +205,7 @@ function EditorContent() {
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black text-white">
         <p className="text-red-400">{error}</p>
         <Link href="/dashboard" className="text-sm text-indigo-400 hover:underline">
-          ← Back to Dashboard
+          ← Voltar aos meus sites
         </Link>
       </main>
     );
@@ -228,7 +236,7 @@ function EditorContent() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white">
-              ← Back to Dashboard
+              ← Voltar aos meus sites
             </Link>
             <h1 className="mt-2 text-2xl font-bold">{project.name}</h1>
           </div>
@@ -236,17 +244,40 @@ function EditorContent() {
             <div className={`rounded-full border px-4 py-2 text-sm ${SAVE_STATUS_CLASS[saveStatus]}`}>
               {SAVE_STATUS_LABEL[saveStatus]}
             </div>
-            <button
-              onClick={isPublished ? unpublish : publish}
-              disabled={publishing}
-              className={
-                isPublished
-                  ? "rounded-xl border border-zinc-700 px-5 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-900 disabled:opacity-50"
-                  : "rounded-xl bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
-              }
-            >
-              {publishing ? "Working..." : isPublished ? "Take offline" : "Publish"}
-            </button>
+            {/* Two buttons once the site is live, not one that toggles.
+
+                It used to be a single control that said "Tirar de linha" while published,
+                so the only route to pushing an edit live was to take the restaurant's site
+                offline and put it back - it 404'd for customers in between, and the banner
+                cheerfully told the owner to "press Publish again" at a button that was not
+                on the screen. Changing the opening hours is the most ordinary thing an
+                owner does, and it had no path. */}
+            {isPublished ? (
+              <>
+                <button
+                  onClick={publish}
+                  disabled={publishing || !pendingChanges}
+                  className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-default disabled:bg-zinc-800 disabled:text-zinc-500"
+                >
+                  {publishing ? "Um momento…" : pendingChanges ? "Publicar alterações" : "Tudo publicado"}
+                </button>
+                <button
+                  onClick={unpublish}
+                  disabled={publishing}
+                  className="rounded-xl border border-zinc-700 px-5 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-900 disabled:opacity-50"
+                >
+                  Tirar de linha
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={publish}
+                disabled={publishing}
+                className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+              >
+                {publishing ? "Um momento…" : "Publicar"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -261,7 +292,7 @@ function EditorContent() {
             instinct after publishing is to show it to a person. */}
         {isPublished && liveUrl && (
           <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4">
-            <span className="text-sm text-emerald-400">Live at</span>
+            <span className="text-sm text-emerald-400">No ar em</span>
             <a
               href={liveUrl}
               target="_blank"
@@ -277,10 +308,14 @@ function EditorContent() {
               }}
               className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/20"
             >
-              {justCopied ? "Copied" : "Copy link"}
+              {justCopied ? "Copiado" : "Copiar link"}
             </button>
+            {/* Says which of the two states the owner is actually in, rather than stating
+                a rule and leaving him to work out whether it applies to him right now. */}
             <span className="text-xs text-zinc-500">
-              Edits stay private until you press Publish again.
+              {pendingChanges
+                ? "Tem alterações por publicar. Carregue em Publicar alterações para as pôr no site."
+                : "O site está igual ao que vê aqui."}
             </span>
           </div>
         )}
@@ -291,7 +326,7 @@ function EditorContent() {
             <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
             <div className="h-3 w-3 rounded-full bg-green-500"></div>
             <div className="ml-6 flex-1 truncate rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-400">
-              {liveUrl ?? "Not published yet"}
+              {liveUrl ?? "Ainda não publicado"}
             </div>
 
             {/* Mobile is the default, not an afterthought. Someone looking up a restaurant
