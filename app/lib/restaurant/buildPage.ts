@@ -5,6 +5,7 @@ import { DEFAULT_DNA } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
 import { labelsFor, cuisineName } from "./labels";
+import { tidyPrice, tidyPhoneHref } from "./tidy";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -114,7 +115,7 @@ export function buildRestaurantPage(
       secondaryCTA: input.dishes.length > 0 ? labels.seeMenu : labels.findUs,
       // Real destinations. The phone dials on a mobile - the single most valuable action a
       // restaurant page can offer - and the secondary jumps to the menu further down.
-      primaryHref: input.phone ? `tel:${input.phone.replace(/[^\d+]/g, "")}` : undefined,
+      primaryHref: input.phone ? `tel:${tidyPhoneHref(input.phone)}` : undefined,
       secondaryHref: input.dishes.length > 0 ? "#menu" : "#hours",
       imageStyle: "website",
       imagePrompt: "",
@@ -141,7 +142,10 @@ export function buildRestaurantPage(
     testimonials: [],
     pricing: [],
     faq: [],
-    menu: input.dishes,
+    // Formatting, not invention: the owner types "24,00", "18€" and "4,50 euros" into three
+    // boxes in a row and gets a menu with three different price formats on it. Every amount
+    // is his; only the way they line up changes. See tidy.ts.
+    menu: input.dishes.map((dish) => ({ ...dish, price: tidyPrice(dish.price) })),
     menuTitle: labels.menu,
     hoursTitle: labels.findUs,
     gallery,

@@ -6,6 +6,7 @@ import type { SectionHeading } from "./renderers/SectionRenderer";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
+import { tidyPhoneHref } from "@/app/lib/restaurant/tidy";
 
 type Props = {
   data: OpeningHours;
@@ -33,7 +34,9 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
   const entries: Array<{ label: string; field: "address" | "schedule" | "phone"; value: string; href?: string }> = ([
     { label: data.labels?.address ?? "Address", field: "address", value: data.address, href: data.mapUrl },
     { label: data.labels?.hours ?? "Hours", field: "schedule", value: data.schedule },
-    { label: data.labels?.phone ?? "Phone", field: "phone", value: data.phone, href: data.phone ? `tel:${data.phone.replace(/[^\d+]/g, "")}` : undefined },
+    // The printed number stays exactly as the owner wrote it; only what gets dialled is
+    // normalised, so a nine-digit Portuguese number also works from a foreign phone.
+    { label: data.labels?.phone ?? "Phone", field: "phone", value: data.phone, href: data.phone ? `tel:${tidyPhoneHref(data.phone)}` : undefined },
   ] as Array<{ label: string; field: "address" | "schedule" | "phone"; value: string; href?: string }>).filter((entry) => entry.value && entry.value.trim().length > 0);
 
   if (entries.length === 0) return null;

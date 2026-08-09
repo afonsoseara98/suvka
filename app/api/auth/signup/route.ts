@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     const existing = await prisma.user.findUnique({ where: { email: validation.email } });
     if (existing) {
-      return NextResponse.json({ success: false, message: "An account with this email already exists." }, { status: 409 });
+      return NextResponse.json({ success: false, message: "Já existe uma conta com este email." }, { status: 409 });
     }
 
     const passwordHash = await bcrypt.hash(validation.password, SALT_ROUNDS);
@@ -29,6 +29,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ id: user.id, email: user.email, name: user.name });
   } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ success: false, message: "Something went wrong while creating your account." }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Não foi possível criar a conta. Tente novamente." }, { status: 500 });
   }
 }

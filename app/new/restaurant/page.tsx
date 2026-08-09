@@ -14,7 +14,7 @@ import {
   type FieldErrors,
   type RestaurantInput,
 } from "@/app/lib/restaurant/input";
-import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, type SiteLanguage } from "@/app/lib/restaurant/labels";
+import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, styleHint, type SiteLanguage } from "@/app/lib/restaurant/labels";
 
 const EMPTY: RestaurantInput = {
   name: "",
@@ -178,6 +178,9 @@ function RestaurantForm() {
                   </option>
                 ))}
               </select>
+              {/* The word alone made him guess. Naming the room he would recognise means he
+                  is answering a question about his own restaurant instead of about design. */}
+              <p className="mt-2 text-sm text-zinc-500">{styleHint(input.style)}</p>
             </div>
           </div>
 
@@ -235,10 +238,16 @@ function RestaurantForm() {
           </div>
 
           <div>
+            {/* "Três pratos mais pedidos / Ficam na ementa" read as a limit: an owner with
+                forty dishes concluded his site would show three. Saying that the rest come
+                later is only honest now that the editor can actually add a fourth. */}
             <div className="flex items-baseline justify-between">
-              <span className={label}>Três pratos mais pedidos</span>
-              <span className="text-xs text-zinc-500">Ficam na ementa</span>
+              <span className={label}>Comece por três pratos</span>
             </div>
+            <p className="mt-1 text-sm text-zinc-500">
+              Os mais pedidos, para o site ficar pronto agora. Depois acrescenta a ementa toda
+              no editor, quantos pratos quiser.
+            </p>
 
             <div className="mt-3 space-y-3">
               {input.dishes.map((dish, index) => (

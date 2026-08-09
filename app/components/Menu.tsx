@@ -50,7 +50,7 @@ export default function Menu({ items, theme, layout, rhythm, heading, onUpdateCo
         {items.map((item, index) => (
           <div
             key={index}
-            className="flex items-baseline gap-4 py-5"
+            className="group flex items-baseline gap-4 py-5"
             style={{ borderBottom: index < items.length - 1 ? `1px solid ${theme.colors.border}` : undefined }}
           >
             <div className="min-w-0 flex-1">
@@ -82,8 +82,39 @@ export default function Menu({ items, theme, layout, rhythm, heading, onUpdateCo
               value={item.price}
               onCommit={commitAt(items, index, "price", onUpdateContent)}
             />
+
+            {onUpdateContent && items.length > 1 && (
+              <button
+                type="button"
+                aria-label={`Remover ${item.name}`}
+                onClick={() => onUpdateContent(items.filter((_, i) => i !== index))}
+                className="shrink-0 rounded px-2 text-sm opacity-0 transition group-hover:opacity-100 focus:opacity-100"
+                style={{ color: theme.colors.secondary }}
+              >
+                ✕
+              </button>
+            )}
           </div>
         ))}
+
+        {/* A RESTAURANT HAS MORE THAN THREE DISHES
+            The form asks for three, and until now three was all a menu could ever hold -
+            there was no way to add a fourth anywhere in the product. An owner reading
+            "Ficam na ementa" next to three boxes reasonably concluded that his site would
+            show three dishes, which for a restaurant looks like a snack bar.
+
+            No new operation was needed: UpdateContent already replaces the whole list, so
+            adding a dish is the same write as renaming one. */}
+        {onUpdateContent && (
+          <button
+            type="button"
+            onClick={() => onUpdateContent([...items, { name: "Novo prato", price: "0,00 €", description: "" }])}
+            className="mt-6 w-full rounded-xl border border-dashed py-3 text-sm font-medium transition hover:opacity-80"
+            style={{ borderColor: theme.colors.border, color: theme.colors.secondary }}
+          >
+            + Acrescentar prato
+          </button>
+        )}
       </div>
     </SectionShell>
   );

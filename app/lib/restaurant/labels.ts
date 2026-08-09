@@ -84,6 +84,25 @@ export function styleName(style: string): string {
   return STYLE_NAMES_PT[style] ?? style;
 }
 
+// WHAT THE WORD MEANS, IN PLACES HE HAS BEEN
+//
+// "Estilo: Moderno" is a designer's word offered to somebody who has never had to answer
+// it. A restaurant owner does not know whether his marisqueira is "moderno" or "rústico" -
+// he knows what his dining room looks like. So each option names a room rather than an
+// aesthetic, and he recognises his own.
+const STYLE_HINTS_PT: Record<string, string> = {
+  Modern: "linhas direitas, muito espaço, pouca decoração",
+  Classic: "toalhas de linho, madeira escura, de sempre",
+  Minimal: "simples e despojado, quase sem cor",
+  Rustic: "pedra, madeira, tasca de aldeia",
+  Elegant: "para jantares especiais, mais requintado",
+  Casual: "para o dia a dia, sem cerimónia",
+};
+
+export function styleHint(style: string): string | undefined {
+  return STYLE_HINTS_PT[style];
+}
+
 const LABELS: Record<SiteLanguage, SiteLabels> = {
   pt: {
     menu: "Ementa",
