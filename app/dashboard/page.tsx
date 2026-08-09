@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/app/components/RequireAuth";
+import BillingPanel from "./BillingPanel";
 
 interface ProjectSummary {
   id: string;
@@ -109,6 +110,8 @@ function DashboardContent() {
             + Novo site
           </Link>
         </div>
+
+        <BillingPanel />
 
         {projects && projects.length > 0 && (
           <input

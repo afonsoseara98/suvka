@@ -30,6 +30,23 @@ model User {
   sessions Session[]
   projects Project[]
 
+  // BILLING, AS A CACHE OF STRIPE
+  //
+  // Stripe is the source of truth for whether somebody is paying. These columns exist so a
+  // page render does not have to call Stripe to find out - they are written by the webhook
+  // and read everywhere else. Nothing here decides anything Stripe has not already decided.
+  //
+  // trialStartedAt is the exception, and it is ours: the free month starts when a restaurant
+  // first puts its site online, which happens before any Stripe object exists. Without it
+  // the owner has no way of knowing when the free period ends, and "vou ser cobrado quando?"
+  // is a question the product currently answers with silence.
+  stripeCustomerId   String?   @unique
+  // Mirrors Stripe's own vocabulary - trialing, active, past_due, canceled - rather than
+  // inventing a parallel set that has to be mapped back.
+  subscriptionStatus String?
+  subscriptionEndsAt DateTime?
+  trialStartedAt     DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

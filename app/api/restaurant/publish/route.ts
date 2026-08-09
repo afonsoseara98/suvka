@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { repos } from "@/app/lib/repos";
+import { prisma } from "@/app/lib/prisma";
 import { createProjectFromGeneration } from "@/app/lib/projectService";
 import { publishProject } from "@/app/lib/publishService";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
@@ -56,6 +57,22 @@ export async function POST(request: Request) {
     // against what is actually free - the check on that screen is a moment old, and two
     // people can be choosing the same name at once.
     const published = await publishProject(repos, project.id, new Date(), desiredSlug);
+
+    // The free month starts here, at the moment the restaurant is actually online - not at
+    // sign-up, which can happen minutes earlier and for nothing. `updateMany` with the null
+    // guard makes this first-publish-only without a read first: publishing a second
+    // restaurant must not restart the clock.
+    //
+    // Swallowed rather than thrown, because a site going online matters more than a clock -
+    // but logged, because swallowed silently is how a whole cohort of owners ends up with no
+    // trial start and nobody notices. This exact failure happened once already, against a
+    // stale Prisma client, and left no trace at all.
+    await prisma.user
+      .updateMany({
+        where: { id: session.user.id, trialStartedAt: null },
+        data: { trialStartedAt: new Date() },
+      })
+      .catch((error) => console.error("Could not start the trial clock:", error));
 
     // The draft has done its job. Keeping it would leave a second, unowned copy of a site
     // that now has an owner.
