@@ -1,84 +1,47 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   draftId: string;
   name: string;
+  // Rendered above the device, at full width, because it is our tool rather than part of
+  // the restaurant's site - and because squeezing it into 375px made it unusable.
+  tools?: React.ReactNode;
+  // Changes whenever the photographs do, which is what reloads the iframe: router.refresh()
+  // re-renders this page but cannot reach inside a frame.
+  contentKey?: string;
   children: React.ReactNode;
 };
 
 // PUBLISHING IS WHERE THE ACCOUNT IS ASKED FOR
 //
 // Not at the form. A visitor who has just watched their own restaurant appear on screen has
-// a reason to sign up; a visitor staring at an empty form has only a cost. The draft id
-// travels through sign-in in the return URL, so coming back lands here with ?publish=1 and
-// the publish happens without them pressing anything twice.
-export default function PublishBar({ draftId, name, children }: Props) {
-  const { status } = useSession();
+// a reason to sign up; a visitor staring at an empty form has only a cost.
+export default function PublishBar({ draftId, name, tools, contentKey, children }: Props) {
   const router = useRouter();
-  const params = useSearchParams();
   const [publishing, setPublishing] = useState(false);
   // Mobile first, and not as a preference: a person looking up a restaurant is almost
   // always on a phone, and an owner who has only seen their site at 1440px has not seen
   // what their customers see.
   const [viewport, setViewport] = useState<"mobile" | "desktop">("mobile");
-  const [error, setError] = useState<string | null>(null);
 
-  const wantsToPublish = params.get("publish") === "1";
-
-  async function publish() {
-    setPublishing(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/restaurant/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draftId }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data?.message ?? "Não foi possível publicar. Tente novamente.");
-        return;
-      }
-
-      router.push(`/s/${data.slug}`);
-    } catch (err) {
-      console.error(err);
-      setError("Não foi possível contactar o servidor.");
-    } finally {
-      setPublishing(false);
-    }
-  }
-
-  function start() {
-    if (status === "authenticated") {
-      publish();
-      return;
-    }
-    // Carry the draft through sign-in. Without the return URL the person lands on a
-    // dashboard and their site is gone as far as they can tell.
-    router.push(`/entrar?next=${encodeURIComponent(`/preview/d/${draftId}?publish=1`)}`);
-  }
-
-  // Coming back from sign-in: finish what they already asked for, rather than making them
-  // find and press the button a second time.
+  // ONE STEP FROM HERE TO ONLINE
   //
-  // The ref guards against the effect running twice (React's development double-invoke, and
-  // any re-render before `publishing` has settled) - publishing twice would create two
-  // projects from one draft. The work is deferred off the effect's synchronous body because
-  // publish() sets state immediately, and setting state during an effect is the pattern
-  // that produces cascading renders.
-  const started = useRef(false);
-  useEffect(() => {
-    if (!wantsToPublish || status !== "authenticated" || started.current) return;
-    started.current = true;
-    void Promise.resolve().then(publish);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantsToPublish, status]);
+  // This button used to POST straight to /api/restaurant/publish, so the owner never saw
+  // the address of their own website until it already existed - and if the name was taken
+  // they were silently given a "-2". Then it sent anonymous visitors to /entrar for the
+  // account and to a second page for the address: two more chances to close the tab on
+  // somebody who had already decided.
+  //
+  // Now it walks to one screen that asks for whatever is still missing - the account only
+  // when there isn't one - and publishes. Everything that used to live here, including the
+  // auto-publish-on-return-from-sign-in effect and its double-run guard, went with it.
+  function start() {
+    setPublishing(true);
+    router.push(`/publicar/${draftId}`);
+  }
 
   return (
     <div className="sticky top-0 z-50 border-b border-zinc-800 bg-black/90 backdrop-blur">
@@ -90,8 +53,8 @@ export default function PublishBar({ draftId, name, children }: Props) {
           </p>
         </div>
 
-        {error && <p className="w-full text-sm text-red-400 sm:w-auto">{error}</p>}
-
+        {/* Publishing errors are shown on the address step now, which is where publishing
+            happens - this bar can no longer fail at anything. */}
         <div className="flex overflow-hidden rounded-lg border border-zinc-700">
           {(["mobile", "desktop"] as const).map((option) => (
             <button
@@ -116,15 +79,31 @@ export default function PublishBar({ draftId, name, children }: Props) {
         </button>
       </div>
 
-      {/* A real 375px viewport, not a scaled screenshot, so the clamp()-based type and
-          spacing resolve exactly as they will on a phone. */}
-      <div className={viewport === "mobile" ? "flex justify-center bg-zinc-900 py-6" : ""}>
-        <div
-          className={viewport === "mobile" ? "w-[375px] overflow-hidden rounded-2xl border border-zinc-700 bg-black" : ""}
-        >
-          {children}
+      {tools}
+
+      {/* The phone is an iframe because only an iframe has its own viewport.
+
+          A 375px-wide div does not make a media query believe it is on a phone: `sm:` and
+          every vw-based clamp() keep resolving against the real window, so the "Telemóvel"
+          view used to show a desktop layout crushed into 375px - three columns of opening
+          hours at 70px each. It was showing owners a page no phone would ever render.
+
+          Desktop stays inline. At a desktop window that view is already truthful, and an
+          iframe there would need its height synced back out - a blank-page failure mode for
+          no gain. */}
+      {viewport === "mobile" ? (
+        <div className="flex justify-center bg-zinc-900 py-6">
+          <iframe
+            key={contentKey}
+            src={`/preview/d/${draftId}/frame`}
+            title={`${name} — como aparece num telemóvel`}
+            // 375x812 is an iPhone. It scrolls inside the frame, the way a phone does.
+            className="h-[812px] w-[375px] rounded-2xl border border-zinc-700 bg-black"
+          />
         </div>
-      </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }

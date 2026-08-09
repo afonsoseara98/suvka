@@ -45,15 +45,25 @@ export default async function DraftPreview({ params }: { params: Promise<{ draft
   // real-but-expired id would confirm that the id was once valid.
   if (!draft) notFound();
 
+  const gallery = draft.landing.gallery ?? [];
+
   return (
     <>
       {/* The bar is the only thing on the page that is not the restaurant's own site. It
           sits above rather than inside, so what the owner is judging is exactly what a
           customer would see. */}
-      <PublishBar draftId={draft.id} name={draft.input.name}>
-        {/* The last thing on the page that belonged to somebody else. Until an owner can
-            put their own dish here, every preview is a demo. */}
-        <PhotoManager draftId={draft.id} gallery={draft.landing.gallery ?? []} />
+      <PublishBar
+        draftId={draft.id}
+        name={draft.input.name}
+        // The phone view renders in an iframe, which router.refresh() cannot reach into.
+        // Keying it on the photographs is what makes a newly uploaded dish actually appear.
+        contentKey={gallery.map((image) => image.url).join("|")}
+        tools={
+          /* The last thing on the page that belonged to somebody else. Until an owner can
+             put their own dish here, every preview is a demo. */
+          <PhotoManager draftId={draft.id} gallery={gallery} />
+        }
+      >
         <Landing state={fromLandingPage(draft.landing)} />
       </PublishBar>
     </>
