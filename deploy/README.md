@@ -104,9 +104,14 @@ Every deploy after this one is the same command.
 
 ## Things that will bite
 
-**One process, on purpose.** Drafts live in memory. A second worker holds a different map,
-so a visitor who generated a site on worker A gets a 404 opening their own preview from
-worker B. Do not add workers before moving drafts to Redis.
+**One machine, on purpose — and the reason changed.** Drafts used to live in memory, so a
+second worker held a different map and a visitor who generated on worker A got a 404 from
+worker B. That is fixed: drafts are rows in Postgres and survive both restarts and workers.
+
+What still pins this to one machine is **photographs on local disk** (`public/uploads`).
+A second machine cannot see the first one's uploads, so a customer's own dish would 404 for
+half the visitors. Before scaling out: move uploads to object storage, and set
+`UPSTASH_REDIS_REST_URL`/`_TOKEN` so rate limiting is shared rather than per-process.
 
 **Photographs are on this disk.** `public/uploads` is gitignored, so `git pull` leaves it
 alone. It is not in any backup unless you make one:

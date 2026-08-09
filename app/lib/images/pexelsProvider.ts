@@ -11,6 +11,66 @@ import type { ImageProvider } from "./types";
 const PEXELS_ENDPOINT = "https://api.pexels.com/v1/search";
 const CANDIDATES_PER_QUERY = 15;
 
+// THE THING THAT BREAKS ON LAUNCH DAY
+//
+// Every generated site costs five searches - one hero, four gallery - and nothing was
+// remembered between them. Pexels' free tier allows 200 requests an hour, so the product
+// runs out of photographs after FORTY restaurants in any given hour and every site
+// generated after that comes out text-only. Showing this to a room of a few hundred people
+// would break it live, in front of them, within minutes.
+//
+// Caching is safe here specifically because a search is not personalised. It returns a page
+// of fifteen candidates for (query, orientation), and `variantSeed` - a function of the
+// business, not of the request - picks which one this restaurant gets. Two tascas sharing a
+// cached candidate list still get different photographs.
+//
+// The queries themselves come from the cuisine and style dropdowns, so the whole product
+// has on the order of a hundred distinct ones. After warm-up almost every generation is
+// served without touching the API at all.
+//
+// Module scope, not instance: createImageProvider builds a new provider per request, so a
+// cache on `this` would be thrown away before the next visitor arrived.
+const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const SEARCH_CACHE_MAX_ENTRIES = 500;
+
+const searchCache = new Map<string, { photos: PexelsPhoto[]; storedAt: number }>();
+
+function cacheGet(key: string, now: number): PexelsPhoto[] | undefined {
+  const hit = searchCache.get(key);
+  if (!hit) return undefined;
+
+  if (now - hit.storedAt > SEARCH_CACHE_TTL_MS) {
+    searchCache.delete(key);
+    return undefined;
+  }
+
+  // Re-inserting moves it to the end of the Map's insertion order, which is what makes the
+  // eviction below least-recently-used rather than arbitrary.
+  searchCache.delete(key);
+  searchCache.set(key, hit);
+  return hit.photos;
+}
+
+function cacheSet(key: string, photos: PexelsPhoto[], now: number): void {
+  // An empty result is not cached: it is usually a rate-limit or a network blip, and
+  // remembering it would turn a momentary failure into six hours of photo-less sites.
+  if (photos.length === 0) return;
+
+  searchCache.set(key, { photos, storedAt: now });
+
+  while (searchCache.size > SEARCH_CACHE_MAX_ENTRIES) {
+    const oldest = searchCache.keys().next();
+    if (oldest.done) break;
+    searchCache.delete(oldest.value);
+  }
+}
+
+// Test seam. Nothing in the product calls this - a cache that survives between test cases
+// would make them pass or fail depending on their order.
+export function clearPexelsSearchCache(): void {
+  searchCache.clear();
+}
+
 // The subset of the Pexels response this depends on. Typed narrowly on purpose: a
 // provider that destructures the whole vendor payload turns every upstream field rename
 // into a runtime break here.
@@ -133,6 +193,10 @@ export class PexelsImageProvider implements ImageProvider {
     // realistically differ, and small enough to stay one fast request.
     const url = `${PEXELS_ENDPOINT}?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=${CANDIDATES_PER_QUERY}`;
 
+    const now = Date.now();
+    const cached = cacheGet(url, now);
+    if (cached) return cached;
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -145,7 +209,9 @@ export class PexelsImageProvider implements ImageProvider {
       if (!response.ok) return [];
 
       const body = (await response.json()) as PexelsSearchResponse;
-      return body.photos ?? [];
+      const photos = body.photos ?? [];
+      cacheSet(url, photos, now);
+      return photos;
     } catch {
       // Network failure, timeout, malformed JSON - all the same outcome to a caller: no
       // picture. Never let an image lookup take down a generation the user is waiting on.

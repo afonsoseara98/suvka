@@ -1,10 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
-import { PexelsImageProvider, type FetchLike } from "./pexelsProvider";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { PexelsImageProvider, clearPexelsSearchCache, type FetchLike } from "./pexelsProvider";
 import { NullImageProvider, createImageProvider, resolveImageSafely } from "./index";
 import type { VisualIntent } from "@/app/ai/types/visual";
 
 // Every test here runs against a fake fetch. Nothing in this file contacts a real image
 // API - proving our own code works is not a reason to spend someone else's quota.
+// The search cache lives at module scope, so without this a test inherits whatever the
+// previous one left behind and the file passes or fails depending on its order.
+beforeEach(() => clearPexelsSearchCache());
+
 function intent(overrides: Partial<VisualIntent> = {}): VisualIntent {
   return {
     treatment: "photo",
@@ -267,5 +271,72 @@ describe("PexelsImageProvider - variant selection", () => {
       fetchImpl: fakeFetch(() => ({ photos: [photo()] })),
     });
     await expect(provider.resolve(intent({ variantSeed: 987654 }))).resolves.not.toBeNull();
+  });
+});
+
+// FORTY RESTAURANTS AN HOUR
+//
+// Five searches per generated site against a 200/hour free tier means the fortieth
+// restaurant in any hour is the last one that gets photographs. These cover the cache that
+// removes that ceiling - and, just as importantly, that it does not make two restaurants
+// share a photograph.
+describe("the search cache", () => {
+  function countingFetch(photos: unknown[]) {
+    let calls = 0;
+    const fetchImpl = async () => {
+      calls += 1;
+      return { ok: true, json: async () => ({ photos }) } as unknown as Response;
+    };
+    return { fetchImpl, calls: () => calls };
+  }
+
+  const photo = (photographer: string) => ({
+    width: 1920,
+    height: 1280,
+    url: `https://pexels.com/${photographer}`,
+    alt: "prato",
+    photographer,
+    photographer_url: `https://pexels.com/@${photographer}`,
+    src: { large2x: `https://images.pexels.com/${photographer}.jpg` },
+  });
+
+  it("asks Pexels once for a query two restaurants share", async () => {
+    const { fetchImpl, calls } = countingFetch([photo("a"), photo("b"), photo("c")]);
+    const provider = new PexelsImageProvider({ apiKey: "k", fetchImpl });
+
+    await provider.resolve(intent({ variantSeed: 0 }));
+    await provider.resolve(intent({ variantSeed: 1 }));
+    await provider.resolve(intent({ variantSeed: 2 }));
+
+    expect(calls(), "three sites, one request").toBe(1);
+  });
+
+  it("still gives them different photographs", async () => {
+    // The whole reason caching is safe: the search is not personalised, variantSeed is.
+    const { fetchImpl } = countingFetch([photo("a"), photo("b"), photo("c")]);
+    const provider = new PexelsImageProvider({ apiKey: "k", fetchImpl });
+
+    const first = await provider.resolve(intent({ variantSeed: 0 }));
+    const second = await provider.resolve(intent({ variantSeed: 1 }));
+
+    expect(first?.credit?.name).toBe("a");
+    expect(second?.credit?.name).toBe("b");
+  });
+
+  it("does not remember a failure", async () => {
+    // An empty result is usually a rate limit or a blip. Caching it would turn one bad
+    // second into six hours of text-only sites.
+    let calls = 0;
+    const fetchImpl = async () => {
+      calls += 1;
+      return { ok: true, json: async () => ({ photos: calls === 1 ? [] : [photo("a")] }) } as unknown as Response;
+    };
+    const provider = new PexelsImageProvider({ apiKey: "k", fetchImpl });
+    // No fallback subjects, so the first search failing is the whole answer - otherwise
+    // resolve simply walks on to the next query and the empty result is never observed.
+    const only = intent({ variantSeed: 0, alternateSubjects: [] });
+
+    expect(await provider.resolve(only), "first attempt fails").toBeNull();
+    expect(await provider.resolve(only), "and is retried, not remembered").not.toBeNull();
   });
 });
