@@ -5,6 +5,7 @@ import { prisma } from "@/app/lib/prisma";
 import { createProjectFromGeneration } from "@/app/lib/projectService";
 import { publishProject } from "@/app/lib/publishService";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
+import { track } from "@/app/lib/events";
 import type { BusinessProfile } from "@/app/ai/types";
 
 // The moment a draft becomes someone's site.
@@ -77,6 +78,8 @@ export async function POST(request: Request) {
     // The draft has done its job. Keeping it would leave a second, unowned copy of a site
     // that now has an owner.
     await draftStore.delete(draftId);
+
+    track("publish_completed", { draftId, projectId: project.id, userId: session.user.id });
 
     return NextResponse.json({ id: project.id, slug: published.slug }, { status: 201 });
   } catch (error) {

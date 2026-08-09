@@ -4,6 +4,7 @@ import Landing from "@/app/components/Landing";
 import { repos } from "@/app/lib/repos";
 import { loadPublishedSite } from "@/app/lib/publishService";
 import RestaurantSchema from "./RestaurantSchema";
+import SiteEvents from "./SiteEvents";
 
 // THE PUBLIC SITE
 //
@@ -74,6 +75,8 @@ export default async function PublishedSitePage({ params }: Props) {
           on the phone of someone standing on the street. For a local business that card is
           the search result that matters. */}
       <RestaurantSchema state={site.state} siteUrl={`/s/${slug}`} />
+      {/* Counts taps on the actions, and nothing about the person tapping. */}
+      <SiteEvents projectId={site.projectId} />
       <Landing state={site.state} />
     </main>
   );

@@ -25,7 +25,11 @@ const SECTIONS = [
   },
   {
     title: "Seguimento",
-    body: "Não colocamos cookies de seguimento nem ferramentas de análise nos sites publicados dos nossos clientes. Um site seu não carrega rastreadores que os seus clientes não aceitaram.",
+    body: "Não colocamos cookies nem ferramentas de análise de terceiros nos sites publicados dos nossos clientes. Um site seu não carrega Google Analytics, píxeis do Facebook nem rastreadores que os seus clientes não aceitaram.",
+  },
+  {
+    title: "O que contamos no seu site",
+    body: "Contamos quantas vezes alguém carrega no telefone, no WhatsApp, em 'Como chegar', em reservar e nas plataformas de encomenda — para lhe podermos dizer o que o site lhe está a trazer. É uma contagem e mais nada: não guardamos cookies, endereços IP nem qualquer identificador, e não conseguimos saber quem carregou, nesta visita ou em qualquer outra.",
   },
   {
     title: "Apagar os seus dados",

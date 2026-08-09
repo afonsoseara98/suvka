@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { validateSignup } from "@/app/lib/validateSignup";
+import { track } from "@/app/lib/events";
 
 // Auth.js's Credentials provider only handles sign-*in* - creating the User row is
 // conventionally a small hand-written route, not something the provider does for you.
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: { email: validation.email, passwordHash, name: validation.name },
     });
+
+    track("signup_completed", { userId: user.id });
 
     return NextResponse.json({ id: user.id, email: user.email, name: user.name });
   } catch (error: unknown) {

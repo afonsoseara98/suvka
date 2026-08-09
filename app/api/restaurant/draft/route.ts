@@ -3,6 +3,7 @@ import { createImageProvider, resolveImageSafely } from "@/app/lib/images";
 import { getRateLimiter, DRAFT_LIMIT, DRAFT_WINDOW_MS } from "@/app/lib/rateLimit";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import { validateRestaurantInput, isValid, normaliseRestaurantInput, type RestaurantInput } from "@/app/lib/restaurant/input";
+import { track } from "@/app/lib/events";
 import { buildRestaurantPage, imageQueriesFor } from "@/app/lib/restaurant/buildPage";
 import type { ResolvedImage, VisualIntent } from "@/app/ai/types/visual";
 
@@ -72,6 +73,9 @@ export async function POST(request: Request) {
     });
 
     const draft = await draftStore.create(input, landing);
+    // The top of the funnel. Everything downstream is measured as a fraction of this.
+    track("preview_created", { draftId: draft.id });
+
     return NextResponse.json({ id: draft.id }, { status: 201 });
   } catch (error) {
     console.error("Draft creation failed:", error);

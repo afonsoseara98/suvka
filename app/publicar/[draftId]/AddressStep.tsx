@@ -75,6 +75,17 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
       return false;
     }
 
+    // Counted here rather than on the button, so signup_started means a real attempt with
+    // credentials. Firing it on an empty press would inflate the denominator with people
+    // who never typed anything, and signup_completed / signup_started is the ratio this
+    // exists to make readable.
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "signup_started", draftId }),
+      keepalive: true,
+    }).catch(() => undefined);
+
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

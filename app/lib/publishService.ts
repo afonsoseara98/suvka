@@ -157,6 +157,8 @@ export async function unpublishProject(repos: RepositoryBundle, projectId: strin
 }
 
 export interface PublishedSite {
+  // Needed by the published page to attribute an action to a restaurant. Never rendered.
+  projectId: string;
   projectName: string;
   slug: string;
   state: PageState;
@@ -180,6 +182,7 @@ export async function loadPublishedSite(repos: RepositoryBundle, slug: string): 
   if (!snapshot) return null;
 
   return {
+    projectId: project.id,
     projectName: project.name,
     slug: project.slug ?? slug,
     state: snapshot.state,

@@ -17,6 +17,35 @@ datasource db {
 
 // --- Auth.js required models (@auth/prisma-adapter's canonical schema) ---
 
+// ONE ROW PER THING THAT HAPPENED
+//
+// Not analytics in the usual sense: there is no visitor here. No cookie is set, no address
+// is stored, nothing is joined back to a person. A row says "a phone number was tapped on
+// this project at this time" and cannot say who did it, on this visit or any other.
+//
+// That restraint is the design. Two questions need answering and neither needs identity:
+// where the funnel leaks (preview -> publish -> signup -> published), and whether a
+// restaurant's site actually brings it customers - which is the sentence that renews a
+// 19 EUR subscription.
+//
+// No relations on purpose. Events outlive the draft, project or account they describe: a
+// funnel that loses every abandoned preview measures only the people who succeeded, which
+// is the opposite of what it is for.
+model Event {
+  id   String   @id @default(cuid())
+  name String
+  at   DateTime @default(now())
+
+  // Whichever of these the moment knew about. All optional, all plain strings.
+  draftId   String?
+  projectId String?
+  userId    String?
+
+  // The funnel is always read as "this event, over this window".
+  @@index([name, at])
+  @@index([projectId, name])
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?

@@ -6,6 +6,7 @@ import { fromLandingPage } from "@/app/editor/pageState";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import PublishBar from "./PublishBar";
 import PhotoManager from "./PhotoManager";
+import { track } from "@/app/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,11 @@ export default async function DraftPreview({ params }: { params: Promise<{ draft
   // Expired and never-existed are the same answer on purpose: a different response for a
   // real-but-expired id would confirm that the id was once valid.
   if (!draft) notFound();
+
+  // The second step of the funnel. Counted server-side because it is a page view, and a
+  // client ping would miss anyone who leaves before hydration - which is precisely the
+  // person the funnel needs to count.
+  track("preview_viewed", { draftId: draft.id });
 
   const gallery = draft.landing.gallery ?? [];
 

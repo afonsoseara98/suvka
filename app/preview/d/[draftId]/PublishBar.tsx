@@ -39,6 +39,14 @@ export default function PublishBar({ draftId, name, tools, contentKey, children 
   // when there isn't one - and publishes. Everything that used to live here, including the
   // auto-publish-on-return-from-sign-in effect and its double-run guard, went with it.
   function start() {
+    // Where intent turns into a step. Everything after this is measured against it.
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "publish_clicked", draftId }),
+      keepalive: true,
+    }).catch(() => undefined);
+
     setPublishing(true);
     router.push(`/publicar/${draftId}`);
   }
