@@ -34,8 +34,19 @@ export default function PrimaryButton({ children, theme, href }: Props) {
   };
 
   if (href) {
+    // A booking link goes to somebody else's site - TheFork, or whatever the restaurant
+    // already uses - and following it in this tab closes the restaurant's own page behind
+    // the customer. tel: and in-page anchors must NOT do this: a new tab for a phone dial
+    // leaves an empty window behind on every phone.
+    const leavesTheSite = /^https?:\/\//i.test(href);
+
     return (
-      <a href={href} className={className} style={style}>
+      <a
+        href={href}
+        className={className}
+        style={style}
+        {...(leavesTheSite ? { target: "_blank", rel: "noreferrer" } : {})}
+      >
         {children}
       </a>
     );

@@ -23,6 +23,11 @@ export interface SiteLabels {
   phone: string;
   callToBook: string;
   seeMenu: string;
+  // Shown only when the owner supplied the channel. See OpeningHours.
+  bookTable: string;
+  whatsapp: string;
+  email: string;
+  openInMaps: string;
 
   // The word for the business itself, used in the page title a customer sees in their
   // browser tab and in Google. "Taberna do Bairro — Portuguese restaurant" is not a title a
@@ -112,6 +117,10 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     phone: "Telefone",
     callToBook: "Ligar para reservar",
     seeMenu: "Ver a ementa",
+    bookTable: "Reservar mesa",
+    whatsapp: "WhatsApp",
+    email: "Email",
+    openInMaps: "Abrir no mapa",
     restaurant: "Restaurante",
     takeaway: "Take-away e entregas",
     fallbackSubtitle: (cuisine) => `${cuisine}.`,
@@ -124,6 +133,10 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     phone: "Phone",
     callToBook: "Call to book",
     seeMenu: "See the menu",
+    bookTable: "Book a table",
+    whatsapp: "WhatsApp",
+    email: "Email",
+    openInMaps: "Open in maps",
     restaurant: "Restaurant",
     takeaway: "Takeaway and delivery",
     fallbackSubtitle: (cuisine) => `${cuisine} cooking.`,

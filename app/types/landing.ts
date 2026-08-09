@@ -90,9 +90,21 @@ export interface OpeningHours {
   // answerable for.
   mapUrl?: string;
 
-  // The three column headings. Carried on the content rather than hardcoded in the
-  // component, because a restaurant in Porto shows its customers Portuguese words.
-  labels?: { address: string; hours: string; phone: string };
+  // HOW A CUSTOMER ACTUALLY REACHES THIS RESTAURANT
+  //
+  // The only route used to be the phone, which is one channel and the one a person will not
+  // use at 23:40 to ask whether there is a table on Saturday. Both of these are plain links
+  // that work today with nothing configured - no mail server, no booking vendor, no keys.
+  //
+  // WhatsApp because that is where Portuguese restaurants already answer, and a message
+  // costs the customer far less than a call. Kept separate from `phone` on purpose: the
+  // landline in the dining room does not have WhatsApp, the owner's mobile does.
+  whatsapp?: string;
+  email?: string;
+
+  // The column headings. Carried on the content rather than hardcoded in the component,
+  // because a restaurant in Porto shows its customers Portuguese words.
+  labels?: { address: string; hours: string; phone: string; whatsapp: string; email: string; openInMaps: string };
 }
 
 export interface HeroStat {

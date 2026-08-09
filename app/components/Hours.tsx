@@ -6,7 +6,7 @@ import type { SectionHeading } from "./renderers/SectionRenderer";
 import SectionShell from "./ui/SectionShell";
 import SectionHeader from "./ui/SectionHeader";
 import EditableText from "./editor/EditableText";
-import { tidyPhoneHref } from "@/app/lib/restaurant/tidy";
+import { tidyPhoneHref, whatsappHref } from "@/app/lib/restaurant/tidy";
 
 type Props = {
   data: OpeningHours;
@@ -31,13 +31,41 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
   const commit = (field: keyof OpeningHours) =>
     onUpdateContent && ((value: string) => onUpdateContent({ ...data, [field]: value }));
 
-  const entries: Array<{ label: string; field: "address" | "schedule" | "phone"; value: string; href?: string }> = ([
-    { label: data.labels?.address ?? "Address", field: "address", value: data.address, href: data.mapUrl },
+  type Entry = {
+    label: string;
+    field: "address" | "schedule" | "phone" | "whatsapp" | "email";
+    value: string;
+    href?: string;
+    // What tapping it does, said out loud. An underlined address is not obviously a button
+    // to somebody who does not expect one, and this is the section where every line is
+    // something the customer wants to ACT on rather than read.
+    action?: string;
+    // Leaves the site. tel:, mailto: and a maps handoff should not, so they are marked.
+    external?: boolean;
+  };
+
+  const entries: Entry[] = ([
+    {
+      label: data.labels?.address ?? "Address",
+      field: "address",
+      value: data.address,
+      href: data.mapUrl,
+      action: data.mapUrl ? (data.labels?.openInMaps ?? "Open in maps") : undefined,
+      external: true,
+    },
     { label: data.labels?.hours ?? "Hours", field: "schedule", value: data.schedule },
     // The printed number stays exactly as the owner wrote it; only what gets dialled is
     // normalised, so a nine-digit Portuguese number also works from a foreign phone.
     { label: data.labels?.phone ?? "Phone", field: "phone", value: data.phone, href: data.phone ? `tel:${tidyPhoneHref(data.phone)}` : undefined },
-  ] as Array<{ label: string; field: "address" | "schedule" | "phone"; value: string; href?: string }>).filter((entry) => entry.value && entry.value.trim().length > 0);
+    {
+      label: data.labels?.whatsapp ?? "WhatsApp",
+      field: "whatsapp",
+      value: data.whatsapp ?? "",
+      href: data.whatsapp ? whatsappHref(data.whatsapp) : undefined,
+      external: true,
+    },
+    { label: data.labels?.email ?? "Email", field: "email", value: data.email ?? "", href: data.email ? `mailto:${data.email}` : undefined },
+  ] as Entry[]).filter((entry) => entry.value && entry.value.trim().length > 0);
 
   if (entries.length === 0) return null;
 
@@ -53,7 +81,9 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
         description={heading?.description}
       />
 
-      <div className="mx-auto mt-10 grid max-w-3xl gap-8 sm:grid-cols-3">
+      {/* Two columns rather than three: with WhatsApp and email the section can carry five
+          entries, and three columns left an orphan on its own row. */}
+      <div className="mx-auto mt-10 grid max-w-3xl gap-8 sm:grid-cols-2">
         {entries.map((entry) => (
           <div key={entry.field}>
             <div
@@ -72,7 +102,12 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
               style={{ color: theme.colors.primary, whiteSpace: entry.field === "schedule" ? "pre-line" : "normal" }}
             >
               {entry.href && !onUpdateContent ? (
-                <a href={entry.href} className="hover:underline" style={{ color: theme.colors.primary }}>
+                <a
+                  href={entry.href}
+                  className="hover:underline"
+                  style={{ color: theme.colors.primary }}
+                  {...(entry.external ? { target: "_blank", rel: "noreferrer" } : {})}
+                >
                   {entry.value}
                 </a>
               ) : (
@@ -84,6 +119,21 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
                 />
               )}
             </div>
+
+            {/* Says what the tap does. Without it the address is an underlined string, and
+                a customer standing on the street does not discover that it opens their map
+                by guessing. */}
+            {entry.action && entry.href && !onUpdateContent && (
+              <a
+                href={entry.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-block text-sm hover:underline"
+                style={{ color: theme.colors.accent }}
+              >
+                {entry.action} →
+              </a>
+            )}
           </div>
         ))}
       </div>

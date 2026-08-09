@@ -31,6 +31,41 @@ export function tidyPrice(raw: string): string {
   return `${whole},${cents} €`;
 }
 
+// TAP THE ADDRESS, THE MAP OPENS
+//
+// The address was plain text. Somebody standing on a street in Aveiro with the restaurant's
+// site open had to select it, copy it, leave, open Maps and paste - which nobody does. They
+// close the page and search the name in Google instead, which is the competitor.
+//
+// A universal Google Maps link rather than a `geo:` URI: geo: opens the default map app on
+// Android and does nothing at all on a desktop, where roughly half of these pages are read.
+// This form opens the Google Maps app when it is installed - on iOS too - and falls back to
+// the browser, where the phone still offers to hand off to Apple Maps. One link that works
+// everywhere beats three that each work in one place.
+//
+// Deliberately NOT an embedded map. An iframe from Google would load Google's cookies onto
+// a customer's website, and app/privacidade promises the opposite in writing: "Não colocamos
+// cookies de seguimento nem ferramentas de análise nos sites publicados dos nossos
+// clientes." A link costs the visitor nothing until they choose to tap it.
+export function mapsHref(address: string): string | undefined {
+  const query = address.trim();
+  if (!query) return undefined;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+// A WhatsApp link needs the country code and nothing else - no plus, no spaces. Reuses the
+// phone normalisation so a number typed as "912 345 678" reaches the same place as one typed
+// as "+351 912345678", and refuses rather than guesses when it cannot tell what the number
+// is: a wa.me link built from a wrong number opens a chat with a stranger.
+export function whatsappHref(raw: string, message?: string): string | undefined {
+  const dialable = tidyPhoneHref(raw);
+  if (!dialable.startsWith("+")) return undefined;
+
+  const digits = dialable.slice(1);
+  const text = message?.trim() ? `?text=${encodeURIComponent(message.trim())}` : "";
+  return `https://wa.me/${digits}${text}`;
+}
+
 // A Portuguese landline or mobile is nine digits. Written without the country code it dials
 // perfectly from inside Portugal and not at all from the German tourist's phone standing
 // outside the door in August - which for a restaurant in Aveiro is the call that matters.

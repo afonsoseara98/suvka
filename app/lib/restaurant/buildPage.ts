@@ -5,7 +5,7 @@ import { DEFAULT_DNA } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
 import { labelsFor, cuisineName } from "./labels";
-import { tidyPrice, tidyPhoneHref } from "./tidy";
+import { tidyPrice, tidyPhoneHref, mapsHref } from "./tidy";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -111,11 +111,15 @@ export function buildRestaurantPage(
       // Emphasise the last word of the name, which is usually the distinctive one.
       highlightWord: input.name.trim().split(/\s+/).slice(-1)[0] ?? "",
       subtitle,
-      primaryCTA: labels.callToBook,
+      // A booking link, when the restaurant has one, beats a phone call: it is the action
+      // the customer came to take and it works at 23:40. Without one the phone is not a
+      // fallback, it is the honest answer for most tascas - so the words change with it
+      // rather than promising a booking system that does not exist.
+      primaryCTA: input.bookingUrl ? labels.bookTable : labels.callToBook,
       secondaryCTA: input.dishes.length > 0 ? labels.seeMenu : labels.findUs,
       // Real destinations. The phone dials on a mobile - the single most valuable action a
       // restaurant page can offer - and the secondary jumps to the menu further down.
-      primaryHref: input.phone ? `tel:${tidyPhoneHref(input.phone)}` : undefined,
+      primaryHref: input.bookingUrl || (input.phone ? `tel:${tidyPhoneHref(input.phone)}` : undefined),
       secondaryHref: input.dishes.length > 0 ? "#menu" : "#hours",
       imageStyle: "website",
       imagePrompt: "",
@@ -157,7 +161,22 @@ export function buildRestaurantPage(
       schedule: input.hasDelivery ? `${input.schedule}\n\n${labels.takeaway}` : input.schedule,
       address: input.address,
       phone: input.phone,
-      labels: { address: labels.address, hours: labels.hours, phone: labels.phone },
+      // Tapping the address opens the customer's own map app. It was plain text, so somebody
+      // standing on a street had to copy it out by hand - which nobody does; they go back to
+      // Google and search the name, which is where the competitor is.
+      mapUrl: mapsHref(input.address),
+      // Both only when the owner gave them. A WhatsApp button that opens a chat with nobody
+      // is worse than no button.
+      whatsapp: input.whatsapp || undefined,
+      email: input.email || undefined,
+      labels: {
+        address: labels.address,
+        hours: labels.hours,
+        phone: labels.phone,
+        whatsapp: labels.whatsapp,
+        email: labels.email,
+        openInMaps: labels.openInMaps,
+      },
     },
     footer: {
       company: input.name,

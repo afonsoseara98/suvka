@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tidyPrice, tidyPhoneHref } from "./tidy";
+import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref } from "./tidy";
 
 // A real owner filled these three in, one after the other, and got a menu with three
 // different price formats on it.
@@ -55,5 +55,41 @@ describe("tidyPhoneHref", () => {
   it("does not guess at a number it does not recognise", () => {
     expect(tidyPhoneHref("1820")).toBe("1820");
     expect(tidyPhoneHref("234 390")).toBe("234390");
+  });
+});
+
+// Standing on a street with the restaurant's site open, the address was text you had to
+// copy out by hand. Nobody does that - they go back to Google and search the name, which is
+// where the competitor is.
+describe("mapsHref", () => {
+  it("builds a link that opens the map app the visitor already uses", () => {
+    expect(mapsHref("Cais dos Mercanteis 14, Aveiro")).toBe(
+      "https://www.google.com/maps/search/?api=1&query=Cais%20dos%20Mercanteis%2014%2C%20Aveiro"
+    );
+  });
+
+  it("has nothing to point at without an address", () => {
+    expect(mapsHref("")).toBeUndefined();
+    expect(mapsHref("   ")).toBeUndefined();
+  });
+});
+
+describe("whatsappHref", () => {
+  it("reaches the same restaurant however the owner typed the number", () => {
+    expect(whatsappHref("912 345 678")).toBe("https://wa.me/351912345678");
+    expect(whatsappHref("+351 912345678")).toBe("https://wa.me/351912345678");
+  });
+
+  it("carries a first message so the customer does not have to open with 'olá'", () => {
+    expect(whatsappHref("912345678", "Boa tarde, queria reservar")).toBe(
+      "https://wa.me/351912345678?text=Boa%20tarde%2C%20queria%20reservar"
+    );
+  });
+
+  it("refuses rather than guesses at a number it cannot place", () => {
+    // A wa.me link built from a wrong number opens a chat with a stranger, under the
+    // restaurant's name.
+    expect(whatsappHref("1820")).toBeUndefined();
+    expect(whatsappHref("234 390")).toBeUndefined();
   });
 });

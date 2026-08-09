@@ -30,6 +30,8 @@ const EMPTY: RestaurantInput = {
   hasDelivery: false,
   style: "Modern",
   description: "",
+  whatsapp: "",
+  bookingUrl: "",
   language: DEFAULT_LANGUAGE,
   // Never collected here. The published site uses the account address - see the publish
   // route - so the public form asks for nothing personal.
@@ -234,6 +236,48 @@ function RestaurantForm() {
                 placeholder={"Terça a domingo\n12:00–15:00 e 19:00–22:30\nEncerrado à segunda"}
               />
               {errors.schedule && <p className={errorText}>{errors.schedule}</p>}
+            </div>
+          </div>
+
+          {/* COMO OS CLIENTES FALAM CONSIGO
+              Both optional, and asked here because this is where the owner is already
+              thinking about being reached. Neither is invented if left blank: the site
+              simply does not show a channel the restaurant does not have. */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <label className={label} htmlFor="whatsapp">
+                WhatsApp <span className="font-normal text-zinc-500">— opcional</span>
+              </label>
+              <input
+                id="whatsapp"
+                maxLength={LIMITS.whatsapp}
+                className={field}
+                value={input.whatsapp}
+                onChange={(e) => set("whatsapp", e.target.value)}
+                placeholder="912 345 678"
+              />
+              <p className="mt-2 text-sm text-zinc-500">
+                Muita gente prefere mandar mensagem a ligar. Ponha o telemóvel que atende.
+              </p>
+              {errors.whatsapp && <p className={errorText}>{errors.whatsapp}</p>}
+            </div>
+
+            <div>
+              <label className={label} htmlFor="bookingUrl">
+                Link de reservas <span className="font-normal text-zinc-500">— opcional</span>
+              </label>
+              <input
+                id="bookingUrl"
+                maxLength={LIMITS.bookingUrl}
+                className={field}
+                value={input.bookingUrl}
+                onChange={(e) => set("bookingUrl", e.target.value)}
+                placeholder="https://thefork.pt/..."
+              />
+              <p className="mt-2 text-sm text-zinc-500">
+                Se já usa TheFork ou outro. Sem isto, o botão do site liga-lhe pelo telefone.
+              </p>
+              {errors.bookingUrl && <p className={errorText}>{errors.bookingUrl}</p>}
             </div>
           </div>
 

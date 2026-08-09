@@ -14,6 +14,8 @@ function input(overrides: Partial<RestaurantInput> = {}): RestaurantInput {
     style: "Rustic",
     email: "reservas@tabernadobairro.pt",
     existingWebsite: "",
+    whatsapp: "",
+    bookingUrl: "",
     language: "pt",
     description: "A small dining room.",
     ...overrides,
@@ -181,7 +183,14 @@ describe("the page speaks the restaurant's language", () => {
     const built = buildRestaurantPage(input({ language: "pt" }), { hero: null, gallery: [] });
     expect(built.hero.primaryCTA).toBe("Ligar para reservar");
     expect(built.hero.secondaryCTA).toBe("Ver a ementa");
-    expect(built.hours?.labels).toEqual({ address: "Morada", hours: "Horário", phone: "Telefone" });
+    expect(built.hours?.labels).toEqual({
+      address: "Morada",
+      hours: "Horário",
+      phone: "Telefone",
+      whatsapp: "WhatsApp",
+      email: "Email",
+      openInMaps: "Abrir no mapa",
+    });
   });
 
   it("switches to English when the owner asks for it", () => {

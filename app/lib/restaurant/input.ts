@@ -53,6 +53,18 @@ export interface RestaurantInput {
   // and those are different products.
   existingWebsite: string;
 
+  // BOOKING AND MESSAGING, BOTH OPTIONAL
+  //
+  // The only way to reach a restaurant used to be its phone number, which is the one channel
+  // a person will not use at 23:40 to ask about a table on Saturday.
+  //
+  // Optional because the honest default for a tasca IS the phone, and a booking button that
+  // goes nowhere is worse than no booking button. Each one appears on the site only if the
+  // owner supplied it - the same rule every other section follows.
+  whatsapp: string;
+  // TheFork, Zomato, their own system. Whatever they already use; we integrate with nothing.
+  bookingUrl: string;
+
   // Which language the finished SITE speaks. Portugal is the market, so the default is
   // Portuguese - an owner who wants English can switch.
   language: SiteLanguage;
@@ -85,6 +97,8 @@ export const LIMITS = {
   schedule: 400,
   email: 120,
   existingWebsite: 200,
+  whatsapp: 40,
+  bookingUrl: 300,
   dishName: 80,
   dishPrice: 20,
   dishDescription: 200,
@@ -128,6 +142,21 @@ export function validateRestaurantInput(input: Partial<RestaurantInput>, options
   else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(input.email).trim())) errors.email = "Isso não parece um endereço de email.";
   else if (String(input.email).trim().length > LIMITS.email) errors.email = "Esse email parece demasiado longo.";
 
+  if (typeof input.whatsapp === "string" && input.whatsapp.trim().length > LIMITS.whatsapp) {
+    errors.whatsapp = "Esse número parece demasiado longo.";
+  }
+
+  // A booking link that goes to the wrong place is worse than none, and the owner is going
+  // to paste this from TheFork or from their own system. Checked as a URL rather than left
+  // to fail silently on a customer's tap.
+  if (!isBlank(input.bookingUrl)) {
+    const value = String(input.bookingUrl).trim();
+    if (value.length > LIMITS.bookingUrl) errors.bookingUrl = "Esse link é demasiado longo.";
+    else if (!/^https?:\/\/[^\s.]+\.[^\s]{2,}$/i.test(value)) {
+      errors.bookingUrl = "O link de reservas tem de começar por https:// e ser um endereço completo.";
+    }
+  }
+
   if (typeof input.existingWebsite === "string" && input.existingWebsite.trim().length > LIMITS.existingWebsite) {
     errors.existingWebsite = "Esse endereço parece demasiado longo.";
   }
@@ -167,6 +196,8 @@ export const FIELD_ORDER: ReadonlyArray<keyof FieldErrors> = [
   "address",
   "phone",
   "schedule",
+  "whatsapp",
+  "bookingUrl",
   "dishes",
   "email",
   "existingWebsite",
@@ -194,6 +225,8 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     description: (input.description ?? "").trim(),
     email: (input.email ?? "").trim(),
     existingWebsite: (input.existingWebsite ?? "").trim(),
+    whatsapp: (input.whatsapp ?? "").trim(),
+    bookingUrl: (input.bookingUrl ?? "").trim(),
     language: input.language ?? "pt",
     dishes: input.dishes
       .filter((dish) => !isBlank(dish.name) && !isBlank(dish.price))
