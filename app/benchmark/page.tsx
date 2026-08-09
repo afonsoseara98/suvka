@@ -218,7 +218,9 @@ function BusinessReview({ businessId }: { businessId: string }) {
             </div>
 
             <div className="max-h-[500px] overflow-y-auto">
-              <Landing state={fromLandingPage(record.landingPage)} />
+              {/* The one caller the card was designed for: twenty specimens side by side,
+                  where a border is what separates one from the next. */}
+              <Landing state={fromLandingPage(record.landingPage)} framed />
             </div>
 
             <div className="space-y-2 border-t border-zinc-800 p-4">
