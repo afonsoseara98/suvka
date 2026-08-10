@@ -7,7 +7,7 @@ contra um build de produção real (`NODE_ENV=production`, `next start`), não c
 | Ronda | Commit | Veredito |
 |---|---|---|
 | Auditoria | `0286bb8` | READY FOR BETA: **NO** — #1 e #2 |
-| Correção de #1 e #2 | `6ea9f9f` | READY FOR BETA: **YES**, com três condições |
+| Correção de #1 e #2 | `7072def` | READY FOR BETA: **YES**, com três condições |
 
 **Aviso que não desaparece com nenhuma ronda:** "verificado" aqui significa contra um build
 de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
@@ -26,14 +26,14 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 | ✅ | Nenhum endpoint de desenvolvimento acessível | 22 rotas de API enumeradas; as 4 de benchmark exigem sessão |
 | ✅ | Sem secrets hardcoded | `git grep` no código e `git log -p --all` em todo o histórico: só marcadores `sk_live_...` na documentação |
 | ✅ | Sem chaves de teste em produção | Uma `sk_test_` ou `pk_test_` com `NODE_ENV=production` recusa o arranque — **verificado**: o servidor recusou-se a arrancar com as chaves de teste do `.env.local` |
-| ✅ | Rate limiting em todos os endpoints públicos | **Fechado em `6ea9f9f`** — 10/min por endereço e 10/15 min por conta no login, 5/h no signup |
+| ✅ | Rate limiting em todos os endpoints públicos | **Fechado em `7072def`** — 10/min por endereço e 10/15 min por conta no login, 5/h no signup |
 | ⚠️ | Upload protegido | Whitelist de tipos, 10 MB, máximo 6, nome aleatório, `remove()` recusa separadores. Só o `Content-Type` declarado pelo cliente é que não é verificado contra os bytes |
 
 ### 🔴 Configuração
 
 | | Item | Evidência |
 |---|---|---|
-| ✅ | Variáveis validadas no arranque | **Fechado em `6ea9f9f`** — `instrumentation.ts` + `app/lib/env.ts`, 22 testes |
+| ✅ | Variáveis validadas no arranque | **Fechado em `7072def`** — `instrumentation.ts` + `app/lib/env.ts`, 22 testes |
 | ✅ | Falta uma `ENV` → falha imediata | **Verificado**: `DATABASE_URL="mysql://errado"` → saída 1, e **nenhum pedido chegou a ser servido** durante o arranque |
 | ✅ | Sem referências a `localhost` | Zero fora dos testes |
 | ❌ | URLs construídas a partir de `APP_URL` | O Stripe usa `new URL(request.url).origin` — BLOCKER #3 |
@@ -62,7 +62,7 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 
 | | Item | Evidência |
 |---|---|---|
-| ✅ | Build limpa | `tsc` ✓ `eslint` ✓ `next build` ✓ · 878 testes, 68 ficheiros |
+| ✅ | Build limpa | `tsc` ✓ `eslint` ✓ `next build` ✓ · 907 testes, 70 ficheiros |
 | ✅ | `next start` | Verificado |
 | ✅ | Healthcheck | `/api/health` → `{"ok":true}`, faz `SELECT 1` |
 | ✅ | Logs | `journald` (`SyslogIdentifier=noctra`) + Caddy em JSON |
@@ -94,7 +94,7 @@ O `bcrypt` a 12 é a escolha certa. O que falta é o que impede alguém de o cha
 `/api/auth/callback/credentials` com uma password errada, ou a `/api/auth/signup` com emails
 diferentes. Nenhum é recusado. Ver a carga da máquina subir durante.
 
-**Correção aplicada** (`6ea9f9f`). `app/lib/authThrottle.ts`, chamado no `authorize` **antes**
+**Correção aplicada** (`7072def`). `app/lib/authThrottle.ts`, chamado no `authorize` **antes**
 do bcrypt e no `/api/auth/signup` antes do hash. Duas contagens: 10/min por endereço, que é
 o que defende o CPU, e 10/15 min por conta, que é o que trava quem distribui os pedidos por
 muitos endereços — que é como se adivinha uma password a sério. O signup fica em 5/h por
@@ -140,7 +140,7 @@ quando corre.
 `active`, o healthcheck sai 0, e a página de pagamento diz "ainda não estão configurados" a
 um cliente.
 
-**Correção aplicada** (`6ea9f9f`). `app/lib/env.ts` como função pura — recebe o ambiente,
+**Correção aplicada** (`7072def`). `app/lib/env.ts` como função pura — recebe o ambiente,
 devolve o que está mal — e `instrumentation.ts` a decidir morrer. 22 testes.
 
 O Stripe é tratado como **grupo**: sem chave nenhuma o produto assume-se sem pagamentos e
