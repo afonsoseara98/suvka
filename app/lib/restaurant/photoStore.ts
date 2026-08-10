@@ -26,8 +26,29 @@ export interface PhotoStore {
   remove(key: string): Promise<void>;
 }
 
+// THE ONE DIRECTORY THAT CANNOT BE REBUILT
+//
+// This defaulted to `<repo>/public/uploads`, which put every customer's own photographs
+// inside the git working tree of the application that serves them. A `git clean -fdx`, a
+// fresh checkout into a new directory, or a deploy that ever decides to start from scratch
+// takes them all - and unlike the database, the sites and the accounts, a photograph a
+// restaurant took of its own food cannot be regenerated from anything.
+//
+// So in production it lives outside the repository, at a path the deploy owns and the
+// backup script already knows about. NOCTRA_UPLOADS_DIR overrides it anywhere.
+//
+// Development keeps public/uploads, because Next serves it with no configuration and a
+// local machine has nothing to lose.
+export function uploadsDirectory(env: NodeJS.ProcessEnv = process.env): string {
+  const configured = env.NOCTRA_UPLOADS_DIR?.trim();
+  if (configured) return configured;
+
+  if (env.NODE_ENV === "production") return "/srv/noctra-uploads";
+  return path.join(process.cwd(), "public", "uploads");
+}
+
 export class LocalPhotoStore implements PhotoStore {
-  constructor(private readonly directory: string = path.join(process.cwd(), "public", "uploads")) {}
+  constructor(private readonly directory: string = uploadsDirectory()) {}
 
   async save(bytes: Buffer, contentType: string): Promise<StoredPhoto> {
     const extension = ALLOWED_TYPES[contentType];

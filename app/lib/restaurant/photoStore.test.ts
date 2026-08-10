@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { mkdtempSync, existsSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
-import { LocalPhotoStore } from "./photoStore";
+import { LocalPhotoStore, uploadsDirectory } from "./photoStore";
 import { rejectPhoto, MAX_PHOTO_BYTES, MAX_PHOTOS } from "./photoLimits";
 
 const dirs: string[] = [];
@@ -89,5 +89,25 @@ describe("what we tell an owner when we refuse a photo", () => {
 
   it("refuses an empty file", () => {
     expect(rejectPhoto(0, "image/jpeg", 0)).toBeTruthy();
+  });
+});
+
+// The only directory in this product that cannot be rebuilt from anything else. It used to
+// default inside the git working tree, where a clean checkout or a `git clean -fdx` takes
+// every photograph a restaurant ever took of its own food.
+describe("where uploads live", () => {
+  it("stays out of the repository in production", () => {
+    const dir = uploadsDirectory({ NODE_ENV: "production" } as NodeJS.ProcessEnv);
+    expect(dir).toBe("/srv/noctra-uploads");
+    expect(dir).not.toContain("public");
+  });
+
+  it("is overridable, because a server may not be laid out the way we assumed", () => {
+    expect(uploadsDirectory({ NODE_ENV: "production", NOCTRA_UPLOADS_DIR: "/mnt/fotos" } as NodeJS.ProcessEnv))
+      .toBe("/mnt/fotos");
+  });
+
+  it("keeps public/uploads locally, where Next serves it with no configuration", () => {
+    expect(uploadsDirectory({ NODE_ENV: "development" } as NodeJS.ProcessEnv)).toContain("public");
   });
 });

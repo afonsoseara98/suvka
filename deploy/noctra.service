@@ -25,12 +25,16 @@ ExecStart=/usr/bin/npm run start
 Restart=always
 RestartSec=3
 
-# ONE PROCESS, DELIBERATELY.
+# UMA MÁQUINA, DE PROPÓSITO - E A RAZÃO MUDOU.
 #
-# Drafts live in memory (app/lib/restaurant/draftStore.ts) - a second worker would hold a
-# different map, and a visitor who generated a site on worker A would get a 404 opening
-# their own preview from worker B. Scaling past one process means moving drafts to Redis
-# first, not adding workers here.
+# Os rascunhos viviam em memória, e por isso um segundo worker devolvia 404 a quem tinha
+# gerado o site no primeiro. Isso já não é verdade: são linhas em Postgres e sobrevivem a
+# reinícios e a workers.
+#
+# O que ainda prende isto a uma máquina são as FOTOGRAFIAS EM DISCO (NOCTRA_UPLOADS_DIR).
+# Uma segunda máquina não vê os uploads da primeira, e o prato de um cliente daria 404 a
+# metade dos visitantes. Antes de escalar: mover para armazenamento de objetos e definir
+# UPSTASH_REDIS_REST_URL/_TOKEN para os limites de pedidos deixarem de ser por processo.
 
 StandardOutput=journal
 StandardError=journal

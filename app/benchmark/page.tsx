@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Landing from "@/app/components/Landing";
 import { fromLandingPage } from "@/app/editor/pageState";
@@ -47,6 +48,17 @@ function shuffle<T>(items: readonly T[]): T[] {
 // itself; it only triggers /api/benchmark/generate, which does, and only when a person
 // clicks the button.
 export default function BenchmarkPage() {
+  // AN INTERNAL TOOL SHOULD NOT HAVE A PUBLIC ADDRESS
+  //
+  // The four benchmark APIs behind this all require a session, so nothing leaked to a
+  // stranger - but "a session" is any restaurant owner who signed up, and this page is our
+  // own competitive scoring against ChatGPT, Claude and Gemini. A customer stumbling into
+  // it is a bad afternoon that costs nothing to prevent.
+  //
+  // NODE_ENV is inlined at build time, so in a production bundle this is an unconditional
+  // 404. The dev preview routes next door already do exactly this.
+  if (process.env.NODE_ENV === "production") notFound();
+
   const { status } = useSession();
   const [tab, setTab] = useState<"setup" | "review" | "report">("setup");
 

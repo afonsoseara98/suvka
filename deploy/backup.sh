@@ -14,7 +14,9 @@
 
 set -euo pipefail
 
-PHOTOS_DIR="${NOCTRA_PHOTOS_DIR:-/srv/noctra/public/uploads}"
+# Fora do repositório. Tem de coincidir com NOCTRA_UPLOADS_DIR no .env.production - uma
+# cópia que aponta para a pasta errada faz backups vazios durante meses sem se queixar.
+PHOTOS_DIR="${NOCTRA_UPLOADS_DIR:-/srv/noctra-uploads}"
 BACKUP_DIR="${NOCTRA_BACKUP_DIR:-/var/backups/noctra}"
 KEEP_DAYS="${NOCTRA_BACKUP_KEEP_DAYS:-14}"
 DB_NAME="${NOCTRA_DB_NAME:-noctra}"

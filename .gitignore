@@ -45,3 +45,7 @@ next-env.d.ts
 dev_stdout.log
 uploads/
 public/uploads/
+
+# Os ficheiros de exemplo são a documentação do deploy e têm de ir para o git. Nunca contêm
+# um valor real - a regra .env* acima continua a apanhar tudo o resto.
+!deploy/.env.production.example
