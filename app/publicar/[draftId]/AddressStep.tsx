@@ -102,7 +102,11 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
 
     const signedIn = await signIn("credentials", { email: email.trim(), password, redirect: false });
     if (signedIn?.error) {
-      setError("Esse email já tem conta e a palavra-passe não coincide.");
+      setError(
+        signedIn.code === "demasiadas_tentativas"
+          ? "Demasiadas tentativas. Aguarde alguns minutos e tente novamente."
+          : "Esse email já tem conta e a palavra-passe não coincide."
+      );
       return false;
     }
 

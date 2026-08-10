@@ -42,7 +42,13 @@ function SignInForm({ publishing }: { publishing: boolean }) {
 
       const result = await signIn("credentials", { email, password, redirect: false });
       if (result?.error) {
-        setError("Email ou palavra-passe incorretos.");
+        // Sem esta distinção, quem foi travado lê "palavra-passe incorreta" e tenta outra
+        // vez, mais depressa, contra um limite que não sabe que existe.
+        setError(
+          result.code === "demasiadas_tentativas"
+            ? "Demasiadas tentativas. Aguarde alguns minutos e tente novamente."
+            : "Email ou palavra-passe incorretos."
+        );
       }
       // On success useSession() flips to "authenticated" and SignInRoute's effect below
       // sends them where they were going - back to the preview, which publishes on arrival.

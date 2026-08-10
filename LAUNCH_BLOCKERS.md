@@ -1,11 +1,17 @@
 # Launch Blockers
 
-Auditoria de produção do commit `0286bb8`. Nada foi corrigido nesta passagem — a lista
-primeiro, as correções depois, por ordem de criticidade.
+Auditoria de produção. Cada ponto foi verificado por leitura do código ou por execução
+contra um build de produção real (`NODE_ENV=production`, `next start`), não contra o
+`next dev`. Onde não consegui verificar, está escrito que não consegui.
 
-Cada ponto foi verificado por leitura do código ou por execução contra um build de produção
-real (`NODE_ENV=production`, `next start`), não contra o `next dev`. Onde não consegui
-verificar, está escrito que não consegui.
+| Ronda | Commit | Veredito |
+|---|---|---|
+| Auditoria | `0286bb8` | READY FOR BETA: **NO** — #1 e #2 |
+| Correção de #1 e #2 | `6ea9f9f` | READY FOR BETA: **YES**, com três condições |
+
+**Aviso que não desaparece com nenhuma ronda:** "verificado" aqui significa contra um build
+de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
+`./deploy/deploy.sh` continua a ser o primeiro teste a sério.
 
 ---
 
@@ -19,16 +25,16 @@ verificar, está escrito que não consegui.
 | ✅ | `/preview` só expõe o fluxo real | `/preview`, `/preview/[id]` e `/preview/restaurant` dão 404; só `/preview/d/[draftId]` fica aberto, que é o fluxo |
 | ✅ | Nenhum endpoint de desenvolvimento acessível | 22 rotas de API enumeradas; as 4 de benchmark exigem sessão |
 | ✅ | Sem secrets hardcoded | `git grep` no código e `git log -p --all` em todo o histórico: só marcadores `sk_live_...` na documentação |
-| ❌ | Sem chaves de teste em produção | **Nada verifica.** Uma `sk_test_` num `.env.production` arranca na mesma e só falha ao primeiro pagamento |
-| ❌ | Rate limiting em todos os endpoints públicos | **`/api/auth/signup` e o login não têm nenhum** — BLOCKER #1 |
+| ✅ | Sem chaves de teste em produção | Uma `sk_test_` ou `pk_test_` com `NODE_ENV=production` recusa o arranque — **verificado**: o servidor recusou-se a arrancar com as chaves de teste do `.env.local` |
+| ✅ | Rate limiting em todos os endpoints públicos | **Fechado em `6ea9f9f`** — 10/min por endereço e 10/15 min por conta no login, 5/h no signup |
 | ⚠️ | Upload protegido | Whitelist de tipos, 10 MB, máximo 6, nome aleatório, `remove()` recusa separadores. Só o `Content-Type` declarado pelo cliente é que não é verificado contra os bytes |
 
 ### 🔴 Configuração
 
 | | Item | Evidência |
 |---|---|---|
-| ❌ | Variáveis validadas no arranque | **Não existe validação nenhuma.** Sem `instrumentation.ts`, sem esquema — BLOCKER #2 |
-| ❌ | Falta uma `ENV` → falha imediata | O processo arranca, o healthcheck passa, e a falha aparece ao cliente |
+| ✅ | Variáveis validadas no arranque | **Fechado em `6ea9f9f`** — `instrumentation.ts` + `app/lib/env.ts`, 22 testes |
+| ✅ | Falta uma `ENV` → falha imediata | **Verificado**: `DATABASE_URL="mysql://errado"` → saída 1, e **nenhum pedido chegou a ser servido** durante o arranque |
 | ✅ | Sem referências a `localhost` | Zero fora dos testes |
 | ❌ | URLs construídas a partir de `APP_URL` | O Stripe usa `new URL(request.url).origin` — BLOCKER #3 |
 
@@ -88,11 +94,31 @@ O `bcrypt` a 12 é a escolha certa. O que falta é o que impede alguém de o cha
 `/api/auth/callback/credentials` com uma password errada, ou a `/api/auth/signup` com emails
 diferentes. Nenhum é recusado. Ver a carga da máquina subir durante.
 
-**Correção.** `getRateLimiter` nos dois, com chave por endereço **e** por email (só por
-endereço não trava quem distribui; só por email deixa passar a enumeração de contas). Algo
-como 10/min por endereço e 5/min por email. Resposta 429 com `Retry-After`.
+**Correção aplicada** (`6ea9f9f`). `app/lib/authThrottle.ts`, chamado no `authorize` **antes**
+do bcrypt e no `/api/auth/signup` antes do hash. Duas contagens: 10/min por endereço, que é
+o que defende o CPU, e 10/15 min por conta, que é o que trava quem distribui os pedidos por
+muitos endereços — que é como se adivinha uma password a sério. O signup fica em 5/h por
+endereço. Um endereço já travado não gasta a contagem da conta, senão bastava atacar de um
+sítio só para deixar o dono do restaurante de fora. 7 testes.
 
-**Estado.** 🔴 Aberto — bloqueia a beta.
+O erro chega ao cliente como `demasiadas_tentativas` e vira "Demasiadas tentativas. Aguarde
+alguns minutos" nos dois ecrãs de login — sem isso, o dono lia "palavra-passe incorreta" e
+tentava outra vez, mais depressa, contra um limite que não sabia que existia.
+
+**Verificação** — contra `next start`, com uma conta real na base de dados para o bcrypt
+correr mesmo:
+
+```
+ 1..10:  ~620 ms cada   (bcrypt a correr)
+ 11:      105 ms        code=demasiadas_tentativas
+ 12:      137 ms        code=demasiadas_tentativas
+ 13:      123 ms        code=demasiadas_tentativas
+```
+
+O custo deixa de ser pago a partir da 11.ª. E no signup: cinco contas criadas, a 6.ª e a 7.ª
+devolveram **HTTP 429**. As cinco contas de teste foram apagadas da base de dados a seguir.
+
+**Estado.** ✅ Fechado.
 
 ---
 
@@ -114,14 +140,50 @@ quando corre.
 `active`, o healthcheck sai 0, e a página de pagamento diz "ainda não estão configurados" a
 um cliente.
 
-**Correção.** Um `instrumentation.ts` que, com `NODE_ENV=production`, verifica as obrigatórias
-(`DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `PEXELS_API_KEY`) e recusa arrancar com a lista do
-que falta. As de Stripe são degradáveis por opção — mas se `STRIPE_SECRET_KEY` existir, então
-`STRIPE_PRICE_ID` e `STRIPE_WEBHOOK_SECRET` passam a obrigatórias, porque metade da
-configuração de pagamentos é pior do que nenhuma. E recusar `sk_test_` em produção, o que
-fecha também a linha ❌ da secção de Segurança.
+**Correção aplicada** (`6ea9f9f`). `app/lib/env.ts` como função pura — recebe o ambiente,
+devolve o que está mal — e `instrumentation.ts` a decidir morrer. 22 testes.
 
-**Estado.** 🔴 Aberto — bloqueia a beta.
+O Stripe é tratado como **grupo**: sem chave nenhuma o produto assume-se sem pagamentos e
+diz isso ao dono; com chave e sem `price` o botão existe, é carregado, e dá 500 na cara de
+quem estava a pagar. Metade da configuração é pior do que nenhuma. Isto apanha exactamente o
+`STRIPE_SECRETKEY` do seu exemplo — não por reconhecer o erro de escrita, mas por dar pela
+ausência do nome certo. `sk_test_`/`pk_test_` em produção também recusam: o checkout abriria,
+o cartão seria aceite, e não entrava dinheiro nenhum.
+
+`PEXELS_API_KEY` avisa em vez de matar, porque a ausência é uma configuração suportada por
+desenho (`createImageProvider` devolve um herói editorial em vez de um falso).
+
+**Duas coisas que foram medidas e não assumidas:**
+
+1. `register()` **não corre** durante o `next build`. Um build numa máquina sem segredos
+   nenhuns continua a funcionar, que é o que a CI é.
+2. Um `throw` no `register()` **não mata o processo**. O Next escreve "Failed to prepare
+   server", fica de pé, e responde **HTTP 500 a tudo, incluindo ao `/api/health`** — o
+   systemd via um processo vivo e não reiniciava nada. Por isso é `process.exit(1)`. E por
+   isso o `noctra.service` levou `StartLimitIntervalSec=60` / `StartLimitBurst=5`: sem eles,
+   sair com 1 mais `Restart=always` era um ciclo infinito de reinícios a esconder no journal
+   a mensagem que explica o que falta.
+
+**Verificação** — `DATABASE_URL="mysql://errado"` contra `next start`:
+
+```
+  A configuração está incompleta e o Noctra não vai arrancar:
+    DATABASE_URL: tem de começar por postgres:// ou postgresql://
+SAIDA=1
+```
+
+E seis pedidos ao `/api/health` durante o arranque, de 300 em 300 ms: **nenhum foi servido**.
+O `Ready` que o Next imprime é optimista, mas a porta só aceita depois do `register()` —
+portanto o healthcheck do `deploy.sh` não consegue passar por engano.
+
+**Nota sobre o Zod.** Não usei. Existe no projecto apenas como dependência transitiva do
+`openai` e do `next-auth`, e promovê-la a directa para doze verificações de strings era
+passar a depender a sério de algo que hoje pode desaparecer num `npm update` sem ninguém dar
+por nada. As mensagens também tinham de ser nossas — quem as vai ler está a fazer um deploy
+às onze da noite. Se preferir Zod na mesma, a troca é de minutos: as regras estão todas numa
+função pura com testes que não mudariam.
+
+**Estado.** ✅ Fechado.
 
 ---
 
@@ -218,12 +280,21 @@ uma decisão comercial, não uma decisão de engenharia, e é sua.
 **Como reproduzir.** Pôr o `trialStartedAt` de uma conta 31 dias atrás. O painel diz "período
 terminado". O site continua a servir normalmente.
 
-**Correção.** Decisão sua primeiro. A versão mínima honesta: avisar aos 23, aos 28 e ao 30.º
-dia, e depois disso mostrar um aviso ao dono — sem tocar no site público, que é do
-restaurante e não nosso.
+**Política decidida** (sua, 10/08/2026). O site **nunca** é apagado nem posto offline —
+suspende-se a **edição**, e mais nada:
 
-**Estado.** 🔴 Aberto — bloqueia o lançamento público. Não bloqueia a beta: numa beta privada
-não quer cortar nada a ninguém.
+```
+dia 25  →  email: "o seu período termina em 5 dias"
+dia 30  →  o Stripe tenta cobrar
+           ├── sucesso  →  continua
+           └── falha    →  7 dias de graça  →  suspende a EDIÇÃO
+```
+
+Concordo, e vale a pena dizer porquê: o site é do restaurante, não nosso, e desligá-lo
+castiga os clientes dele por uma dívida que é nossa para com ele. Suspender a edição dói ao
+dono e não dói a mais ninguém.
+
+**Estado.** 🔴 Aberto — bloqueia o lançamento público. Não bloqueia a beta.
 
 ---
 
@@ -244,33 +315,83 @@ dados — mas isso só funciona porque conhece as pessoas todas pelo nome.
 
 ---
 
+## BLOCKER #8 — Um erro em produção não chega a ninguém
+
+**Descrição.** Os erros vão para `console.error`, que vai para o journal da máquina. Ninguém
+lê um journal por iniciativa própria.
+
+**Impacto.** Um restaurante que não consegue publicar às nove da noite fecha o separador e
+não volta. Nós só damos por isso quando ele nos disser — e a maior parte não diz. Numa beta
+de dez restaurantes, três desistências silenciosas são trinta por cento do produto a falhar
+sem deixar rasto.
+
+**Correção.** Sentry, BetterStack ou Axiom — qualquer um serve, e todos têm um plano
+gratuito que chega para este volume. Mais um `UptimeRobot` a bater no `/api/health`, que é
+gratuito e apanha a classe de falha que nenhum deles apanha: a máquina em baixo.
+
+**Estado.** 🟠 Aberto. Não bloqueia a beta desde que fale com os dez restaurantes por
+telefone; bloqueia o lançamento público, onde não há telefonemas.
+
+---
+
+## BLOCKER #9 — Existe backup; não existe prova de que restaura
+
+**Descrição.** O `backup.sh` escreve os ficheiros e verifica que os arquivos abrem. O
+`restore.sh` está escrito e passa no `bash -n`. Nenhum dos dois correu alguma vez numa
+máquina a sério, e a diferença entre "o backup existe" e "o backup restaura" é onde vive a
+única coisa insubstituível deste produto.
+
+**Impacto.** No dia em que precisar, descobre. E o que se descobre nesse dia costuma ser
+banal: uma password de Postgres que o script não pede, uma permissão errada, um `pg_dump` de
+uma versão que o `psql` do lado de lá não lê.
+
+**Correção.** Uma vez, num dia calmo, antes de haver dados de outra pessoa lá dentro:
+
+```
+criar backup  →  apagar a base de dados  →  restaurar  →  confirmar que o site volta
+```
+
+Já está no `LAUNCH_CHECKLIST.md`. O que muda aqui é a categoria: passa de linha a riscar a
+blocker.
+
+**Nota, e é sua a decisão.** Pôs isto no lançamento público. Registo a discordância uma vez e
+sigo a sua chamada: na beta as fotografias já são de restaurantes reais, e são a única coisa
+aqui que não se gera outra vez. Um ensaio de restauro custa vinte minutos no dia do deploy,
+enquanto a base de dados ainda está vazia — que é o único momento em que sai barato.
+
+**Estado.** 🟠 Aberto — bloqueia o lançamento público por decisão sua.
+
+---
+
 ## Parecer
 
-**READY FOR BETA: NO**
+**READY FOR BETA: YES**
 
-Falta pouco, e o pouco é concreto: **#1 e #2**. Nada mais na lista impede uma beta privada.
+Os dois blockers que diziam NO estão fechados, e nenhum dos dois está fechado por leitura:
+o travão foi exercido contra um servidor de produção com uma conta verdadeira, e a validação
+foi vista a recusar arrancar. Nada mais na lista impede uma beta privada.
 
-O #1 é o que me faz dizer NO em vez de "quase". No momento em que o domínio ficar público,
-qualquer pessoa consegue derrubar a máquina inteira com um `for` de vinte linhas — e a
-máquina inteira são os sites de todos os restaurantes que confiaram em nós. Não é um risco
-teórico com um custo medido em reputação: são 439 ms de CPU por pedido, medidos, contra dois
-vCPUs partilhados.
+O YES vem com três condições, e valem por serem ditas em voz alta antes e não depois:
 
-O #2 é o oposto — não é perigoso, é apenas o erro mais provável do primeiro deploy, e o mais
-silencioso. Uma tarde de trabalho para os dois.
-
-Resolvidos esses, a beta pode arrancar com #3 a #7 abertos e conhecidos, desde que aceite
-três coisas explicitamente: que o webhook será verificado à mão no painel do Stripe depois do
-primeiro pagamento; que ninguém será cobrado nem cortado automaticamente; e que uma password
-esquecida é um telefonema para si.
+1. **O webhook é verificado à mão** em **Developers → Webhooks → Attempts** depois do
+   primeiro pagamento a sério. Não a seguir ao primeiro cliente: a seguir ao primeiro
+   pagamento.
+2. **Ninguém é cobrado nem cortado automaticamente.** O fim do período gratuito não faz nada,
+   por desenho, até a política do #6 estar implementada.
+3. **Uma password esquecida é um telefonema para si**, e você repõe-na à mão na base de
+   dados. Isto só funciona enquanto conhecer as pessoas todas pelo nome — é o número de
+   restaurantes que define quando deixa de funcionar, não o calendário.
 
 **READY FOR PUBLIC LAUNCH: NO**
 
-Faltam **#5, #6 e #7**, e nenhum deles é uma questão de horas.
+Faltam **#5, #6, #7, #8 e #9**, e nenhum é uma questão de horas.
 
-O que separa a beta do lançamento público não é código — é que na beta você conhece as dez
-pessoas e pode compensar à mão tudo o que falta. Num lançamento público não pode, e o
-produto ainda não sabe cobrar sozinho, avisar sozinho, nem devolver o acesso a quem o perdeu.
+O que separa a beta do lançamento público não é código: é que na beta você conhece as dez
+pessoas e compensa à mão tudo o que falta. Num lançamento público não pode, e o produto
+ainda não sabe cobrar sozinho, avisar sozinho, devolver o acesso a quem o perdeu, nem
+sequer dizer-lhe que alguma coisa correu mal.
 
-E ainda há uma coisa que nenhuma auditoria resolve: **nada disto correu alguma vez numa
-máquina a sério.** O primeiro `./deploy/deploy.sh` continua a ser o primeiro teste real.
+**A ordem que eu seguiria a seguir**, e é a ordem do risco, não a da dificuldade: #9
+(restauro ensaiado, no dia do deploy, enquanto a base de dados ainda está vazia) → #8
+(observabilidade, meia hora) → #3 (`APP_URL`) → #5 (webhook, assim que houver domínio) → #7
+(recuperação de password) → #6 (política de fim do período) → #4 (fotografias órfãs).

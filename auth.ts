@@ -1,8 +1,17 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/app/lib/prisma";
+import { checkLoginAttempt } from "@/app/lib/authThrottle";
+import { clientAddress } from "@/app/lib/rateLimit";
+
+// Devolver null daria "email ou password errados", e mandava um dono de restaurante que se
+// enganou tentar outra vez, mais depressa, contra um travão que ele não sabe que existe.
+// O `code` chega ao cliente e é lá que vira uma frase em português.
+class TooManyAttempts extends CredentialsSignin {
+  code = "demasiadas_tentativas";
+}
 
 // Credentials provider only for this pass (see docs/noctra-product-blueprint-v1.md
 // §17's ADR on this) - no external OAuth app registration needed to get a working
@@ -39,10 +48,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = typeof credentials?.email === "string" ? credentials.email : undefined;
         const password = typeof credentials?.password === "string" ? credentials.password : undefined;
         if (!email || !password) return null;
+
+        // ANTES DO BCRYPT, SEMPRE.
+        //
+        // 439 ms de CPU por tentativa, medidos, num processo que também serve todos os
+        // sites publicados. Contar as tentativas depois de as pagar seria contabilidade,
+        // não defesa: o recurso que se está a proteger já tinha sido gasto.
+        const attempt = await checkLoginAttempt({ address: clientAddress(request), email });
+        if (!attempt.allowed) throw new TooManyAttempts();
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.passwordHash) return null;

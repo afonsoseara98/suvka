@@ -8,6 +8,19 @@
 Description=Noctra
 After=network.target postgresql.service
 
+# DESISTIR É O COMPORTAMENTO CERTO QUANDO A CONFIGURAÇÃO ESTÁ ERRADA.
+#
+# O instrumentation.ts sai com código 1 quando falta uma variável obrigatória. Com
+# Restart=always e sem estes dois limites, isso era um ciclo infinito: reiniciar de três em
+# três segundos, para sempre, a encher o journal e a esconder a mensagem que explica o que
+# falta. Cinco tentativas em sessenta segundos e a unidade fica `failed`, com a última linha
+# do erro à vista num `systemctl status noctra`.
+#
+# Uma falha transitória - o Postgres a arrancar devagar, um OOM - continua a ser recuperada
+# pelo Restart=always, porque essa recupera dentro das cinco.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
 [Service]
 Type=simple
 User=noctra
