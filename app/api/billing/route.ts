@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/app/lib/prisma";
 import { billingStateFor } from "@/app/lib/billing";
+import { billingIsConfigured } from "@/app/lib/stripe";
 
 // Where the owner stands on paying, in one call.
 //
@@ -30,5 +31,7 @@ export async function GET() {
     return NextResponse.json({ success: false, message: "Conta não encontrada." }, { status: 404 });
   }
 
-  return NextResponse.json({ billing: billingStateFor(user) });
+  // The dashboard asks before offering a button: a checkout that 500s because no keys are
+  // set is worse than no button at all.
+  return NextResponse.json({ billing: billingStateFor(user), canSubscribe: billingIsConfigured() });
 }

@@ -70,7 +70,34 @@ PEXELS_API_KEY="..."
 # Only needed by the free-text path for other business types. The restaurant flow makes
 # no model call at all.
 OPENAI_API_KEY="..."
+
+# Payments. Without these the product runs exactly as before - the dashboard shows the free
+# period and simply offers no button, because a checkout that 500s is worse than none.
+STRIPE_SECRET_KEY="sk_live_..."
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_live_..."
+STRIPE_PRICE_ID="price_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
+
+### O webhook
+
+Every subscription fact comes from Stripe: renewals, cancellations, a card failing three
+weeks from now. None of those pass through the app, so without the webhook the dashboard
+freezes on whatever it knew at checkout.
+
+In production, add the endpoint in the Stripe dashboard - `https://noctra.pt/api/stripe/webhook`,
+events `checkout.session.completed` and `customer.subscription.*` - and paste the signing
+secret it gives you.
+
+Locally, the CLI does the same job and prints the secret:
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+The endpoint refuses everything while `STRIPE_WEBHOOK_SECRET` is unset. That is deliberate:
+it is public by necessity, and unverified it would let anyone who knows the URL mark any
+customer as paying.
 
 ```bash
 chmod 600 /srv/noctra/.env.production
