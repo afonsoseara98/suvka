@@ -14,6 +14,22 @@ import { prisma } from "@/app/lib/prisma";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  // WITHOUT THIS, NOTHING SIGNS IN ONCE THIS IS DEPLOYED
+  //
+  // Auth.js v5 refuses to answer at all when it cannot verify the host it was reached on -
+  // "UntrustedHost" - unless the deployment says the host can be trusted. It is only lenient
+  // on Vercel, which sets its own signal; on any self-hosted box it throws.
+  //
+  // `next dev` hides this completely. It first appeared running `next start` locally: every
+  // call to /api/auth/session returned "There was a problem with the server configuration",
+  // so useSession() reported nobody was signed in, and publishing asked an already-signed-in
+  // owner to create an account again. On the real VPS that would have been every account,
+  // on day one.
+  //
+  // Trusting the Host header is only sound because Caddy terminates every request and serves
+  // exactly one domain (see deploy/Caddyfile). A future setup that forwards arbitrary Host
+  // headers would need AUTH_URL pinned instead.
+  trustHost: true,
   pages: {
     signIn: "/",
   },
