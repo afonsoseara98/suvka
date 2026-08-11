@@ -44,7 +44,16 @@ export function uploadsDirectory(env: NodeJS.ProcessEnv = process.env): string {
   if (configured) return configured;
 
   if (env.NODE_ENV === "production") return "/srv/noctra-uploads";
-  return path.join(process.cwd(), "public", "uploads");
+
+  // O comentário não é decorativo. Sem ele o Turbopack vê `process.cwd()` dentro de um
+  // path.join, conclui que isto pode apontar para qualquer ficheiro do projecto, e traça o
+  // projecto inteiro como dependência desta rota - o aviso "Encountered unexpected file in
+  // NFT list", que arrastava o instrumentation.ts e o next.config.ts para a lista de
+  // ficheiros da rota das fotografias.
+  //
+  // Aqui não há nada de dinâmico: são duas constantes juntas à raiz do projecto, e este
+  // ramo só existe em desenvolvimento - em produção o caminho é uma string literal.
+  return path.join(/* turbopackIgnore: true */ process.cwd(), "public", "uploads");
 }
 
 export class LocalPhotoStore implements PhotoStore {
@@ -60,7 +69,11 @@ export class LocalPhotoStore implements PhotoStore {
     // traversal waiting to happen, and two restaurants both uploading "IMG_0001.jpg" must
     // not collide.
     const key = `${randomBytes(12).toString("hex")}.${extension}`;
-    await writeFile(path.join(this.directory, key), bytes);
+    // turbopackIgnore aqui e no remove() pela mesma razão do uploadsDirectory: `directory`
+    // vem da configuração e o tracer não a consegue resolver, por isso assume o pior e
+    // traça o projecto todo. O que escreve neste caminho é um nome aleatório de doze bytes
+    // com uma extensão de uma whitelist - não há aqui ficheiro nenhum do projecto.
+    await writeFile(path.join(/* turbopackIgnore: true */ this.directory, key), bytes);
 
     return { url: `/uploads/${key}`, key };
   }
@@ -71,7 +84,7 @@ export class LocalPhotoStore implements PhotoStore {
     if (key.includes("/") || key.includes("\\") || key.includes("..")) return;
 
     try {
-      await unlink(path.join(this.directory, key));
+      await unlink(path.join(/* turbopackIgnore: true */ this.directory, key));
     } catch {
       // Already gone is the outcome the caller wanted.
     }
