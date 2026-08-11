@@ -1,10 +1,10 @@
 // The fixed, versioned 20-business dataset for Benchmark v1 - the user's exact list.
-// Each `prompt` is the ONE shared briefing every arm (Noctra, ChatGPT-equivalent,
+// Each `prompt` is the ONE shared briefing every arm (Suvka, ChatGPT-equivalent,
 // Claude-equivalent) receives verbatim - "mesmo prompt, mesmo objetivo." Plain,
 // natural-language descriptions, same register as the Diversity Engine's stress-test
 // corpus (app/ai/builders/DiversityStressTest.test.ts) - not keyword-stuffed.
 //
-// Deliberately a mix of industries Noctra's BusinessProfileBuilder classifies
+// Deliberately a mix of industries Suvka's BusinessProfileBuilder classifies
 // confidently (medical, law, restaurant, fitness, real_estate, beauty, home_services,
 // consulting, agency, ecommerce, startup, events) and ones that land on "generic"
 // (psychologist, hotel, physiotherapy, architecture) - the benchmark should surface

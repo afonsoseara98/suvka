@@ -1,4 +1,4 @@
-# Noctra UX Audit v1
+# Suvka UX Audit v1
 
 **Method:** walked every page in the real product flow (Landing → Sign Up → Login →
 Dashboard → New Project → Editor) as a first-time user, in a real browser against the

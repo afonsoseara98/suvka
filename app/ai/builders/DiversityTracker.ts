@@ -5,8 +5,8 @@ import { computeDiversityScore, type GenerationFingerprint } from "./DiversitySc
 // Caveat, stated plainly: this is module-level, in-process state - it resets on server
 // restart and is never shared across serverless instances/replicas. A real cross-
 // request, cross-deploy anti-repetition memory would need persistent storage (a
-// database), which is explicitly out of scope for Noctra today (see
-// NOCTRA_CONSTITUTION.md - auth/payments/DB are deferred). This is the honest version
+// database), which is explicitly out of scope for Suvka today (see
+// SUVKA_CONSTITUTION.md - auth/payments/DB are deferred). This is the honest version
 // of the mechanism that's actually buildable without that: it catches repetition
 // within a single running server process, which is exactly the case that matters most
 // in practice (a user generating several pages back-to-back in one session/demo).

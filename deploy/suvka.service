@@ -1,11 +1,11 @@
 # Runs the Next server and brings it back if it dies. Install with:
 #
-#   sudo cp deploy/noctra.service /etc/systemd/system/noctra.service
+#   sudo cp deploy/suvka.service /etc/systemd/system/suvka.service
 #   sudo systemctl daemon-reload
-#   sudo systemctl enable --now noctra
+#   sudo systemctl enable --now suvka
 
 [Unit]
-Description=Noctra
+Description=Suvka
 After=network.target postgresql.service
 
 # DESISTIR É O COMPORTAMENTO CERTO QUANDO A CONFIGURAÇÃO ESTÁ ERRADA.
@@ -14,7 +14,7 @@ After=network.target postgresql.service
 # Restart=always e sem estes dois limites, isso era um ciclo infinito: reiniciar de três em
 # três segundos, para sempre, a encher o journal e a esconder a mensagem que explica o que
 # falta. Cinco tentativas em sessenta segundos e a unidade fica `failed`, com a última linha
-# do erro à vista num `systemctl status noctra`.
+# do erro à vista num `systemctl status suvka`.
 #
 # Uma falha transitória - o Postgres a arrancar devagar, um OOM - continua a ser recuperada
 # pelo Restart=always, porque essa recupera dentro das cinco.
@@ -23,12 +23,12 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
-User=noctra
-WorkingDirectory=/srv/noctra
+User=suvka
+WorkingDirectory=/srv/suvka
 
 # Secrets live in a file readable only by the service user, never in this unit and never
 # in the repository. See deploy/README.md.
-EnvironmentFile=/srv/noctra/.env.production
+EnvironmentFile=/srv/suvka/.env.production
 
 Environment=NODE_ENV=production
 Environment=PORT=3000
@@ -44,14 +44,14 @@ RestartSec=3
 # gerado o site no primeiro. Isso já não é verdade: são linhas em Postgres e sobrevivem a
 # reinícios e a workers.
 #
-# O que ainda prende isto a uma máquina são as FOTOGRAFIAS EM DISCO (NOCTRA_UPLOADS_DIR).
+# O que ainda prende isto a uma máquina são as FOTOGRAFIAS EM DISCO (SUVKA_UPLOADS_DIR).
 # Uma segunda máquina não vê os uploads da primeira, e o prato de um cliente daria 404 a
 # metade dos visitantes. Antes de escalar: mover para armazenamento de objetos e definir
 # UPSTASH_REDIS_REST_URL/_TOKEN para os limites de pedidos deixarem de ser por processo.
 
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=noctra
+SyslogIdentifier=suvka
 
 [Install]
 WantedBy=multi-user.target

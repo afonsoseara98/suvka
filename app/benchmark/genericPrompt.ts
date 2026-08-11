@@ -2,7 +2,7 @@ import { SCHEMA_PROMPT } from "@/app/ai/prompts/schema";
 
 // The ONE prompt both the ChatGPT-equivalent and Claude-equivalent arms receive -
 // deliberately the same text for both (see Benchmark plan §A3), a genuinely good
-// prompt a savvy marketer would write, not a strawman. It reuses Noctra's own
+// prompt a savvy marketer would write, not a strawman. It reuses Suvka's own
 // SCHEMA_PROMPT verbatim (the same one PromptBuilder.ts sends, post the Signal Trace
 // Audit v1 stats field-name fix) so every arm's output can be parsed and rendered
 // through the exact same Landing/SectionRenderer components - the benchmark measures

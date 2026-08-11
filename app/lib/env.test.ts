@@ -6,7 +6,7 @@ const SECRET = "x".repeat(44);
 function production(extra: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
   return {
     NODE_ENV: "production",
-    DATABASE_URL: "postgresql://noctra:pw@localhost:5432/noctra",
+    DATABASE_URL: "postgresql://suvka:pw@localhost:5432/suvka",
     AUTH_SECRET: SECRET,
     PEXELS_API_KEY: "pexels-abc",
     ...extra,
@@ -65,17 +65,17 @@ describe("checkEnvironment", () => {
     });
 
     it("recusa AUTH_URL em http em produção", () => {
-      const report = checkEnvironment(production({ AUTH_URL: "http://noctra.pt" }));
+      const report = checkEnvironment(production({ AUTH_URL: "http://suvka.com" }));
       expect(names(report.fatal)).toContain("AUTH_URL");
     });
 
     it("aceita AUTH_URL em https", () => {
-      const report = checkEnvironment(production({ AUTH_URL: "https://noctra.pt" }));
+      const report = checkEnvironment(production({ AUTH_URL: "https://suvka.com" }));
       expect(names(report.fatal)).not.toContain("AUTH_URL");
     });
 
     it("recusa um AUTH_URL que não é sequer um endereço", () => {
-      const report = checkEnvironment(production({ AUTH_URL: "noctra.pt" }));
+      const report = checkEnvironment(production({ AUTH_URL: "suvka.com" }));
       expect(names(report.fatal)).toContain("AUTH_URL");
     });
   });
@@ -130,7 +130,7 @@ describe("checkEnvironment", () => {
     it("aceita chaves de teste fora de produção", () => {
       const report = checkEnvironment({
         NODE_ENV: "development",
-        DATABASE_URL: "postgresql://localhost/noctra",
+        DATABASE_URL: "postgresql://localhost/suvka",
         STRIPE_SECRET_KEY: "sk_test_abc",
         STRIPE_PRICE_ID: "price_abc",
         STRIPE_WEBHOOK_SECRET: "whsec_abc",
@@ -141,14 +141,14 @@ describe("checkEnvironment", () => {
   });
 
   describe("fotografias", () => {
-    it("recusa um NOCTRA_UPLOADS_DIR relativo, que resolveria dentro do repositório", () => {
-      const report = checkEnvironment(production({ NOCTRA_UPLOADS_DIR: "public/uploads" }));
-      expect(names(report.fatal)).toContain("NOCTRA_UPLOADS_DIR");
+    it("recusa um SUVKA_UPLOADS_DIR relativo, que resolveria dentro do repositório", () => {
+      const report = checkEnvironment(production({ SUVKA_UPLOADS_DIR: "public/uploads" }));
+      expect(names(report.fatal)).toContain("SUVKA_UPLOADS_DIR");
     });
 
     it("aceita um caminho absoluto", () => {
-      const report = checkEnvironment(production({ NOCTRA_UPLOADS_DIR: "/srv/noctra-uploads" }));
-      expect(names(report.fatal)).not.toContain("NOCTRA_UPLOADS_DIR");
+      const report = checkEnvironment(production({ SUVKA_UPLOADS_DIR: "/srv/suvka-uploads" }));
+      expect(names(report.fatal)).not.toContain("SUVKA_UPLOADS_DIR");
     });
 
     it("avisa, sem matar, quando não há chave de fotografias", () => {

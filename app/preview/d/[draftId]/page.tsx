@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 // The whole point of this URL is that it gets sent to somebody - a business partner, a
 // husband, the person who works the floor. Whatever WhatsApp or Messenger shows in the link
-// card IS the first impression, and it was showing "Noctra - AI Conversion System": our
+// card IS the first impression, and it was showing "Suvka - AI Conversion System": our
 // product name, in English, in SaaS language, on what is supposed to be their restaurant.
 //
 // Never indexed, though. This is an unpublished draft at a URL the owner did not choose,

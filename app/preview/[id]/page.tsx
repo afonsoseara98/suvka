@@ -28,12 +28,12 @@ interface StoredGeneration {
   landingPage: LandingPage;
 }
 
-function readStoredNoctraPage(businessId: string): LandingPage | null {
+function readStoredSuvkaPage(businessId: string): LandingPage | null {
   const file = path.join(process.cwd(), "benchmark-results", `${businessId}.json`);
   if (!fs.existsSync(file)) return null;
 
   const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { generations?: StoredGeneration[] };
-  const record = parsed.generations?.find((generation) => generation.source === "noctra");
+  const record = parsed.generations?.find((generation) => generation.source === "suvka");
   return record?.landingPage ?? null;
 }
 
@@ -42,7 +42,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
 
   const { id } = await params;
   const business = BENCHMARK_BUSINESSES.find((candidate) => candidate.id === id);
-  const stored = business ? readStoredNoctraPage(id) : null;
+  const stored = business ? readStoredSuvkaPage(id) : null;
   if (!business || !stored) notFound();
 
   // The pipeline is deterministic, so everything except the copy is recomputed from the

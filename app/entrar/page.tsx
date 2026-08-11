@@ -64,7 +64,7 @@ function SignInForm({ publishing }: { publishing: boolean }) {
     <main className="flex min-h-screen items-center justify-center bg-black text-white">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
         {/* Says where they are in what they were already doing. Someone who pressed Publish
-            is not "signing up for Noctra", they are finishing one action. */}
+            is not "signing up for Suvka", they are finishing one action. */}
         <h1 className="text-2xl font-bold">
           {publishing ? "Quase lá." : mode === "signin" ? "Entre na sua conta" : "Crie a sua conta"}
         </h1>

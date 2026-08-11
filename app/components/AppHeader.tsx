@@ -15,7 +15,7 @@ export default function AppHeader() {
   return (
     <header className="flex items-center justify-between border-b border-zinc-800 bg-black px-6 py-4">
       <Link href="/dashboard" className="text-lg font-bold text-white transition hover:text-zinc-300">
-        Noctra
+        Suvka
       </Link>
 
       <div className="flex items-center gap-4">

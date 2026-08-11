@@ -110,7 +110,7 @@ describe("real generations that shipped unverifiable claims", () => {
       if (!fs.existsSync(file)) continue;
 
       const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { generations?: { source: string; landingPage: LandingPage }[] };
-      const record = parsed.generations?.find((g) => g.source === "noctra");
+      const record = parsed.generations?.find((g) => g.source === "suvka");
       if (!record) continue;
 
       inspected++;

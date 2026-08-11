@@ -3,7 +3,7 @@
 # Está mesmo vivo?
 #
 #   ./deploy/healthcheck.sh              # local, na máquina
-#   ./deploy/healthcheck.sh https://noctra.pt   # de fora, através do Caddy
+#   ./deploy/healthcheck.sh https://suvka.com   # de fora, através do Caddy
 #
 # Sai 0 se estiver bem, 1 se não. Feito para ser usado por um cron, por um monitor externo
 # ou pelo deploy.sh - por isso é silencioso quando corre bem e explícito quando falha.
@@ -40,19 +40,19 @@ verificar "base de dados" "$BASE/api/health" 200
 verificar "página inicial" "$BASE/" 200
 
 if command -v systemctl >/dev/null 2>&1; then
-  if systemctl is-active --quiet noctra; then
+  if systemctl is-active --quiet suvka; then
     # NRestarts a subir entre duas execuções é um processo que está a morrer e a voltar -
     # invisível para qualquer teste que só faça um pedido no momento certo.
-    reinicios=$(systemctl show noctra -p NRestarts --value 2>/dev/null || echo "?")
+    reinicios=$(systemctl show suvka -p NRestarts --value 2>/dev/null || echo "?")
     echo "  ok    serviço ativo (reinícios desde o arranque: $reinicios)"
   else
-    echo "  FALHA serviço noctra não está ativo" >&2
+    echo "  FALHA serviço suvka não está ativo" >&2
     FALHAS=$((FALHAS + 1))
   fi
 fi
 
 if [ "$FALHAS" -gt 0 ]; then
-  echo "!! $FALHAS verificação(ões) falharam. Ver: journalctl -u noctra -n 50 --no-pager" >&2
+  echo "!! $FALHAS verificação(ões) falharam. Ver: journalctl -u suvka -n 50 --no-pager" >&2
   exit 1
 fi
 

@@ -24,7 +24,7 @@ const EMPTY_SITE: SiteData = {
 };
 
 // The one real OpenAI call this whole project makes - extracted out of
-// app/api/generate/route.ts so app/benchmark/generators/noctra.ts can call the exact
+// app/api/generate/route.ts so app/benchmark/generators/suvka.ts can call the exact
 // same code path a real user's generation goes through, instead of a second,
 // independently-drifting copy of it. The LLM client is a narrow structural interface
 // (not the concrete `OpenAI` class), so tests can pass a fake one - the real `OpenAI`
@@ -71,7 +71,7 @@ export interface GeneratedLandingPage extends LandingPage {
   businessIntelligence: BusinessIntelligenceProfile;
   signals: CompositionSignals;
   // The exact, fully-assembled prompt sent to the model - exposed so callers (the
-  // Benchmark Framework's Noctra adapter in particular) can record "the prompt used,"
+  // Benchmark Framework's Suvka adapter in particular) can record "the prompt used,"
   // not just the raw business description that seeded it.
   finalPrompt: string;
 }

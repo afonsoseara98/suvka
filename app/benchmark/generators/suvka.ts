@@ -5,8 +5,8 @@ const MODEL = "gpt-4.1-mini";
 
 // Calls the exact same code path a real user's generation goes through
 // (app/ai/generateLandingPage.ts, also used by app/api/generate/route.ts) - never a
-// second, independently-drifting copy of Noctra's own pipeline+prompt+call.
-export async function generateNoctra(
+// second, independently-drifting copy of Suvka's own pipeline+prompt+call.
+export async function generateSuvka(
   businessId: string,
   prompt: string,
   openai: ChatCompletionClient
@@ -19,8 +19,8 @@ export async function generateNoctra(
 
   return {
     businessId,
-    source: "noctra",
-    // The actual, fully-assembled prompt Noctra sent - not just the raw business
+    source: "suvka",
+    // The actual, fully-assembled prompt Suvka sent - not just the raw business
     // description, which is already recorded in app/benchmark/businesses.ts. This is
     // the real research value: what did the pipeline add on top of the same brief?
     promptUsed: finalPrompt,

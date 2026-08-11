@@ -11,7 +11,7 @@ export interface CriterionAverage {
   criterion: BenchmarkCriterion;
   averages: Record<BenchmarkSource, number | null>;
   // The source with the strictly highest average for this criterion - null if there's
-  // no data yet, or a tie (a tie is not a loss for Noctra, so it's never reported as one).
+  // no data yet, or a tie (a tie is not a loss for Suvka, so it's never reported as one).
   winner: BenchmarkSource | null;
 }
 
@@ -26,10 +26,10 @@ export interface SourceAverage {
   weightedAverage: number | null;
 }
 
-export interface NoctraLoss {
+export interface SuvkaLoss {
   criterion: BenchmarkCriterion;
   winner: BenchmarkSource;
-  noctraAverage: number | null;
+  suvkaAverage: number | null;
   winnerAverage: number;
   recommendation: string;
 }
@@ -37,10 +37,10 @@ export interface NoctraLoss {
 export interface BenchmarkReport {
   perCriterion: CriterionAverage[];
   overall: SourceAverage[];
-  // Every criterion where Noctra is NOT the (strict) winner, paired with a recommendation
+  // Every criterion where Suvka is NOT the (strict) winner, paired with a recommendation
   // pointing at the module most likely responsible - mirrors the user's own examples
   // ("perder em headline -> voltar ao PromptBuilder").
-  noctraLosses: NoctraLoss[];
+  suvkaLosses: SuvkaLoss[];
 }
 
 // One module pointer per criterion - deliberately a flat, fixed lookup (not itself
@@ -134,15 +134,15 @@ export function buildReport(scores: readonly ScoreRecord[]): BenchmarkReport {
     };
   });
 
-  const noctraLosses: NoctraLoss[] = perCriterion
-    .filter((c) => c.winner !== null && c.winner !== "noctra")
+  const suvkaLosses: SuvkaLoss[] = perCriterion
+    .filter((c) => c.winner !== null && c.winner !== "suvka")
     .map((c) => ({
       criterion: c.criterion,
       winner: c.winner as BenchmarkSource,
-      noctraAverage: c.averages.noctra,
+      suvkaAverage: c.averages.suvka,
       winnerAverage: c.averages[c.winner as BenchmarkSource] as number,
       recommendation: RECOMMENDATIONS[c.criterion],
     }));
 
-  return { perCriterion, overall, noctraLosses };
+  return { perCriterion, overall, suvkaLosses };
 }

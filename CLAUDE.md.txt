@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-# Noctra AI Conversion System
+# Suvka AI Conversion System
 
 ## Mission
 
-Noctra is not a website builder.
+Suvka is not a website builder.
 
 It is an AI Conversion System that generates landing pages designed to maximize conversions using marketing psychology, UX, persuasion and modern design.
 

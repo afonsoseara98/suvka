@@ -27,7 +27,7 @@ describe("normalizeGenericOutput", () => {
     expect(result.sections[0].type).toBe("hero");
   });
 
-  it("uses a neutral DNA baseline, not Noctra's own pipeline-computed one", () => {
+  it("uses a neutral DNA baseline, not Suvka's own pipeline-computed one", () => {
     const result = normalizeGenericOutput({});
     expect(result.dna.saturation).toBe(0.5);
     expect(result.dna.brightness).toBe(0.3);

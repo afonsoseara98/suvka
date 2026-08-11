@@ -2,10 +2,10 @@
 #
 # Daily backup of the two things that cannot be regenerated.
 #
-#   sudo cp deploy/backup.sh /usr/local/bin/noctra-backup
-#   sudo chmod +x /usr/local/bin/noctra-backup
+#   sudo cp deploy/backup.sh /usr/local/bin/suvka-backup
+#   sudo chmod +x /usr/local/bin/suvka-backup
 #   sudo crontab -e
-#     15 4 * * * /usr/local/bin/noctra-backup
+#     15 4 * * * /usr/local/bin/suvka-backup
 #
 # Photographs first, because they are the only thing here that is irreplaceable. A lost
 # database costs the accounts and the published sites, which the owners can recreate from
@@ -14,12 +14,12 @@
 
 set -euo pipefail
 
-# Fora do repositório. Tem de coincidir com NOCTRA_UPLOADS_DIR no .env.production - uma
+# Fora do repositório. Tem de coincidir com SUVKA_UPLOADS_DIR no .env.production - uma
 # cópia que aponta para a pasta errada faz backups vazios durante meses sem se queixar.
-PHOTOS_DIR="${NOCTRA_UPLOADS_DIR:-/srv/noctra-uploads}"
-BACKUP_DIR="${NOCTRA_BACKUP_DIR:-/var/backups/noctra}"
-KEEP_DAYS="${NOCTRA_BACKUP_KEEP_DAYS:-14}"
-DB_NAME="${NOCTRA_DB_NAME:-noctra}"
+PHOTOS_DIR="${SUVKA_UPLOADS_DIR:-/srv/suvka-uploads}"
+BACKUP_DIR="${SUVKA_BACKUP_DIR:-/var/backups/suvka}"
+KEEP_DAYS="${SUVKA_BACKUP_KEEP_DAYS:-14}"
+DB_NAME="${SUVKA_DB_NAME:-suvka}"
 
 STAMP="$(date +%F)"
 mkdir -p "$BACKUP_DIR"

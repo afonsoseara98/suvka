@@ -35,15 +35,15 @@ export interface PhotoStore {
 // restaurant took of its own food cannot be regenerated from anything.
 //
 // So in production it lives outside the repository, at a path the deploy owns and the
-// backup script already knows about. NOCTRA_UPLOADS_DIR overrides it anywhere.
+// backup script already knows about. SUVKA_UPLOADS_DIR overrides it anywhere.
 //
 // Development keeps public/uploads, because Next serves it with no configuration and a
 // local machine has nothing to lose.
 export function uploadsDirectory(env: NodeJS.ProcessEnv = process.env): string {
-  const configured = env.NOCTRA_UPLOADS_DIR?.trim();
+  const configured = env.SUVKA_UPLOADS_DIR?.trim();
   if (configured) return configured;
 
-  if (env.NODE_ENV === "production") return "/srv/noctra-uploads";
+  if (env.NODE_ENV === "production") return "/srv/suvka-uploads";
 
   // O comentário não é decorativo. Sem ele o Turbopack vê `process.cwd()` dentro de um
   // path.join, conclui que isto pode apontar para qualquer ficheiro do projecto, e traça o

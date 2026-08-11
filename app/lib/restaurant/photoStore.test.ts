@@ -7,7 +7,7 @@ import { rejectPhoto, MAX_PHOTO_BYTES, MAX_PHOTOS } from "./photoLimits";
 
 const dirs: string[] = [];
 function tempStore() {
-  const dir = mkdtempSync(path.join(tmpdir(), "noctra-photos-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "suvka-photos-"));
   dirs.push(dir);
   return { store: new LocalPhotoStore(dir), dir };
 }
@@ -98,12 +98,12 @@ describe("what we tell an owner when we refuse a photo", () => {
 describe("where uploads live", () => {
   it("stays out of the repository in production", () => {
     const dir = uploadsDirectory({ NODE_ENV: "production" } as NodeJS.ProcessEnv);
-    expect(dir).toBe("/srv/noctra-uploads");
+    expect(dir).toBe("/srv/suvka-uploads");
     expect(dir).not.toContain("public");
   });
 
   it("is overridable, because a server may not be laid out the way we assumed", () => {
-    expect(uploadsDirectory({ NODE_ENV: "production", NOCTRA_UPLOADS_DIR: "/mnt/fotos" } as NodeJS.ProcessEnv))
+    expect(uploadsDirectory({ NODE_ENV: "production", SUVKA_UPLOADS_DIR: "/mnt/fotos" } as NodeJS.ProcessEnv))
       .toBe("/mnt/fotos");
   });
 

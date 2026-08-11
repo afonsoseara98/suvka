@@ -149,7 +149,7 @@ export function getRateLimiter(name: string, limit: number, windowMs: number): R
     const ratelimit = new Ratelimit({
       redis: new Redis({ url, token }),
       limiter: Ratelimit.slidingWindow(limit, `${windowMs} ms`),
-      prefix: `noctra:${name}`,
+      prefix: `suvka:${name}`,
     });
 
     const upstash = new UpstashRateLimiter(ratelimit);

@@ -1,4 +1,4 @@
-# Pôr o Noctra em produção
+# Pôr o Suvka em produção
 
 Ubuntu 24.04 novo → domínio público com HTTPS. **Menos de 30 minutos**, quase tudo à espera
 que coisas instalem.
@@ -57,19 +57,19 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs postgresql caddy git
 
 # Um utilizador que não é root para correr a aplicação
-adduser --system --group --home /srv/noctra noctra
-usermod -s /bin/bash noctra
+adduser --system --group --home /srv/suvka suvka
+usermod -s /bin/bash suvka
 
 # A pasta das fotografias, FORA do repositório
-mkdir -p /srv/noctra-uploads
-chown noctra:noctra /srv/noctra-uploads
+mkdir -p /srv/suvka-uploads
+chown suvka:suvka /srv/suvka-uploads
 ```
 
 Deixar o `deploy.sh` reiniciar o serviço sem pedir password:
 
 ```bash
-echo 'noctra ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart noctra' > /etc/sudoers.d/noctra
-chmod 440 /etc/sudoers.d/noctra
+echo 'suvka ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart suvka' > /etc/sudoers.d/suvka
+chmod 440 /etc/sudoers.d/suvka
 ```
 
 ---
@@ -77,8 +77,8 @@ chmod 440 /etc/sudoers.d/noctra
 ## 3. Base de dados (2 min)
 
 ```bash
-sudo -u postgres createuser noctra --pwprompt    # ANOTE a password
-sudo -u postgres createdb noctra --owner=noctra
+sudo -u postgres createuser suvka --pwprompt    # ANOTE a password
+sudo -u postgres createdb suvka --owner=suvka
 ```
 
 ---
@@ -86,8 +86,8 @@ sudo -u postgres createdb noctra --owner=noctra
 ## 4. O código (2 min)
 
 ```bash
-sudo -u noctra -H bash
-cd /srv/noctra
+sudo -u suvka -H bash
+cd /srv/suvka
 git clone SEU-REPOSITORIO .
 ```
 
@@ -107,7 +107,7 @@ O ficheiro de exemplo explica cada variável. Os três valores que as pessoas er
   desenvolvimento: quem o tiver consegue forjar uma sessão para qualquer conta.
 - **`STRIPE_PRICE_ID`** — tem de ser um Price criado no **modo live**. Um `price_` de teste
   não existe em live e o checkout falha com "No such price".
-- **`NOCTRA_UPLOADS_DIR`** — deixe em `/srv/noctra-uploads`. Se mudar, mude também o
+- **`SUVKA_UPLOADS_DIR`** — deixe em `/srv/suvka-uploads`. Se mudar, mude também o
   `Caddyfile` e o `backup.sh`.
 
 ---
@@ -118,23 +118,23 @@ Noutro terminal, como root:
 
 ```bash
 # Editar o domínio e o email ANTES de copiar
-nano /srv/noctra/deploy/Caddyfile
-cp /srv/noctra/deploy/Caddyfile /etc/caddy/Caddyfile
+nano /srv/suvka/deploy/Caddyfile
+cp /srv/suvka/deploy/Caddyfile /etc/caddy/Caddyfile
 systemctl reload caddy
 
-cp /srv/noctra/deploy/noctra.service /etc/systemd/system/
+cp /srv/suvka/deploy/suvka.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable noctra
+systemctl enable suvka
 ```
 
 ---
 
 ## 7. O primeiro deploy (5 min)
 
-De volta ao utilizador `noctra`:
+De volta ao utilizador `suvka`:
 
 ```bash
-cd /srv/noctra
+cd /srv/suvka
 chmod +x deploy/*.sh
 ./deploy/deploy.sh
 ```
@@ -149,7 +149,7 @@ O script instala, migra a base de dados, faz o build, reinicia e **verifica**. S
 No dashboard do Stripe, com o interruptor em **live**:
 
 1. **Developers → API keys** → copiar `sk_live_…` e `pk_live_…` para o `.env.production`
-2. **Products** → criar "Noctra Pro", 19 € recorrente mensal → copiar o `price_…`
+2. **Products** → criar "Suvka Pro", 19 € recorrente mensal → copiar o `price_…`
 3. **Developers → Webhooks → Add endpoint**
    - URL: `https://SEU-DOMINIO.pt/api/stripe/webhook`
    - Eventos: `checkout.session.completed`, `customer.subscription.created`,
@@ -157,7 +157,7 @@ No dashboard do Stripe, com o interruptor em **live**:
    - Copiar o `whsec_…` para o `.env.production`
 
 ```bash
-sudo systemctl restart noctra
+sudo systemctl restart suvka
 ```
 
 O webhook **recusa todos os pedidos** enquanto `STRIPE_WEBHOOK_SECRET` não existir. É de
@@ -171,13 +171,13 @@ qualquer cliente como pagante.
 Como root:
 
 ```bash
-cp /srv/noctra/deploy/backup.sh /usr/local/bin/noctra-backup
-chmod +x /usr/local/bin/noctra-backup
+cp /srv/suvka/deploy/backup.sh /usr/local/bin/suvka-backup
+chmod +x /usr/local/bin/suvka-backup
 crontab -e
 ```
 
 ```
-15 4 * * * /usr/local/bin/noctra-backup
+15 4 * * * /usr/local/bin/suvka-backup
 ```
 
 **Corra o `restore.sh` uma vez, hoje, num dia calmo.** Uma cópia que nunca foi reposta é
@@ -209,8 +209,8 @@ Falta `AUTH_URL` no `.env.production`, ou não coincide com o domínio real.
 mesmo modo.
 
 **As fotografias dão 404**
-`NOCTRA_UPLOADS_DIR` e o `root` do `Caddyfile` não apontam para o mesmo sítio, ou a pasta
-não pertence ao utilizador `noctra`.
+`SUVKA_UPLOADS_DIR` e o `root` do `Caddyfile` não apontam para o mesmo sítio, ou a pasta
+não pertence ao utilizador `suvka`.
 
 **Os sites publicados não sabem que alguém pagou**
 O webhook não está a chegar. Veja **Developers → Webhooks → o seu endpoint → Attempts** no

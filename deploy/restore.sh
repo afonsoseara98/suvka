@@ -19,9 +19,9 @@ set -euo pipefail
 
 DATA="${1:-}"
 QUAL="${2:-tudo}"
-BACKUP_DIR="${NOCTRA_BACKUP_DIR:-/var/backups/noctra}"
-UPLOADS_DIR="${NOCTRA_UPLOADS_DIR:-/srv/noctra-uploads}"
-DB_NAME="${NOCTRA_DB_NAME:-noctra}"
+BACKUP_DIR="${SUVKA_BACKUP_DIR:-/var/backups/suvka}"
+UPLOADS_DIR="${SUVKA_UPLOADS_DIR:-/srv/suvka-uploads}"
+DB_NAME="${SUVKA_DB_NAME:-suvka}"
 
 if [ -z "$DATA" ]; then
   echo "Uso: $0 AAAA-MM-DD [tudo|base|fotos]" >&2
@@ -45,12 +45,12 @@ restaurar_base() {
   echo "==> A repor a base de dados de $DATA"
   # Recriada em vez de despejada por cima: um restore sobre dados existentes deixa linhas
   # que a cópia não tinha, e um estado que não é nem o de antes nem o de depois.
-  sudo systemctl stop noctra
+  sudo systemctl stop suvka
   sudo -u postgres dropdb --if-exists "${DB_NAME}_old"
   sudo -u postgres psql -c "ALTER DATABASE \"$DB_NAME\" RENAME TO \"${DB_NAME}_old\";"
-  sudo -u postgres createdb "$DB_NAME" --owner=noctra
+  sudo -u postgres createdb "$DB_NAME" --owner=suvka
   gunzip -c "$ARQ_BASE" | sudo -u postgres psql "$DB_NAME" > /dev/null
-  sudo systemctl start noctra
+  sudo systemctl start suvka
 
   echo "    Reposta. A anterior ficou como \"${DB_NAME}_old\" - apague-a quando tiver a certeza:"
   echo "      sudo -u postgres dropdb ${DB_NAME}_old"
@@ -70,7 +70,7 @@ restaurar_fotos() {
     mv "$UPLOADS_DIR" "${UPLOADS_DIR}.antes-do-restore-$(date +%F-%H%M%S)"
   fi
   mv "$temporario" "$UPLOADS_DIR"
-  chown -R noctra:noctra "$UPLOADS_DIR"
+  chown -R suvka:suvka "$UPLOADS_DIR"
 
   echo "    Repostas. A pasta anterior ficou ao lado, com sufixo .antes-do-restore-*"
 }

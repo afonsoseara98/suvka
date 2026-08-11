@@ -1,14 +1,14 @@
-# Noctra Product Blueprint v1
+# Suvka Product Blueprint v1
 
 **Status:** Single Source of Truth for all product and architecture decisions from this point forward.
 **Supersedes:** `PROJECT_CONTEXT.md.txt`'s "Current Status/Sprint" sections (stale — written before the AI pipeline, Diversity Engine, and Editor Foundation existed).
-**Evolves, does not discard:** `NOCTRA_CONSTITUTION.md.txt` and `CLAUDE.md.txt`. Their engineering principles (strong typing, one responsibility per module, structured data before prompting an LLM, no duplicated logic) remain in force and are restated in [§13](#13-critérios-de-qualidade). Their mission statement does not — see below.
+**Evolves, does not discard:** `SUVKA_CONSTITUTION.md.txt` and `CLAUDE.md.txt`. Their engineering principles (strong typing, one responsibility per module, structured data before prompting an LLM, no duplicated logic) remain in force and are restated in [§13](#13-critérios-de-qualidade). Their mission statement does not — see below.
 
 ---
 
 ## How to use this document
 
-Every new feature answers one question before a line of code is written: **does this move Noctra toward the vision in §1, along the roadmap in §11, without violating a decision in §17?** If the answer isn't obviously yes, that's the signal to update this document first, not to build around it.
+Every new feature answers one question before a line of code is written: **does this move Suvka toward the vision in §1, along the roadmap in §11, without violating a decision in §17?** If the answer isn't obviously yes, that's the signal to update this document first, not to build around it.
 
 ---
 
@@ -49,7 +49,7 @@ Tudo o resto neste documento existe para suportar isto.
 
 ### A evolução da missão (registo explícito, não silencioso)
 
-`NOCTRA_CONSTITUTION.md.txt` (v1.1) e `CLAUDE.md.txt` afirmam: *"Noctra is not an AI website builder. Noctra is an AI Conversion System."* Este documento altera essa posição deliberadamente, não por acidente:
+`SUVKA_CONSTITUTION.md.txt` (v1.1) e `CLAUDE.md.txt` afirmam: *"Suvka is not an AI website builder. Suvka is an AI Conversion System."* Este documento altera essa posição deliberadamente, não por acidente:
 
 - O **motor de decisão** (Business Intelligence, Psychology, Knowledge, Composition, Layout, Design Engines — tudo em `app/ai/*`) continua a ser a vantagem competitiva real e **não muda**. Continua verdade que "a nossa vantagem competitiva não é a geração, é a decisão."
 - O que muda é a **superfície do produto**: deixa de ser "gera uma landing page a partir de um prompt" e passa a ser "cria, edita, publica e otimiza um website completo." O motor de conversão passa a ser um *componente* do produto, não o produto inteiro.
@@ -121,7 +121,7 @@ Cada persona corresponde a um `businessProfile` real que o pipeline já sabe der
         │
         ▼
 6. Publish
-   noctra.site/empresa  →  (opcional) domínio próprio
+   suvka.com/empresa  →  (opcional) domínio próprio
 ```
 
 Passos 1-4 já têm fundação técnica real: `BusinessProfileBuilder` + `BusinessIntelligence` cobrem grande parte do passo 3 (**exceto pesquisa de concorrentes — ver gap em [§9](#9-sistema-de-ia)**); `PipelineBuilder` + a chamada ao LLM cobrem o passo 4; `Project`/`PageState` cobrem o passo 5 ao nível de dados. O passo 6 (publicação real) **não existe ainda** — é o maior buraco entre o que está construído e um produto vendável (ver [§16](#16-riscos-técnicos)).
@@ -353,7 +353,7 @@ Sequenciado por dependência real, não por desejo. Cada item indica do que depe
 - [x] `app/page.tsx` exige sessão e persiste o projeto gerado via `POST /api/projects` em vez de o manter só em memória do browser
 - [ ] Fluxo completo: criar projeto → gerar (pesquisa simplificada: Business DNA inferido do próprio texto do utilizador, **sem pesquisa de concorrentes ainda** — ver gap em [§9](#9-sistema-de-ia)) → editor → publicar
 - [ ] Editor visual funcional: Navigator + Canvas + Properties, ligados às `Operation`s já existentes (`MoveSection`, `UpdateContent`, `ChangeVariant`, `HideSection`, `DuplicateSection`, `DeleteSection`) — o motor de sincronização já existe (`dispatchAndPersist`, `POST /api/projects/:id/pages/:pageId/operations`), falta a UI que o chama — **sem IA de edição ainda**, edição manual primeiro
-- [ ] Publicação real: `noctra.site/<slug>`, com o conceito de "versão publicada" resolvido ([§7](#7-modelo-de-dados-project-page-section-operation), [§17](#17-decisões-arquiteturais))
+- [ ] Publicação real: `suvka.com/<slug>`, com o conceito de "versão publicada" resolvido ([§7](#7-modelo-de-dados-project-page-section-operation), [§17](#17-decisões-arquiteturais))
 - [ ] Armazenamento de assets (upload básico)
 - [ ] Uma página por projeto é aceitável para o v1 — `Project` já suporta múltiplas, mas a geração de página adicional por IA fica para v1.5
 
@@ -362,7 +362,7 @@ Sequenciado por dependência real, não por desejo. Cada item indica do que depe
 - [ ] `RegenerateSection` ligado a uma chamada real ao LLM escopada (Rewrite/Regenerate/Improve)
 - [ ] Chat de IA global → `Operation[]` validado
 - [ ] Geração de páginas adicionais por IA (About/Pricing/Contact) dentro de um projeto existente
-- [ ] Domínios próprios (para lá do subdomínio `noctra.site`)
+- [ ] Domínios próprios (para lá do subdomínio `suvka.com`)
 - [ ] Dashboard de analytics básico (Visitantes, CTR) — pipeline de eventos própria, leve
 
 ### v2.0
@@ -388,7 +388,7 @@ Modelo SaaS por níveis, alinhado com o custo real de IA (cada regeneração/cha
 
 | Nível | Preço (indicativo) | Inclui | Limite de IA |
 |---|---|---|---|
-| **Free/Trial** | €0 | 1 projeto, 1 página, subdomínio `noctra.site`, marca de água | Geração inicial só, sem regenerações |
+| **Free/Trial** | €0 | 1 projeto, 1 página, subdomínio `suvka.com`, marca de água | Geração inicial só, sem regenerações |
 | **Starter** | ~€15-25/mês | Vários projetos, multi-página, domínio próprio | Crédito de IA mensal (regenerações/chat) |
 | **Growth** | ~€40-60/mês | Equipas, mais páginas, analytics, sem marca de água | Crédito de IA maior, prioridade |
 | **Agency/Business** | Preço por escala/contacto | Projetos ilimitados, white-label, papel `Client`, suporte prioritário | Crédito de IA por cliente gerido |
@@ -488,6 +488,6 @@ Backlog além do v3, não sequenciado, para não perder ideias já validadas pel
 - Heatmaps reais (não apenas métricas agregadas) no dashboard pós-publicação.
 - Testes A/B geridos automaticamente pela IA (propor, correr, concluir, aplicar o vencedor).
 - Plugins de terceiros (marketplace v3 estendido a funcionalidade, não só a design).
-- Exportação de código (para utilizadores que eventualmente querem "sair" do Noctra com o site em mãos — uma decisão de posicionamento, não só técnica, a ponderar com cuidado por poder reduzir retenção).
+- Exportação de código (para utilizadores que eventualmente querem "sair" do Suvka com o site em mãos — uma decisão de posicionamento, não só técnica, a ponderar com cuidado por poder reduzir retenção).
 - Internacionalização de sites publicados (um projeto, várias línguas, geridas como variantes de página, não projetos separados).
 - App móvel para gerir o dashboard/aprovar sugestões de IA em trânsito.

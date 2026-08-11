@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# The deploy. Run it on the server, as the noctra user:
+# The deploy. Run it on the server, as the suvka user:
 #
-#   ssh noctra@SEU-IP
-#   cd /srv/noctra && ./deploy/deploy.sh
+#   ssh suvka@SEU-IP
+#   cd /srv/suvka && ./deploy/deploy.sh
 #
 # Safe to run repeatedly. Stops at the first failure rather than restarting a broken build
 # over a working one.
 
 set -euo pipefail
 
-APP_DIR="/srv/noctra"
+APP_DIR="/srv/suvka"
 cd "$APP_DIR"
 
 # Guardado ANTES de mexer em nada, para o rollback.sh saber a que commit voltar. Sem isto,
@@ -36,7 +36,7 @@ echo "==> Build"
 npm run build
 
 echo "==> A reiniciar"
-sudo systemctl restart noctra
+sudo systemctl restart suvka
 
 echo "==> À espera que responda"
 # Verificado contra /api/health, não contra "/". A página inicial é estática, não toca na
@@ -52,6 +52,6 @@ for i in $(seq 1 30); do
 done
 
 echo "!! Não respondeu em 30 segundos." >&2
-echo "   Logs:     journalctl -u noctra -n 50 --no-pager" >&2
+echo "   Logs:     journalctl -u suvka -n 50 --no-pager" >&2
 echo "   Reverter: ./deploy/rollback.sh" >&2
 exit 1

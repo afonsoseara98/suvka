@@ -1,6 +1,6 @@
 # Editor Foundation Report — Project, PageState, Operations, History
 
-This is the foundation for evolving Noctra from a single-page generator into a full
+This is the foundation for evolving Suvka from a single-page generator into a full
 website editor + AI co-pilot: a `Project` (one or more pages, shared brand/business
 context/assets) built on top of a canonical page model, a typed operation/reducer
 system, and operation-log-based undo/redo per page — all built, fully tested, and wired

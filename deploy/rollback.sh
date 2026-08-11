@@ -2,8 +2,8 @@
 #
 # Voltar atrás.
 #
-#   cd /srv/noctra && ./deploy/rollback.sh              # para o deploy anterior
-#   cd /srv/noctra && ./deploy/rollback.sh <commit>     # para um commit específico
+#   cd /srv/suvka && ./deploy/rollback.sh              # para o deploy anterior
+#   cd /srv/suvka && ./deploy/rollback.sh <commit>     # para um commit específico
 #
 # O deploy.sh grava o commit que estava online antes de mexer em nada. Isto lê esse ficheiro
 # e volta lá.
@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-APP_DIR="/srv/noctra"
+APP_DIR="/srv/suvka"
 ANTERIOR="$APP_DIR/.deploy-anterior"
 
 cd "$APP_DIR"
@@ -67,7 +67,7 @@ echo "==> Build"
 npm run build
 
 echo "==> A reiniciar"
-sudo systemctl restart noctra
+sudo systemctl restart suvka
 
 echo "==> A verificar"
 sleep 3

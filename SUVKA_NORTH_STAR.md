@@ -1,4 +1,4 @@
-# Noctra North Star
+# Suvka North Star
 
 *Uma página. Três minutos. Lê isto antes de qualquer sessão de desenvolvimento.*
 
@@ -59,4 +59,4 @@ Nenhuma outra métrica (número de templates, de features, de integrações) ent
 
 ---
 
-*Para o "porquê" completo: `docs/noctra-vision-v2.md`. Para a constituição: `NOCTRA_MANIFESTO.md`. Para a arquitetura: `docs/noctra-product-blueprint-v1.md`. Para a concorrência: `docs/noctra-competitive-bible.md`.*
+*Para o "porquê" completo: `docs/suvka-vision-v2.md`. Para a constituição: `SUVKA_MANIFESTO.md`. Para a arquitetura: `docs/suvka-product-blueprint-v1.md`. Para a concorrência: `docs/suvka-competitive-bible.md`.*

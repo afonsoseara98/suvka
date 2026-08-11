@@ -1,4 +1,4 @@
-# NOCTRA CONSTITUTION
+# SUVKA CONSTITUTION
 
 Version: 1.1
 
@@ -8,9 +8,9 @@ Version: 1.1
 
 Build the world's best AI platform for generating landing pages that maximize conversions.
 
-Noctra does not compete on speed.
+Suvka does not compete on speed.
 
-Noctra competes on intelligence, quality, and measurable conversion performance.
+Suvka competes on intelligence, quality, and measurable conversion performance.
 
 Every landing page should feel as if it was created by a senior conversion strategist, senior copywriter, senior UX designer, and senior front-end engineer working together.
 
@@ -18,9 +18,9 @@ Every landing page should feel as if it was created by a senior conversion strat
 
 # Vision
 
-Noctra is not an AI website builder.
+Suvka is not an AI website builder.
 
-Noctra is an AI Conversion System.
+Suvka is an AI Conversion System.
 
 The landing page is the final output of a structured reasoning process.
 
@@ -142,7 +142,7 @@ Quality Scoring
 
 # Core Engines
 
-The Noctra architecture is divided into independent engines.
+The Suvka architecture is divided into independent engines.
 
 ## Business Intelligence Engine
 
@@ -313,7 +313,7 @@ A feature is considered complete only if it:
 
 Create the most intelligent landing page generation platform in the world.
 
-Noctra should consistently produce landing pages that outperform manually created pages in:
+Suvka should consistently produce landing pages that outperform manually created pages in:
 
 - Conversion
 - Design quality

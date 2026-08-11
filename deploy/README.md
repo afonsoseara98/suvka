@@ -25,43 +25,43 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs postgresql caddy git
 
 # A user that is not root to run the app
-adduser --system --group --home /srv/noctra noctra
-usermod -s /bin/bash noctra
+adduser --system --group --home /srv/suvka suvka
+usermod -s /bin/bash suvka
 
 # The database
-sudo -u postgres createuser noctra --pwprompt      # note the password
-sudo -u postgres createdb noctra --owner=noctra
+sudo -u postgres createuser suvka --pwprompt      # note the password
+sudo -u postgres createdb suvka --owner=suvka
 ```
 
 Let the deploy script restart the service without a password:
 
 ```bash
-echo 'noctra ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart noctra' > /etc/sudoers.d/noctra
-chmod 440 /etc/sudoers.d/noctra
+echo 'suvka ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart suvka' > /etc/sudoers.d/suvka
+chmod 440 /etc/sudoers.d/suvka
 ```
 
 ## 3. The code
 
 ```bash
-sudo -u noctra -H bash
-cd /srv/noctra
+sudo -u suvka -H bash
+cd /srv/suvka
 git clone SEU-REPO .
 ```
 
 ## 4. Secrets
 
-`/srv/noctra/.env.production`, owned by `noctra`, mode `600`. Nothing here belongs in git.
+`/srv/suvka/.env.production`, owned by `suvka`, mode `600`. Nothing here belongs in git.
 
 ```bash
-DATABASE_URL="postgresql://noctra:A-PASSWORD@localhost:5432/noctra?schema=public"
+DATABASE_URL="postgresql://suvka:A-PASSWORD@localhost:5432/suvka?schema=public"
 
 # Generate a fresh one. The development value must not travel to production - it signs
 # every session cookie, and anyone holding it can mint a session for any account.
 AUTH_SECRET="$(openssl rand -base64 32)"
 
 # The public origin, used to build absolute URLs and to validate auth callbacks.
-AUTH_URL="https://noctra.pt"
-NEXTAUTH_URL="https://noctra.pt"
+AUTH_URL="https://suvka.com"
+NEXTAUTH_URL="https://suvka.com"
 
 # Stock photographs. Without it every generated site is text-only - it still works, it
 # just looks like a draft.
@@ -85,7 +85,7 @@ Every subscription fact comes from Stripe: renewals, cancellations, a card faili
 weeks from now. None of those pass through the app, so without the webhook the dashboard
 freezes on whatever it knew at checkout.
 
-In production, add the endpoint in the Stripe dashboard - `https://noctra.pt/api/stripe/webhook`,
+In production, add the endpoint in the Stripe dashboard - `https://suvka.com/api/stripe/webhook`,
 events `checkout.session.completed` and `customer.subscription.*` - and paste the signing
 secret it gives you.
 
@@ -100,19 +100,19 @@ it is public by necessity, and unverified it would let anyone who knows the URL 
 customer as paying.
 
 ```bash
-chmod 600 /srv/noctra/.env.production
+chmod 600 /srv/suvka/.env.production
 ```
 
 ## 5. Caddy and systemd
 
 ```bash
 # As root
-cp /srv/noctra/deploy/Caddyfile /etc/caddy/Caddyfile     # edit the domain and email first
+cp /srv/suvka/deploy/Caddyfile /etc/caddy/Caddyfile     # edit the domain and email first
 systemctl reload caddy
 
-cp /srv/noctra/deploy/noctra.service /etc/systemd/system/
+cp /srv/suvka/deploy/suvka.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now noctra
+systemctl enable --now suvka
 ```
 
 Point an A record at the server's IP before reloading Caddy — it fetches the certificate
@@ -121,8 +121,8 @@ on the spot and needs the domain to already resolve.
 ## 6. Deploy
 
 ```bash
-chmod +x /srv/noctra/deploy/deploy.sh
-sudo -u noctra -H /srv/noctra/deploy/deploy.sh
+chmod +x /srv/suvka/deploy/deploy.sh
+sudo -u suvka -H /srv/suvka/deploy/deploy.sh
 ```
 
 Every deploy after this one is the same command.
@@ -144,7 +144,7 @@ half the visitors. Before scaling out: move uploads to object storage, and set
 alone. It is not in any backup unless you make one:
 
 ```bash
-0 3 * * * tar czf /var/backups/uploads-$(date +\%F).tgz /srv/noctra/public/uploads
+0 3 * * * tar czf /var/backups/uploads-$(date +\%F).tgz /srv/suvka/public/uploads
 ```
 
 Losing that directory means every restaurant's own photographs are gone and their sites
@@ -153,7 +153,7 @@ fall back to stock. Back it up before the first customer, not after.
 **Back up Postgres too.**
 
 ```bash
-0 4 * * * sudo -u postgres pg_dump noctra | gzip > /var/backups/noctra-$(date +\%F).sql.gz
+0 4 * * * sudo -u postgres pg_dump suvka | gzip > /var/backups/suvka-$(date +\%F).sql.gz
 ```
 
 **The dev routes are already closed.** `/preview`, `/preview/[id]` and `/preview/restaurant`
@@ -167,8 +167,8 @@ mealtimes once there are real users.
 ## Checking it worked
 
 ```bash
-curl -I https://noctra.pt                    # 200, and a valid certificate
-journalctl -u noctra -n 50 --no-pager        # no stack traces
+curl -I https://suvka.com                    # 200, and a valid certificate
+journalctl -u suvka -n 50 --no-pager        # no stack traces
 ```
 
 Then do the thing a customer does: open the site, fill the form, upload a photograph,

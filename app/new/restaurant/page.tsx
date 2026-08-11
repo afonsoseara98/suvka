@@ -101,10 +101,10 @@ function RestaurantForm() {
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
-  // A client component cannot export metadata. Without this the tab read "Noctra —
+  // A client component cannot export metadata. Without this the tab read "Suvka —
   // Websites para restaurantes" while the person was already filling in their own.
   useEffect(() => {
-    document.title = "O site do seu restaurante — Noctra";
+    document.title = "O site do seu restaurante — Suvka";
   }, []);
 
   function set<K extends keyof RestaurantInput>(key: K, value: RestaurantInput[K]) {

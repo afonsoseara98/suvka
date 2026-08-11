@@ -13,7 +13,7 @@ class TooManyAttempts extends CredentialsSignin {
   code = "demasiadas_tentativas";
 }
 
-// Credentials provider only for this pass (see docs/noctra-product-blueprint-v1.md
+// Credentials provider only for this pass (see docs/suvka-product-blueprint-v1.md
 // §17's ADR on this) - no external OAuth app registration needed to get a working
 // end-to-end loop with just a database connection string. Adding Google/GitHub/etc.
 // later is a `providers` array entry, not a restructuring of this file.

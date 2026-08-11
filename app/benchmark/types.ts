@@ -7,14 +7,14 @@ import type { LandingPage } from "@/app/types/landing";
 // (adding "gemini" to the type without updating a hardcoded check elsewhere would have
 // silently 400'd every Gemini score submission) - the exact "two copies drift" failure
 // mode this session has hit before (schema.ts, applyOperation).
-export const BENCHMARK_SOURCES = ["noctra", "chatgpt", "claude", "gemini"] as const;
+export const BENCHMARK_SOURCES = ["suvka", "chatgpt", "claude", "gemini"] as const;
 export type BenchmarkSource = (typeof BENCHMARK_SOURCES)[number];
 
 // Benchmark Audit v1: replaced the original 12 (headline/clareza/copy/...) with a
 // criteria set scoped around what actually predicts whether a landing page converts -
 // first impression, message clarity, trust signals, narrative structure, and the
 // business outcome itself (probabilidadeConversao) - rather than surface writing
-// mechanics alone. See docs/noctra-benchmark-audit-v1.md.
+// mechanics alone. See docs/suvka-benchmark-audit-v1.md.
 export const BENCHMARK_CRITERIA = [
   "primeiraImpressao",
   "clarezaProposta",
@@ -57,7 +57,7 @@ export const CRITERION_WEIGHTS: Record<BenchmarkCriterion, number> = {
 // One generation for one (business, source) pair. `landingPage` is always in the same
 // shape regardless of source - see app/benchmark/generators/*.ts and
 // docs/ (Benchmark plan) §A4: ChatGPT/Claude output is asked for the same JSON schema
-// Noctra's SCHEMA_PROMPT uses, specifically so every arm renders through the exact same
+// Suvka's SCHEMA_PROMPT uses, specifically so every arm renders through the exact same
 // Landing/SectionRenderer components with no source-specific render logic.
 export interface GenerationRecord {
   businessId: string;

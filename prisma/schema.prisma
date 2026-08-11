@@ -1,4 +1,4 @@
-// Noctra persistence schema. See docs/noctra-product-blueprint-v1.md (§7, §17) for the
+// Suvka persistence schema. See docs/suvka-product-blueprint-v1.md (§7, §17) for the
 // product-level rationale and docs/editor-architecture-report.md for the in-memory
 // domain model (app/editor/*) this schema persists.
 //
@@ -123,14 +123,14 @@ model VerificationToken {
 // functions between these rows and those in-memory types. businessProfile/brand/settings
 // stay as Json (small, cohesive, never queried by sub-field today); Section is its own
 // table, not Json, so a future component library can query sections independently of
-// any one page's operation log (see docs/noctra-product-blueprint-v1.md §17, ADR on
+// any one page's operation log (see docs/suvka-product-blueprint-v1.md §17, ADR on
 // this exact choice).
 
 model Project {
   id              String   @id @default(cuid())
   ownerId         String
   name            String
-  // The public URL segment: noctra.site/s/<slug>. Globally unique because it is a
+  // The public URL segment: suvka.com/s/<slug>. Globally unique because it is a
   // public namespace, not scoped to an owner - two users cannot both own "joes-bakery".
   // Nullable: a project only gets a slug the first time it is published, so drafts
   // never squat on names they may never use.
@@ -166,7 +166,7 @@ model Page {
   // this is the replay path's starting point, not a duplicate of it).
   baseState Json
   // PUBLISHED VERSION - deliberately a materialized snapshot, not a pointer into the
-  // operation log (the open decision in docs/noctra-product-blueprint-v1.md §17).
+  // operation log (the open decision in docs/suvka-product-blueprint-v1.md §17).
   //
   // A pointer would have meant replaying the whole log on every public request, which
   // is O(number of edits ever made) on the one surface that has to be fastest and is
@@ -239,7 +239,7 @@ model OperationLogEntry {
 }
 
 // Seed for the future Version History UI (blueprint v2, "Restore" - see
-// docs/noctra-product-blueprint-v1.md §4.4/§11). Not read or written by any app code
+// docs/suvka-product-blueprint-v1.md §4.4/§11). Not read or written by any app code
 // path yet - present now so adding that UI later is an additive feature, not a schema
 // migration blocking it.
 model PageVersionTag {

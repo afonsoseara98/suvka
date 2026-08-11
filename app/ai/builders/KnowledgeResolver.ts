@@ -22,7 +22,7 @@ import { genericKnowledge } from "../knowledge/generic";
 // Industry` deliberately: with the real union type, TypeScript enforces this switch
 // stays exhaustive, so a 16th Industry added later without a matching `case` here is a
 // compile error, not a silent fallback discovered in production the way the previous
-// `default: return startupKnowledge` was (see docs/noctra-signal-trace-audit-v1.md,
+// `default: return startupKnowledge` was (see docs/suvka-signal-trace-audit-v1.md,
 // finding #2 - 10 of 15 industries were silently receiving SaaS/startup knowledge:
 // "AI automation" as a common feature for a hair salon).
 export function resolveKnowledge(industry: Industry): BusinessKnowledge {

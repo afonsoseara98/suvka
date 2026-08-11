@@ -22,7 +22,7 @@ type LandingProps = {
   // side by side and a bordered, rounded, shadowed card with 80px of margin is exactly
   // right - it separates one specimen from the next.
   //
-  // Then the same component became the published site. Every restaurant Noctra put online
+  // Then the same component became the published site. Every restaurant Suvka put online
   // was a card floating in the middle of a page, with a visible border, rounded corners, a
   // drop shadow, and margins showing the browser's own background - which follows the
   // VISITOR's light/dark preference, not the restaurant's design. No real restaurant
@@ -89,7 +89,7 @@ export default function Landing({ state, onDispatchOperation, framed = false }: 
           alone cannot reach. Server-rendered, so there is no flash of the wrong colour.
 
           Only where this component IS the page. The editor renders the same tree inside our
-          own chrome, and there the body belongs to Noctra - painting it the restaurant's
+          own chrome, and there the body belongs to Suvka - painting it the restaurant's
           colour would leak the customer's palette onto our furniture. Being editable is
           exactly the signal that we are not the whole page. */}
       {!onDispatchOperation && (

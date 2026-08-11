@@ -1,6 +1,6 @@
-# Noctra Vision v2 — A Experiência, Não a Infraestrutura
+# Suvka Vision v2 — A Experiência, Não a Infraestrutura
 
-**Não é um documento técnico.** Zero Prisma, zero Auth, zero Repository, zero tabelas. `docs/noctra-product-blueprint-v1.md` continua a ser a referência de arquitetura; este documento é o que faltava nele — a resposta a "porque é que alguém fica horas no Noctra, paga, e volta amanhã." Se o Blueprint v1 é o esqueleto, este é o porquê de alguém querer vesti-lo.
+**Não é um documento técnico.** Zero Prisma, zero Auth, zero Repository, zero tabelas. `docs/suvka-product-blueprint-v1.md` continua a ser a referência de arquitetura; este documento é o que faltava nele — a resposta a "porque é que alguém fica horas no Suvka, paga, e volta amanhã." Se o Blueprint v1 é o esqueleto, este é o porquê de alguém querer vesti-lo.
 
 **Regra de leitura:** sempre que uma decisão técnica e esta visão entrarem em conflito, esta visão ganha. A infraestrutura existe para servir isto, nunca o contrário.
 
@@ -23,13 +23,13 @@ O que este utilizador quer não é "um website." É **deixar de se sentir amador
 
 Não paga pela geração. A geração é grátis de prometer — todos os concorrentes prometem "gera em segundos." Paga por três coisas que a geração sozinha não dá:
 
-1. **Ausência de fricção entre a ideia e a coisa publicada.** Cada minuto entre "tenho uma ideia" e "está no ar" é um minuto em que pode desistir. Noctra vende a compressão desse tempo a zero.
+1. **Ausência de fricção entre a ideia e a coisa publicada.** Cada minuto entre "tenho uma ideia" e "está no ar" é um minuto em que pode desistir. Suvka vende a compressão desse tempo a zero.
 2. **A confiança de que aquilo converte, não só que é bonito.** Um site bonito que não vende é um cartão de visita caro. O Business Intelligence Engine e a Diversity Engine já construídos existem exatamente para isto — mas o utilizador nunca vê esses nomes, só sente o resultado: "isto parece ter sido pensado para o meu negócio, não copiado de um template."
 3. **Nunca mais ter de voltar a pensar nisto sozinho.** Paga por uma relação contínua, não por uma entrega única — é por isto que o regresso (§4, "Quando volta amanhã") importa tanto quanto a primeira publicação.
 
 ---
 
-## 3. Porque escolhe Noctra e não Framer, Webflow, Wix ou Canva
+## 3. Porque escolhe Suvka e não Framer, Webflow, Wix ou Canva
 
 | Alternativa | Porque falha para este utilizador |
 |---|---|
@@ -37,7 +37,7 @@ Não paga pela geração. A geração é grátis de prometer — todos os concor
 | **Wix / Squarespace** | Fácil de começar, mas o resultado é genérico e não pensa em conversão — a estrutura da página é a mesma quer seja um advogado quer seja uma pastelaria. |
 | **Canva** | Bonito, rápido, mas não é um site a sério: não entende negócio, não pensa em SEO, não sabe o que é uma taxa de conversão. |
 | **Um freelancer** | Caro, lento, e o conhecimento fica com a pessoa, não com o produto — cada alteração futura volta a depender dela. |
-| **Noctra** | É a única opção que **entende o negócio antes de desenhar** — e que depois deixa editar tudo com a mesma naturalidade de um Canva, sem nunca pedir para "saber código." |
+| **Suvka** | É a única opção que **entende o negócio antes de desenhar** — e que depois deixa editar tudo com a mesma naturalidade de um Canva, sem nunca pedir para "saber código." |
 
 Esta linha — perceber o negócio primeiro, desenhar depois — é a única vantagem nesta tabela que ninguém copia num fim de semana. É por isto que o motor de Business Intelligence (`app/ai/*`, já construído) não é um detalhe técnico: é o argumento de venda inteiro, só que dito em linguagem de produto.
 
@@ -66,7 +66,7 @@ O segundo "uau", este visual. A página aparece completa: hero, provas sociais, 
 Não é a geração inicial — é a primeira vez que pede uma alteração em linguagem natural ("torna isto mais premium") e ela acontece corretamente, na hora, sem ele ter de saber o que "premium" significa em CSS. É aqui que a diferença para o Canva/Wix se torna visceral, não teórica.
 
 ### Quando decide nunca mais voltar ao Framer/Webflow
-Quando percebe que consegue fazer tudo o que precisa — mudar layout, trocar imagens, ajustar copy, adicionar uma secção — sem nunca sair do fluxo, sem nunca precisar de abrir a documentação, sem nunca pensar "isto no Webflow seria mais fácil." O teste é negativo: não é um momento em que o Noctra brilha, é a ausência de qualquer momento em que sente falta de outra ferramenta.
+Quando percebe que consegue fazer tudo o que precisa — mudar layout, trocar imagens, ajustar copy, adicionar uma secção — sem nunca sair do fluxo, sem nunca precisar de abrir a documentação, sem nunca pensar "isto no Webflow seria mais fácil." O teste é negativo: não é um momento em que o Suvka brilha, é a ausência de qualquer momento em que sente falta de outra ferramenta.
 
 ### Quando publica
 Tem de ser um único clique, com uma confirmação que celebra o momento (não um toast discreto) — é o culminar da promessa dos "10 minutos." O link tem de estar pronto a copiar e enviar imediatamente, porque o primeiro instinto depois de publicar é mostrar a alguém.
@@ -78,7 +78,7 @@ Paga não quando lhe é pedido, mas quando já teve o suficiente de graça para 
 O que o traz de volta não é uma notificação genérica — é uma razão concreta: "3 pessoas visitaram o teu site ontem" ou "a IA tem uma sugestão para o teu CTA." Retenção nasce de o produto ter algo novo e específico para dizer, não de lembrar que existe.
 
 ### Quando convida um colega
-Acontece quando mostra o site a alguém e essa pessoa pergunta "como fizeste isto tão rápido?" — a resposta a essa pergunta é o próprio crescimento orgânico do Noctra. O produto tem de dar-lhe algo fácil de responder com uma frase.
+Acontece quando mostra o site a alguém e essa pessoa pergunta "como fizeste isto tão rápido?" — a resposta a essa pergunta é o próprio crescimento orgânico do Suvka. O produto tem de dar-lhe algo fácil de responder com uma frase.
 
 ---
 
@@ -91,7 +91,7 @@ O que faz alguém ficar horas dentro de um editor:
 - **Feedback instantâneo, sempre.** Nenhuma ação pode ter um "loading" a meio de uma edição simples — mudar uma cor, trocar uma variante, mover uma secção têm de parecer tão imediatos como arrastar um objeto numa mesa.
 - **Nunca um erro cru.** Se algo corre mal, o utilizador nunca vê uma mensagem técnica — vê a IA a tentar de novo, ou uma sugestão alternativa.
 - **Reversibilidade total e visível.** Undo/redo não é uma funcionalidade escondida num menu — é uma garantia permanente e visível de que nada do que fizer pode partir o trabalho anterior. É essa garantia que dá coragem para experimentar, e é a experimentação que gera as horas de uso.
-- **A IA como colega, não como assistente de formulário.** No Figma, ninguém "preenche campos" — desenha. No Noctra, ninguém deve sentir que está a preencher um formulário de conteúdo; deve sentir que está a conversar com alguém que entende o objetivo e propõe, em vez de só executar ordens.
+- **A IA como colega, não como assistente de formulário.** No Figma, ninguém "preenche campos" — desenha. No Suvka, ninguém deve sentir que está a preencher um formulário de conteúdo; deve sentir que está a conversar com alguém que entende o objetivo e propõe, em vez de só executar ordens.
 
 Isto muda a prioridade de construção: **um editor visual completo, fluido e imediato vale mais para a retenção do que qualquer melhoria na geração inicial.** A geração convence uma vez; o editor decide se o utilizador fica.
 
@@ -109,19 +109,19 @@ O utilizador nunca vê estes nomes. Mas a diferença entre "um prompt genérico"
 - **Repair Engine** — o que acontece quando algo corre mal: uma resposta da IA malformada, uma imagem que falha, uma secção que fica inconsistente. O utilizador nunca deve ver o erro em si — só a recuperação.
 - **Layout Engine / Copy Engine / Image Engine** — especialistas dedicados dentro da geração, cada um respondendo por uma dimensão (estrutura da página, texto, imagens), não um único prompt genérico a tentar fazer tudo de uma vez. Um pedido de "melhora o hero" deve acionar precisamente estes três, coordenados, não uma reescrita cega da página inteira.
 
-Este sistema é o que separa "o Noctra usa IA" de "o Noctra É IA" — a segunda frase só é verdade se cada uma destas responsabilidades for tratada como um motor com identidade própria, não como uma instrução a mais dentro de um prompt gigante.
+Este sistema é o que separa "o Suvka usa IA" de "o Suvka É IA" — a segunda frase só é verdade se cada uma destas responsabilidades for tratada como um motor com identidade própria, não como uma instrução a mais dentro de um prompt gigante.
 
 ---
 
-## 7. As peças que fazem o Noctra crescer (em termos de produto, não de tabelas)
+## 7. As peças que fazem o Suvka crescer (em termos de produto, não de tabelas)
 
 - **Marca** — o utilizador define cores, tipografia e voz uma vez; todas as páginas do projeto herdam isso automaticamente, sem ter de repetir a escolha em cada página nova.
 - **Múltiplas páginas** — criar uma página "Sobre" ou "Preços" tem de parecer tão simples como duplicar a landing, nunca como começar um novo projeto do zero.
 - **Equipas** — um dono convida um designer ou um copywriter para o mesmo projeto; cada um vê exatamente o que precisa e nada mais.
 - **Componentes reutilizáveis** — depois de gostar de uma secção, guardá-la e voltar a usá-la noutra página ou projeto tem de ser um clique, não uma cópia manual.
-- **Templates e Marketplace** — os melhores utilizadores tornam-se criadores: vendem os seus próprios blocos e temas a outros. O Noctra ganha uma parte disso.
+- **Templates e Marketplace** — os melhores utilizadores tornam-se criadores: vendem os seus próprios blocos e temas a outros. O Suvka ganha uma parte disso.
 - **Ligar Stripe / domínio** — dois momentos onde o utilizador sai da "brincadeira" e entra no "negócio a sério." Têm de ser tão simples como colar uma chave e esperar a confirmação, nunca um manual de configuração.
-- **A/B Testing e Analytics** — o momento em que o Noctra deixa de ser só uma ferramenta de criação e passa a ser um parceiro contínuo do negócio: não só "fiz o site," mas "o site está a melhorar sozinho."
+- **A/B Testing e Analytics** — o momento em que o Suvka deixa de ser só uma ferramenta de criação e passa a ser um parceiro contínuo do negócio: não só "fiz o site," mas "o site está a melhorar sozinho."
 - **Biblioteca e Design System** — a evolução natural de "gostei desta secção" para "toda a minha marca vive aqui" — o utilizador deixa de pensar em páginas soltas e passa a pensar num sistema coerente.
 
 Nenhuma destas peças precisa de existir no dia 1. Todas precisam de já fazer sentido no dia 1, para que adicionar cada uma mais tarde pareça uma evolução natural, não um pivô.

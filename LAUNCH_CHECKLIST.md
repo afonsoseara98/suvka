@@ -15,18 +15,18 @@ e a diferença aparece sempre no pior momento.
 - [ ] **DNS propagado** — o mesmo resultado a partir de outra rede (o telemóvel com dados móveis serve)
 - [ ] **Node 22** — `node -v` diz `v22.x`
 - [ ] **PostgreSQL** — `sudo -u postgres psql -c "SELECT 1"`
-- [ ] **Base de dados criada** — `sudo -u postgres psql -l | grep noctra`
-- [ ] **Utilizador `noctra`** existe e é dono de `/srv/noctra`
-- [ ] **`/srv/noctra-uploads`** criada e pertence ao `noctra`
+- [ ] **Base de dados criada** — `sudo -u postgres psql -l | grep suvka`
+- [ ] **Utilizador `suvka`** existe e é dono de `/srv/suvka`
+- [ ] **`/srv/suvka-uploads`** criada e pertence ao `suvka`
 
 ## Aplicação
 
-- [ ] **Código clonado** em `/srv/noctra`
+- [ ] **Código clonado** em `/srv/suvka`
 - [ ] **`.env.production`** preenchido, `chmod 600`
 - [ ] **`AUTH_SECRET` novo** — gerado nesta máquina, diferente do de desenvolvimento
 - [ ] **Prisma migrate** — `npx prisma migrate deploy` sem erros
 - [ ] **Build** — `npm run build` termina limpo
-- [ ] **systemd** — `systemctl is-active noctra` diz `active`
+- [ ] **systemd** — `systemctl is-active suvka` diz `active`
 - [ ] **Arranca sozinho** — `sudo reboot`, e volta a responder sem ninguém tocar
 
 ## Rede
@@ -63,7 +63,7 @@ Faça isto **como um restaurante faria**, no telemóvel, do domínio público.
 
 ## Segurança e dados
 
-- [ ] **Backup a correr** — `crontab -l` mostra a linha; `ls /var/backups/noctra` tem ficheiros
+- [ ] **Backup a correr** — `crontab -l` mostra a linha; `ls /var/backups/suvka` tem ficheiros
 - [ ] **Restore testado** — `./deploy/restore.sh` corrido **uma vez, hoje**, num dia calmo
 - [ ] **`/benchmark` fechado** — devolve 404 em produção
 - [ ] **`/preview`, `/preview/[id]`, `/preview/restaurant`** devolvem 404 em produção
@@ -71,7 +71,7 @@ Faça isto **como um restaurante faria**, no telemóvel, do domínio público.
 
 ## Operação
 
-- [ ] **Logs** — `journalctl -u noctra -n 50` legível; `/var/log/caddy/noctra.log` a crescer
+- [ ] **Logs** — `journalctl -u suvka -n 50` legível; `/var/log/caddy/suvka.log` a crescer
 - [ ] **Rollback testado** — `./deploy/rollback.sh` corrido uma vez, e o site voltou
 - [ ] **Monitorização** — algo externo a bater em `/api/health`
 - [ ] **Uptime** — UptimeRobot ou equivalente, alerta por email *(gratuito)*

@@ -6,7 +6,7 @@ considered and rejected, so the same idea does not get re-litigated from scratch
 
 Test applied to every candidate:
 
-1. Does this significantly increase the value of Noctra?
+1. Does this significantly increase the value of Suvka?
 2. Does it bring us closer to real customers?
 3. Does it create an advantage that is hard to copy?
 4. Is it worth more than everything else we could do today?
@@ -39,7 +39,7 @@ publish. Nothing else moves adoption or conversion while the answer is no.
 
 ## Stock image provider - Pexels chosen on license, not catalogue (built, inert)
 
-Noctra publishes **commercial** sites for paying customers. A generated page carrying a
+Suvka publishes **commercial** sites for paying customers. A generated page carrying a
 CC-BY photo whose attribution the customer never saw hands them a legal exposure they did
 not ask for. Pexels permits commercial use with no attribution required; Unsplash is
 similar; Wikimedia and Openverse are not. Attribution is captured and rendered anyway -
@@ -112,11 +112,11 @@ There is no reason to charge yet and no user to charge. Premature.
 ## Deferred: scoring the benchmark
 
 80 generations are collected and sitting in `benchmark-results/`; zero have been scored.
-The strategic claim - that Noctra beats an excellent prompt given directly to an LLM - is
+The strategic claim - that Suvka beats an excellent prompt given directly to an LLM - is
 still unproven.
 
 Deliberately deferred past M1 for one reason: `qualidadeVisual` is one of the 12 criteria,
-and until this milestone every Noctra page rendered a fake software mockup. Scoring would
+and until this milestone every Suvka page rendered a fake software mockup. Scoring would
 have spent real money measuring a defect already visible by reading the code. The corpus
 should be regenerated after images are live, then scored.
 

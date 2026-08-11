@@ -25,7 +25,7 @@ import { calibrateSignal } from "./signalCalibration";
 // "Cheap Wedding Photographer" should - and now do - diverge despite sharing an
 // industry, a businessModel, and a primaryGoal.
 //
-// Deterministic by design (see NOCTRA_CONSTITUTION.md: "the AI should never improvise
+// Deterministic by design (see SUVKA_CONSTITUTION.md: "the AI should never improvise
 // information when structured knowledge exists" / "structured data always comes before
 // prompting an LLM") - this is lexicon scoring, not a second LLM call. No randomness,
 // no network request, fully reproducible and unit-testable.

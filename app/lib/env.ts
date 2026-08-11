@@ -73,11 +73,11 @@ export function checkEnvironment(env: NodeJS.ProcessEnv): EnvReport {
   }
 
   // --- Fotografias -------------------------------------------------------------------
-  const uploads = value(env, "NOCTRA_UPLOADS_DIR");
+  const uploads = value(env, "SUVKA_UPLOADS_DIR");
   if (uploads && !uploads.startsWith("/") && !/^[A-Za-z]:[\\/]/.test(uploads)) {
     // Um caminho relativo resolve-se contra o directório de trabalho do processo, que é o
     // repositório - exactamente o sítio de onde as fotografias foram tiradas.
-    fail("NOCTRA_UPLOADS_DIR", `tem de ser um caminho absoluto, não "${uploads}"`);
+    fail("SUVKA_UPLOADS_DIR", `tem de ser um caminho absoluto, não "${uploads}"`);
   }
 
   // --- Pagamentos --------------------------------------------------------------------
@@ -134,7 +134,7 @@ export function formatEnvReport(report: EnvReport): string {
 
   if (report.fatal.length > 0) {
     lines.push("");
-    lines.push("  A configuração está incompleta e o Noctra não vai arrancar:");
+    lines.push("  A configuração está incompleta e o Suvka não vai arrancar:");
     lines.push("");
     for (const problem of report.fatal) lines.push(`    ${problem.name}: ${problem.detail}`);
     lines.push("");

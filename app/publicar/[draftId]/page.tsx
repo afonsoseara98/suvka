@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 // A private step between "I want this" and "it is online".
 export const metadata: Metadata = {
-  title: "O endereço do seu site — Noctra",
+  title: "O endereço do seu site — Suvka",
   robots: { index: false, follow: false, nocache: true },
 };
 
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 // So it is a step, with the name they would have got already filled in, because most people
 // should be able to press the button without typing anything.
 //
-// Today it produces /s/<slug> on this origin. The plan is <slug>.noctra.site, which needs a
+// Today it produces /s/<slug> on this origin. The plan is <slug>.suvka.com, which needs a
 // domain, wildcard DNS and a server that exists - none of which do yet. Deliberately the
 // same slug either way, so that day is a DNS change and not a migration of everybody's URL.
 export default async function PublishStep({ params }: { params: Promise<{ draftId: string }> }) {

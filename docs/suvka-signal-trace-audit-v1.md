@@ -1,4 +1,4 @@
-# Noctra Signal Trace Audit v1
+# Suvka Signal Trace Audit v1
 
 **Nenhum código foi alterado para produzir a auditoria original abaixo.** É uma leitura completa, ficheiro a ficheiro, de todo o pipeline de geração (`app/ai/*` + `app/api/generate/route.ts`), a responder a uma pergunta: **de tudo o que o pipeline calcula, o que chega realmente ao LLM — e o que se perde, é substituído, ou nunca foi ligado a nada?**
 

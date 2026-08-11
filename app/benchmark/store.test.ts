@@ -38,7 +38,7 @@ function landingPageFixture() {
 function generation(overrides: Partial<GenerationRecord> = {}): GenerationRecord {
   return {
     businessId: "advogado",
-    source: "noctra",
+    source: "suvka",
     promptUsed: "A small law firm...",
     model: "gpt-4.1-mini",
     landingPage: landingPageFixture(),
@@ -50,7 +50,7 @@ function generation(overrides: Partial<GenerationRecord> = {}): GenerationRecord
 function score(overrides: Partial<ScoreRecord> = {}): ScoreRecord {
   return {
     businessId: "advogado",
-    source: "noctra",
+    source: "suvka",
     criterion: "clarezaProposta",
     score: 8,
     scoredAt: new Date(0).toISOString(),
@@ -69,16 +69,16 @@ function describeBenchmarkStoreContract(name: string, createStore: () => Promise
     });
 
     it("saves and lists generations for a business", async () => {
-      await store.saveGeneration(generation({ source: "noctra" }));
+      await store.saveGeneration(generation({ source: "suvka" }));
       await store.saveGeneration(generation({ source: "chatgpt" }));
 
       const listed = await store.listGenerations("advogado");
-      expect(listed.map((g) => g.source).sort()).toEqual(["chatgpt", "noctra"]);
+      expect(listed.map((g) => g.source).sort()).toEqual(["chatgpt", "suvka"]);
     });
 
     it("upserts a generation - saving the same (businessId, source) twice replaces it", async () => {
-      await store.saveGeneration(generation({ source: "noctra", model: "gpt-4.1-mini" }));
-      await store.saveGeneration(generation({ source: "noctra", model: "gpt-4.1-mini-v2" }));
+      await store.saveGeneration(generation({ source: "suvka", model: "gpt-4.1-mini" }));
+      await store.saveGeneration(generation({ source: "suvka", model: "gpt-4.1-mini-v2" }));
 
       const listed = await store.listGenerations("advogado");
       expect(listed).toHaveLength(1);
@@ -123,7 +123,7 @@ describe("FileBenchmarkStore - temp directory round trip", () => {
   let store: FileBenchmarkStore;
 
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), "noctra-benchmark-"));
+    dir = await mkdtemp(path.join(tmpdir(), "suvka-benchmark-"));
     store = new FileBenchmarkStore(dir);
   });
 
@@ -151,6 +151,6 @@ describe("FileBenchmarkStore - temp directory round trip", () => {
 });
 
 describeBenchmarkStoreContract("FileBenchmarkStore", async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), "noctra-benchmark-contract-"));
+  const dir = await mkdtemp(path.join(tmpdir(), "suvka-benchmark-contract-"));
   return new FileBenchmarkStore(dir);
 });

@@ -4,7 +4,7 @@ import type { BusinessKnowledge } from "../types/knowledge";
 // gets when BusinessProfileBuilder.ts's classifier genuinely can't tell what industry
 // this is. Deliberately vertical-agnostic (never SaaS-flavored, never any specific
 // trade) rather than a stand-in for any one industry - see KnowledgeResolver.ts and
-// docs/noctra-signal-trace-audit-v1.md finding #2 for why defaulting to a real
+// docs/suvka-signal-trace-audit-v1.md finding #2 for why defaulting to a real
 // industry's knowledge here was the wrong fallback.
 export const genericKnowledge: BusinessKnowledge = {
   industry: "generic",

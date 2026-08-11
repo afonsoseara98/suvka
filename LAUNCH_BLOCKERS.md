@@ -43,7 +43,7 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 | | Item | Evidência |
 |---|---|---|
 | ✅ | Drafts sobrevivem a restart | `PrismaDraftStore` em produção; TTL de 24 h a contar da última visita |
-| ✅ | Uploads sobrevivem a restart | `/srv/noctra-uploads`, fora do repositório (corrigido em `0286bb8`) |
+| ✅ | Uploads sobrevivem a restart | `/srv/suvka-uploads`, fora do repositório (corrigido em `0286bb8`) |
 | ⚠️ | Backup da BD | Script escrito, cron documentado, **nunca correu numa máquina real** |
 | ⚠️ | Backup das fotografias | Idem. E as órfãs nunca são apagadas — BLOCKER #4 |
 
@@ -65,7 +65,7 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 | ✅ | Build limpa | `tsc` ✓ `eslint` ✓ `next build` ✓ · 907 testes, 70 ficheiros |
 | ✅ | `next start` | Verificado |
 | ✅ | Healthcheck | `/api/health` → `{"ok":true}`, faz `SELECT 1` |
-| ✅ | Logs | `journald` (`SyslogIdentifier=noctra`) + Caddy em JSON |
+| ✅ | Logs | `journald` (`SyslogIdentifier=suvka`) + Caddy em JSON |
 | ✅ | Restart automático | `Restart=always`, `RestartSec=3`, `WantedBy=multi-user.target` |
 | ⚠️ | HTTPS | Caddy trata dos certificados sozinho. Sem CSP nem `X-Frame-Options` explícitos |
 
@@ -160,14 +160,14 @@ desenho (`createImageProvider` devolve um herói editorial em vez de um falso).
 2. Um `throw` no `register()` **não mata o processo**. O Next escreve "Failed to prepare
    server", fica de pé, e responde **HTTP 500 a tudo, incluindo ao `/api/health`** — o
    systemd via um processo vivo e não reiniciava nada. Por isso é `process.exit(1)`. E por
-   isso o `noctra.service` levou `StartLimitIntervalSec=60` / `StartLimitBurst=5`: sem eles,
+   isso o `suvka.service` levou `StartLimitIntervalSec=60` / `StartLimitBurst=5`: sem eles,
    sair com 1 mais `Restart=always` era um ciclo infinito de reinícios a esconder no journal
    a mensagem que explica o que falta.
 
 **Verificação** — `DATABASE_URL="mysql://errado"` contra `next start`:
 
 ```
-  A configuração está incompleta e o Noctra não vai arrancar:
+  A configuração está incompleta e o Suvka não vai arrancar:
     DATABASE_URL: tem de começar por postgres:// ou postgresql://
 SAIDA=1
 ```
@@ -214,7 +214,7 @@ construídas a partir dela.
 ## BLOCKER #4 — As fotografias de drafts abandonados nunca são apagadas
 
 **Descrição.** O `PrismaDraftStore` limpa os drafts com mais de 24 h com um `deleteMany`. Isso
-apaga a linha. Os ficheiros que o draft tinha em `/srv/noctra-uploads` ficam. Só o `DELETE`
+apaga a linha. Os ficheiros que o draft tinha em `/srv/suvka-uploads` ficam. Só o `DELETE`
 explícito de `/api/restaurant/photos` chama `photoStore.remove`.
 
 **Impacto.** Fuga de disco permanente. Cada pré-visualização abandonada em que alguém tenha

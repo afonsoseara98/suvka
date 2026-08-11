@@ -4,7 +4,7 @@ import { clamp01 } from "@/app/ai/utils/math";
 // PALETTE ANCHORS
 //
 // Replaces free interpolation across all of colour space. See
-// docs/noctra-proposal-color-architecture.md for the measurement that forced this:
+// docs/suvka-proposal-color-architecture.md for the measurement that forced this:
 // compiling the previous model over the 20 benchmark businesses produced a magenta accent
 // for 17 of 20, blue for 0 of 20, and a background in the muddy 20-80% lightness band for
 // 20 of 20.

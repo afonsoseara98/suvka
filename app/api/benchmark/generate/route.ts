@@ -4,14 +4,14 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { BENCHMARK_BUSINESSES } from "@/app/benchmark/businesses";
-import { generateNoctra } from "@/app/benchmark/generators/noctra";
+import { generateSuvka } from "@/app/benchmark/generators/suvka";
 import { generateChatGptEquivalent } from "@/app/benchmark/generators/chatgptEquivalent";
 import { generateClaudeEquivalent } from "@/app/benchmark/generators/claudeEquivalent";
 import { generateGeminiEquivalent } from "@/app/benchmark/generators/geminiEquivalent";
 import { benchmarkStore } from "@/app/benchmark/storeInstance";
 
 // Triggers the one real generation this whole framework exists to evaluate: the same
-// business brief through Noctra's own pipeline, a well-prompted ChatGPT-equivalent
+// business brief through Suvka's own pipeline, a well-prompted ChatGPT-equivalent
 // call, a well-prompted Claude-equivalent call, and (added in Benchmark Audit v1) a
 // well-prompted Gemini-equivalent call (see Benchmark Framework plan §A3). This route
 // is fully wired but was never invoked during development - every real LLM call in this
@@ -49,21 +49,21 @@ export async function POST(request: Request) {
     const anthropic = new Anthropic({ apiKey: anthropicKey });
     const gemini = new GoogleGenAI({ apiKey: geminiKey });
 
-    const [noctra, chatgpt, claude, geminiResult] = await Promise.all([
-      generateNoctra(business.id, business.prompt, openai),
+    const [suvka, chatgpt, claude, geminiResult] = await Promise.all([
+      generateSuvka(business.id, business.prompt, openai),
       generateChatGptEquivalent(business.id, business.prompt, openai),
       generateClaudeEquivalent(business.id, business.prompt, anthropic),
       generateGeminiEquivalent(business.id, business.prompt, gemini),
     ]);
 
     await Promise.all([
-      benchmarkStore.saveGeneration(noctra),
+      benchmarkStore.saveGeneration(suvka),
       benchmarkStore.saveGeneration(chatgpt),
       benchmarkStore.saveGeneration(claude),
       benchmarkStore.saveGeneration(geminiResult),
     ]);
 
-    return NextResponse.json({ noctra, chatgpt, claude, gemini: geminiResult });
+    return NextResponse.json({ suvka, chatgpt, claude, gemini: geminiResult });
   } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(

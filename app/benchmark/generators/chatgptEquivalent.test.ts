@@ -21,7 +21,7 @@ describe("generateChatGptEquivalent", () => {
     expect(record.model).toBe("gpt-4.1-mini");
   });
 
-  it("never sends Noctra-specific pipeline data - no BUSINESS INTELLIGENCE/STRATEGY DNA sections", async () => {
+  it("never sends Suvka-specific pipeline data - no BUSINESS INTELLIGENCE/STRATEGY DNA sections", async () => {
     const record = await generateChatGptEquivalent("dentista", "A family dental clinic.", fakeClient());
     expect(record.promptUsed).not.toContain("BUSINESS INTELLIGENCE");
     expect(record.promptUsed).not.toContain("STRATEGY DNA");

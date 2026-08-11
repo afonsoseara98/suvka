@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacidade — Noctra",
+  title: "Privacidade — Suvka",
   robots: { index: true, follow: true },
 };
 
@@ -33,7 +33,7 @@ const SECTIONS = [
   },
   {
     title: "Apagar os seus dados",
-    body: "Escreva para ola@noctra.pt e apagamos a conta e tudo o que lhe está associado.",
+    body: "Escreva para ola@suvka.com e apagamos a conta e tudo o que lhe está associado.",
   },
 ];
 
@@ -42,7 +42,7 @@ export default function Privacidade() {
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-2xl px-6 py-16">
         <Link href="/" className="text-sm text-zinc-500 hover:text-white">
-          ← Noctra
+          ← Suvka
         </Link>
 
         <h1 className="mt-6 text-3xl font-bold">Privacidade</h1>
@@ -60,7 +60,7 @@ export default function Privacidade() {
         </div>
 
         <p className="mt-12 border-t border-zinc-900 pt-6 text-xs text-zinc-600">
-          Dúvidas: <a href="mailto:ola@noctra.pt" className="underline">ola@noctra.pt</a>
+          Dúvidas: <a href="mailto:ola@suvka.com" className="underline">ola@suvka.com</a>
         </p>
       </div>
     </main>

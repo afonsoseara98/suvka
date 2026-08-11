@@ -1,20 +1,20 @@
-# Noctra Manifesto
+# Suvka Manifesto
 
-Isto não é um blueprint. Não é um documento técnico. Não é um roadmap. É a constituição — o texto que qualquer pessoa, a construir qualquer parte do Noctra, tem de conseguir ler e sair a construir na mesma direção que todas as outras. `docs/noctra-vision-v2.md` responde ao *porquê* da experiência; `docs/noctra-product-blueprint-v1.md` responde ao *o quê*; o código responde ao *como*. Este documento responde a uma pergunta anterior a todas essas: **quem somos, e o que é que isso nos impede de fazer.**
+Isto não é um blueprint. Não é um documento técnico. Não é um roadmap. É a constituição — o texto que qualquer pessoa, a construir qualquer parte do Suvka, tem de conseguir ler e sair a construir na mesma direção que todas as outras. `docs/suvka-vision-v2.md` responde ao *porquê* da experiência; `docs/suvka-product-blueprint-v1.md` responde ao *o quê*; o código responde ao *como*. Este documento responde a uma pergunta anterior a todas essas: **quem somos, e o que é que isso nos impede de fazer.**
 
 Sempre que uma decisão de produto, de design, de IA ou de engenharia entrar em conflito com uma frase aqui escrita, este documento ganha.
 
 ---
 
-## O que é o Noctra
+## O que é o Suvka
 
-O Noctra não é um gerador de landing pages. Não é um website builder no sentido do Wix. É uma plataforma de criação assistida por IA para quem precisa de parecer profissional e converter — sem se tornar designer, sem se tornar developer, sem contratar quem seja.
+O Suvka não é um gerador de landing pages. Não é um website builder no sentido do Wix. É uma plataforma de criação assistida por IA para quem precisa de parecer profissional e converter — sem se tornar designer, sem se tornar developer, sem contratar quem seja.
 
 A geração é a porta de entrada, não o produto. O produto é a relação contínua entre o utilizador e um sistema que entende o negócio dele, gera com esse entendimento, e continua a ajudar a melhorar depois de publicado.
 
 ## Porque existe
 
-Porque o espaço entre "tenho uma ideia de negócio" e "tenho uma presença online que vende" continua largo demais para a maioria das pequenas empresas — lento demais com um freelancer, caro demais com uma agência, genérico demais com um builder tradicional, técnico demais com uma ferramenta de design profissional. Nenhuma ferramenta existente resolve as três dimensões ao mesmo tempo: **inteligência sobre o negócio, qualidade de design, e simplicidade de uso.** O Noctra existe para ser a primeira que resolve as três, em vez de escolher uma e desculpar-se pelas outras duas.
+Porque o espaço entre "tenho uma ideia de negócio" e "tenho uma presença online que vende" continua largo demais para a maioria das pequenas empresas — lento demais com um freelancer, caro demais com uma agência, genérico demais com um builder tradicional, técnico demais com uma ferramenta de design profissional. Nenhuma ferramenta existente resolve as três dimensões ao mesmo tempo: **inteligência sobre o negócio, qualidade de design, e simplicidade de uso.** O Suvka existe para ser a primeira que resolve as três, em vez de escolher uma e desculpar-se pelas outras duas.
 
 ## Porque vai ganhar
 
@@ -44,7 +44,7 @@ Uma funcionalidade só entra se a resposta a pelo menos uma destas perguntas for
 - Reduz o tempo até ao primeiro "uau" ou até à primeira publicação?
 - Aumenta a confiança de que publicar, editar ou pedir à IA é seguro e reversível?
 - Torna o editor mais vivo e mais rápido a responder — nunca mais complexo de aprender?
-- Um utilizador real, na jornada descrita em `docs/noctra-vision-v2.md`, sentiria a falta disto se fosse removido?
+- Um utilizador real, na jornada descrita em `docs/suvka-vision-v2.md`, sentiria a falta disto se fosse removido?
 
 Se uma funcionalidade só se justifica por "os concorrentes têm" ou "seria interessante ter", não entra ainda. Paridade de funcionalidades não é uma estratégia — é uma desculpa para não ter uma.
 

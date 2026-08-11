@@ -18,7 +18,7 @@ import Link from "next/link";
 // has ever said. The words "IA", "algoritmo" and "SEO" appear nowhere on purpose: the owner
 // is not buying a generator, they are buying the thing they keep meaning to get around to.
 export const metadata: Metadata = {
-  title: "O restaurante já existe. Falta o website. | Noctra",
+  title: "O restaurante já existe. Falta o website. | Suvka",
   description:
     "Criamos o site do seu restaurante em minutos. Sem designer, sem código. Menu, fotos, horário e contacto. Primeiro mês gratuito.",
 };
@@ -125,7 +125,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <span className="text-lg font-bold">Noctra</span>
+        <span className="text-lg font-bold">Suvka</span>
         {/* "Entrar" sat top-right, where a first-time visitor looks for the way in - and it
             led to a sign-in form, which is the one thing this page exists to avoid. Saying
             who it is for stops him clicking it by mistake. */}
@@ -238,9 +238,9 @@ export default function Home() {
 
       <footer className="border-t border-zinc-900 px-6 py-10">
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-sm text-zinc-600 sm:flex-row sm:justify-between">
-          <span>Noctra · Websites para restaurantes</span>
+          <span>Suvka · Websites para restaurantes</span>
           <nav className="flex gap-6">
-            <a href="mailto:ola@noctra.pt" className="transition hover:text-zinc-300">
+            <a href="mailto:ola@suvka.com" className="transition hover:text-zinc-300">
               Contacto
             </a>
             <Link href="/termos" className="transition hover:text-zinc-300">

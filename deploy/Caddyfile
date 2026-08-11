@@ -9,19 +9,19 @@
 	email SEU-EMAIL@exemplo.pt
 }
 
-noctra.pt, www.noctra.pt {
+suvka.com, www.suvka.com {
 	encode zstd gzip
 
 	# Uploaded photographs are served straight off disk by Caddy rather than through
 	# Node. They never change once written, so they are cached hard - a restaurant's own
 	# dish photo is the largest thing on their page and it should be fetched once.
-	# Fora do repositório, de propósito: se vivessem em /srv/noctra/public, um checkout
+	# Fora do repositório, de propósito: se vivessem em /srv/suvka/public, um checkout
 	# limpo ou um `git clean` apagava as fotografias que os restaurantes tiraram à comida
 	# deles - a única coisa aqui que não se gera outra vez.
 	#
-	# Tem de coincidir com NOCTRA_UPLOADS_DIR no .env.production. Se mudar um, mude o outro.
+	# Tem de coincidir com SUVKA_UPLOADS_DIR no .env.production. Se mudar um, mude o outro.
 	handle_path /uploads/* {
-		root * /srv/noctra-uploads
+		root * /srv/suvka-uploads
 		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
 	}
@@ -37,7 +37,7 @@ noctra.pt, www.noctra.pt {
 	}
 
 	log {
-		output file /var/log/caddy/noctra.log
+		output file /var/log/caddy/suvka.log
 		format json
 	}
 }

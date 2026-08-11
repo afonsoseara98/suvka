@@ -21,7 +21,7 @@ import { BENCHMARK_BUSINESSES } from "../app/benchmark/businesses";
 // The section list per business below is judgement, not measurement - there is no dataset
 // of "what a plumber's website contains". It is written down per business, with the
 // reasoning visible, so it can be argued with rather than trusted. What it is NOT is a
-// description of what Noctra currently produces: that would just re-measure our own bug.
+// description of what Suvka currently produces: that would just re-measure our own bug.
 //
 // The rule applied throughout: a section is listed only if a real business of that kind
 // would have content for it. A plumber has no menu and no portfolio; a photographer has a

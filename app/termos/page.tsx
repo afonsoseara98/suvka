@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Termos — Noctra",
+  title: "Termos — Suvka",
   robots: { index: true, follow: true },
 };
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const SECTIONS = [
   {
     title: "O serviço",
-    body: "O Noctra cria e aloja um website para o seu restaurante a partir dos dados que escreve. Enquanto a subscrição estiver ativa, o site fica online.",
+    body: "O Suvka cria e aloja um website para o seu restaurante a partir dos dados que escreve. Enquanto a subscrição estiver ativa, o site fica online.",
   },
   {
     title: "Preço",
@@ -41,7 +41,7 @@ export default function Termos() {
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-2xl px-6 py-16">
         <Link href="/" className="text-sm text-zinc-500 hover:text-white">
-          ← Noctra
+          ← Suvka
         </Link>
 
         <h1 className="mt-6 text-3xl font-bold">Termos</h1>
@@ -57,7 +57,7 @@ export default function Termos() {
         </div>
 
         <p className="mt-12 border-t border-zinc-900 pt-6 text-xs text-zinc-600">
-          Dúvidas: <a href="mailto:ola@noctra.pt" className="underline">ola@noctra.pt</a>
+          Dúvidas: <a href="mailto:ola@suvka.com" className="underline">ola@suvka.com</a>
         </p>
       </div>
     </main>

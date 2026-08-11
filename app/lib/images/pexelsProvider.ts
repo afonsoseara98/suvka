@@ -2,7 +2,7 @@ import type { ResolvedImage, VisualIntent } from "@/app/ai/types/visual";
 import type { ImageProvider } from "./types";
 
 // Pexels chosen over Unsplash/Wikimedia/Openverse on LICENSE, not on catalogue size.
-// Noctra publishes COMMERCIAL sites for paying customers: the moment a generated page
+// Suvka publishes COMMERCIAL sites for paying customers: the moment a generated page
 // carries a CC-BY photo whose attribution the customer never saw, we have handed them a
 // legal exposure they did not ask for. The Pexels license permits commercial use with no
 // attribution required, which is the only footing on which shipping images into someone

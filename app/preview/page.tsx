@@ -34,7 +34,7 @@ export default function ContactSheet() {
 
   return (
     <main style={{ background: "#111", color: "#eee", padding: 24, fontFamily: "ui-sans-serif, system-ui" }}>
-      <h1 style={{ fontSize: 18, marginBottom: 4 }}>Noctra output — all 20 benchmark businesses</h1>
+      <h1 style={{ fontSize: 18, marginBottom: 4 }}>Suvka output — all 20 benchmark businesses</h1>
       <p style={{ fontSize: 12, opacity: 0.6, marginBottom: 20 }}>
         Real pipeline, real stored copy, real resolved photography. {FRAME_WIDTH}×{FRAME_HEIGHT} at {SCALE * 100}%.
       </p>

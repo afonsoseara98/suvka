@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { SCHEMA_PROMPT } from "./schema";
 
-// Regression test for the bug found in the Signal Trace Audit v1 (docs/noctra-signal-trace-audit-v1.md,
+// Regression test for the bug found in the Signal Trace Audit v1 (docs/suvka-signal-trace-audit-v1.md,
 // finding #1): the example JSON schema shown to the LLM used "number" for the top-level
 // `stats` array's value field, while `hero.stats` (three lines above, in the same
 // example) correctly used "value" - and app/types/landing.ts's StatsItem (what

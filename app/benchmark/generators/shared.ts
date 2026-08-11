@@ -22,16 +22,16 @@ const EMPTY_HERO: HeroData = {
 const EMPTY_FOOTER: FooterData = { company: "", email: "", copyright: "" };
 
 // Both the ChatGPT-equivalent and Claude-equivalent arms are asked for the same JSON
-// schema Noctra's own SCHEMA_PROMPT uses (see genericPrompt.ts) - but neither has a
+// schema Suvka's own SCHEMA_PROMPT uses (see genericPrompt.ts) - but neither has a
 // StrategyDNA/LayoutIntelligence pipeline behind it, so their raw output needs
 // normalizing before it can render through the exact same Landing/SectionRenderer
-// components Noctra's own output does:
+// components Suvka's own output does:
 //   - dna: neutralStrategyDna() (app/ai/testFixtures.ts) - a fixed, neutral theme
-//     baseline for every non-Noctra arm, so the comparison measures what each arm
+//     baseline for every non-Suvka arm, so the comparison measures what each arm
 //     actually wrote (copy, structure, section choices), not "did it have a design DNA
-//     system," which only Noctra has by construction.
+//     system," which only Suvka has by construction.
 //   - prominence/rhythm: always "standard" - concepts neither arm has any way to
-//     reason about (Noctra's own SCHEMA_PROMPT doesn't ask the LLM for these either;
+//     reason about (Suvka's own SCHEMA_PROMPT doesn't ask the LLM for these either;
 //     they're always pipeline-computed and applied after generation - see
 //     app/ai/generateLandingPage.ts).
 export function normalizeGenericOutput(raw: Record<string, unknown>): LandingPage {

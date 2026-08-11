@@ -26,7 +26,7 @@ const CRITERION_LABELS: Record<BenchmarkCriterion, string> = {
 };
 
 const SOURCE_LABELS: Record<BenchmarkSource, string> = {
-  noctra: "Noctra",
+  suvka: "Suvka",
   chatgpt: "ChatGPT (prompt excelente)",
   claude: "Claude (prompt excelente)",
   gemini: "Gemini (prompt excelente)",
@@ -78,9 +78,9 @@ export default function BenchmarkPage() {
 
   return (
     <main className="min-h-screen bg-black p-12 text-white">
-      <h1 className="text-3xl font-bold">Noctra Benchmark v1</h1>
+      <h1 className="text-3xl font-bold">Suvka Benchmark v1</h1>
       <p className="mt-2 text-zinc-400">
-        Noctra vs. um prompt excelente ao ChatGPT vs. Claude vs. Gemini, para os mesmos 20 negócios.
+        Suvka vs. um prompt excelente ao ChatGPT vs. Claude vs. Gemini, para os mesmos 20 negócios.
       </p>
 
       <div className="mt-8 flex gap-2 border-b border-zinc-800">
@@ -135,7 +135,7 @@ function SetupTab() {
             className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
           >
             {status[business.id] === "generating"
-              ? "A gerar (Noctra + ChatGPT + Claude + Gemini)..."
+              ? "A gerar (Suvka + ChatGPT + Claude + Gemini)..."
               : status[business.id] === "done"
                 ? "Gerado ✓"
                 : status[business.id] === "error"
@@ -285,7 +285,7 @@ function ReportTab() {
         <h2 className="text-xl font-bold">Média geral por fonte</h2>
         <p className="mt-1 text-sm text-zinc-500">
           &ldquo;Ponderada&rdquo; pesa mais probabilidade de conversão, primeira impressão e clareza da proposta de
-          valor - ver docs/noctra-benchmark-audit-v1.md para os pesos exatos por critério.
+          valor - ver docs/suvka-benchmark-audit-v1.md para os pesos exatos por critério.
         </p>
         <table className="mt-4 w-full text-sm">
           <thead>
@@ -343,16 +343,16 @@ function ReportTab() {
       </section>
 
       <section>
-        <h2 className="text-xl font-bold">Onde o Noctra perde - recomendações</h2>
-        {report.noctraLosses.length === 0 ? (
-          <p className="mt-2 text-emerald-400">Noctra ganha ou empata em todos os critérios com dados.</p>
+        <h2 className="text-xl font-bold">Onde o Suvka perde - recomendações</h2>
+        {report.suvkaLosses.length === 0 ? (
+          <p className="mt-2 text-emerald-400">Suvka ganha ou empata em todos os critérios com dados.</p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {report.noctraLosses.map((loss) => (
+            {report.suvkaLosses.map((loss) => (
               <li key={loss.criterion} className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
                 <div className="font-semibold">
                   {CRITERION_LABELS[loss.criterion]}: {SOURCE_LABELS[loss.winner]} ganha ({loss.winnerAverage.toFixed(2)} vs.{" "}
-                  {loss.noctraAverage?.toFixed(2) ?? "—"})
+                  {loss.suvkaAverage?.toFixed(2) ?? "—"})
                 </div>
                 <div className="mt-1 text-sm text-zinc-400">{loss.recommendation}</div>
               </li>

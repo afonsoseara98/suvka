@@ -3,7 +3,7 @@ import { buildGenericPrompt } from "../genericPrompt";
 import { normalizeGenericOutput } from "./shared";
 import type { GenerationRecord } from "../types";
 
-// Same model tier as Noctra's own call (gpt-4.1-mini) - confirmed with the user
+// Same model tier as Suvka's own call (gpt-4.1-mini) - confirmed with the user
 // specifically so this benchmark isolates the pipeline's contribution, not which
 // provider currently has the strongest flagship model (see Benchmark plan's "Model
 // choice" note).

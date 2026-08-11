@@ -1,13 +1,13 @@
-# Noctra Benchmark Audit v1
+# Suvka Benchmark Audit v1
 
 **Role:** independent-investigator review of the Benchmark Framework, run before any
 real API call was made. **Goal:** find bias, methodological weaknesses, or any
-unintended advantage given to Noctra, fix what's fixable in code, and disclose what
+unintended advantage given to Suvka, fix what's fixable in code, and disclose what
 isn't - so the eventual report can be shown to investors without a credible claim that
-the test was rigged in Noctra's favor.
+the test was rigged in Suvka's favor.
 
 **Scope reviewed:** `app/benchmark/businesses.ts`, `genericPrompt.ts`,
-`generators/{noctra,chatgptEquivalent,claudeEquivalent,geminiEquivalent,shared}.ts`,
+`generators/{suvka,chatgptEquivalent,claudeEquivalent,geminiEquivalent,shared}.ts`,
 `app/ai/generateLandingPage.ts`, `app/ai/testFixtures.ts` (`neutralStrategyDna`),
 `app/components/renderers/SectionRenderer.tsx` and every `*_VARIANTS` fallback,
 `scoring.ts`, `app/api/benchmark/*/route.ts`, `app/benchmark/page.tsx`.
@@ -22,7 +22,7 @@ unaudited technical asymmetry (token budget) or a drift risk (duplicated literal
 
 ### 1. Token-budget asymmetry between arms — FIXED
 
-The Claude arm explicitly capped generation at `max_tokens: 4096`. Noctra's own call and
+The Claude arm explicitly capped generation at `max_tokens: 4096`. Suvka's own call and
 the ChatGPT-equivalent arm set no token budget at all, relying on whatever OpenAI's
 default happens to be for `gpt-4.1-mini` - unaudited, and not necessarily equal to 4096.
 If that default were meaningfully lower, one or two arms could silently truncate a large
@@ -30,11 +30,11 @@ landing page's JSON (a parse failure or a missing section) for a reason that has
 to do with writing or design quality, and everything to do with an unexamined default.
 
 **Fix:** `app/ai/generateLandingPage.ts` now exports `MAX_OUTPUT_TOKENS = 4096`, a single
-constant every arm imports and passes explicitly - Noctra's real call
-(`generateLandingPage.ts`, which the benchmark's Noctra adapter also calls, by design),
+constant every arm imports and passes explicitly - Suvka's real call
+(`generateLandingPage.ts`, which the benchmark's Suvka adapter also calls, by design),
 the ChatGPT-equivalent arm, the Claude arm, and the new Gemini arm. This is a production
 fix, not a benchmark-only shim: it protects real user generations from the same silent
-truncation risk, and it had to be, because the benchmark's Noctra arm calls the real
+truncation risk, and it had to be, because the benchmark's Suvka arm calls the real
 production function rather than a second copy of it - patching only a benchmark-local
 copy would have reintroduced the "two copies drift" problem this session has hit before.
 
@@ -56,30 +56,30 @@ truth (`BenchmarkSource` is derived from it via `(typeof BENCHMARK_SOURCES)[numb
 ### 3. Business-brief register — REVIEWED, NO ISSUE FOUND
 
 Checked whether the 20 business descriptions (`businesses.ts`) are written in a way that
-specifically plays to Noctra's own `BusinessProfileBuilder`/`BusinessIntelligence`
+specifically plays to Suvka's own `BusinessProfileBuilder`/`BusinessIntelligence`
 extraction (e.g. front-loading keywords those modules key off of) rather than reading as
 a real person's brief. They don't: each is one plain sentence, same register as the
 Diversity Engine's stress-test corpus, no industry-jargon stuffing. A savvy marketer
 typing a business description into ChatGPT would write something very close to these.
 
-### 4. Rendering baseline for non-Noctra arms — REVIEWED, NO ISSUE FOUND
+### 4. Rendering baseline for non-Suvka arms — REVIEWED, NO ISSUE FOUND
 
-`generators/shared.ts` renders every non-Noctra arm through `neutralStrategyDna()`
+`generators/shared.ts` renders every non-Suvka arm through `neutralStrategyDna()`
 (`app/ai/testFixtures.ts`) - checked its actual values: every continuous field sits at
 exactly `0.5`, the true midpoint, not a deliberately-bad strawman baseline. Also checked
 every section component's variant fallback (`Features`, `Benefits`, `Testimonials`,
 `Stats`, `FAQ`, `Pricing`, `Hero`) - an unrecognized or "default" variant string from a
-non-Noctra arm's JSON degrades gracefully to that section's own default component
+non-Suvka arm's JSON degrades gracefully to that section's own default component
 (`FeaturesGrid`, `HeroSplitLayout`, etc.), never to a blank or broken render.
 
-**Disclosed, not fixed (correctly, by design):** Noctra's own arm renders through its
+**Disclosed, not fixed (correctly, by design):** Suvka's own arm renders through its
 *actual* computed `StrategyDNA`, not the neutral baseline. This is the one deliberate,
-intentional asymmetry in the whole framework - Noctra's Design Engine is part of the
+intentional asymmetry in the whole framework - Suvka's Design Engine is part of the
 product being tested, and the other arms have no equivalent system to render through.
 Already documented in `generators/shared.ts`'s comments and the original Benchmark plan;
 restated here so it's explicit in one audit-facing place: **qualidadeVisual,
 estruturaNarrativa, and consistenciaMarca scores are not "copy vs. copy" comparisons on
-the non-Noctra arms - they also measure whether having a design system at all is worth
+the non-Suvka arms - they also measure whether having a design system at all is worth
 having one.** That's the question the benchmark exists to answer, not a bias to remove.
 
 ### 5. Sampling and rater bias — DISCLOSED, NOT FIXABLE IN CODE
@@ -104,7 +104,7 @@ still far more evidence than zero benchmarks, it just isn't a peer-reviewed tria
 
 ### 6. Model-tier parity across all four arms — CONFIRMED, EXTENDED
 
-Already established for the original three arms (`gpt-4.1-mini` for Noctra + the
+Already established for the original three arms (`gpt-4.1-mini` for Suvka + the
 ChatGPT-equivalent arm, `claude-haiku-4-5-20251001` for the Claude arm - confirmed with
 the user specifically to isolate the pipeline's contribution, not provider flagship
 strength). The new Gemini arm follows the same rule: Google's comparably-tiered

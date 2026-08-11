@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const generated = await generateLandingPage(validation.value, openai);
 
     // finalPrompt is server-side only (exposed to code that imports generateLandingPage
-    // directly, e.g. the benchmark's Noctra adapter) - never shipped to the browser.
+    // directly, e.g. the benchmark's Suvka adapter) - never shipped to the browser.
     // It's prompt-engineering detail, not something a client needs to render the page
     // or explain its own decisions (see app/ai/builders/ExplainWhy.ts, which works from
     // businessIntelligence/signals instead).
