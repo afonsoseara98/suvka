@@ -74,14 +74,21 @@ export default function Menu({ items, theme, layout, rhythm, heading, onUpdateCo
             </div>
 
             {/* The price sits on its own baseline against the dish, the way a printed menu
-                sets it - not inside a badge, and never styled as a call to action. */}
-            <EditableText
-              as="div"
-              className="shrink-0 tabular-nums font-semibold"
-              style={{ color: theme.colors.accent }}
-              value={item.price}
-              onCommit={commitAt(items, index, "price", onUpdateContent)}
-            />
+                sets it - not inside a badge, and never styled as a call to action.
+
+                Desenhado só quando existe, como já acontecia com a descrição: o preço
+                deixou de ser obrigatório (uma marisqueira vende a peso), e uma coluna
+                vazia ao lado de cada prato lê-se como um preço que faltou carregar. No
+                editor aparece sempre, senão o dono não teria onde carregar para o pôr. */}
+            {(item.price || onUpdateContent) && (
+              <EditableText
+                as="div"
+                className="shrink-0 tabular-nums font-semibold"
+                style={{ color: theme.colors.accent }}
+                value={item.price}
+                onCommit={commitAt(items, index, "price", onUpdateContent)}
+              />
+            )}
 
             {onUpdateContent && items.length > 1 && (
               <button

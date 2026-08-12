@@ -180,16 +180,30 @@ export function validateRestaurantInput(input: Partial<RestaurantInput>, options
     errors.instagram = "Esse Instagram parece demasiado longo.";
   }
 
+  // O PREÇO DEIXOU DE SER OBRIGATÓRIO
+  //
+  // Era: nome E preço, senão o site não se gerava. Descoberto a replicar um restaurante
+  // verdadeiro - o Mariscar, na Rua das Flores - que no site dele não publica preço nenhum.
+  // Marisqueiras vendem a peso, e há casas que não querem o preço na internet. Para essas,
+  // isto não era fricção: era uma porta fechada, e nem chegavam a ver o produto.
+  //
+  // O nome do prato sozinho já constrói uma ementa - "Arroz de marisco" numa lista diz ao
+  // cliente o que aquela casa é. O preço acrescenta e não sustenta.
+  //
+  // O tidyPrice já deixava passar intacto o que não é um número ("sob consulta", "ao peso"),
+  // portanto a página sempre soube desenhar isto. Só a validação é que não deixava lá chegar.
   const dishes = Array.isArray(input.dishes) ? input.dishes : [];
-  const complete = dishes.filter((dish) => !isBlank(dish?.name) && !isBlank(dish?.price));
+  const complete = dishes.filter((dish) => !isBlank(dish?.name));
   if (complete.length === 0) {
     // A menu with no dishes is not a menu, and the page would fall back to being a poster.
-    errors.dishes = "Adicione pelo menos um prato, com nome e preço.";
+    errors.dishes = "Adicione pelo menos um prato.";
   } else if (
     complete.some(
       (dish) =>
         dish.name.trim().length > LIMITS.dishName ||
-        dish.price.trim().length > LIMITS.dishPrice ||
+        // `?? ""` agora que o preço pode não vir de todo: o corpo do pedido é JSON de fora,
+        // e um prato sem a chave `price` fazia isto rebentar num endpoint público.
+        (dish.price ?? "").trim().length > LIMITS.dishPrice ||
         (dish.description ?? "").trim().length > LIMITS.dishDescription
     )
   ) {
@@ -254,10 +268,12 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     boltFood: (input.boltFood ?? "").trim(),
     language: input.language ?? "pt",
     dishes: input.dishes
-      .filter((dish) => !isBlank(dish.name) && !isBlank(dish.price))
+      // O nome é o que faz um prato existir. Sem preço a linha sai sem preço - ver a
+      // validação acima, e o Menu, que deixa de desenhar a coluna quando não há nada nela.
+      .filter((dish) => !isBlank(dish.name))
       .map((dish) => ({
         name: dish.name.trim(),
-        price: dish.price.trim(),
+        price: (dish.price ?? "").trim(),
         description: (dish.description ?? "").trim(),
       })),
   };

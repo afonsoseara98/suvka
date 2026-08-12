@@ -311,8 +311,11 @@ function RestaurantForm() {
                     className={field.replace("mt-2 ", "")}
                     value={dish.price}
                     onChange={(e) => setDish(index, "price", e.target.value)}
-                    placeholder="18,50 €"
-                    aria-label={`Prato ${index + 1} — preço`}
+                    // "opcional" no sítio onde ele olha. A validação deixou de exigir o
+                    // preço, mas uma caixa que diz "18,50 €" e mais nada continua a ler-se
+                    // como obrigatória - e quem vende a peso continuava a desistir aqui.
+                    placeholder={index === 0 ? "18,50 € (opcional)" : "Preço"}
+                    aria-label={`Prato ${index + 1} — preço (opcional)`}
                   />
                   <input
                     className={`${field.replace("mt-2 ", "")} sm:col-span-2`}

@@ -37,9 +37,31 @@ describe("restaurant input validation", () => {
     }
   });
 
-  it("requires at least one dish with a name and a price", () => {
+  it("requires at least one dish, by name", () => {
     expect(validateRestaurantInput(input({ dishes: [] })).dishes).toBeTruthy();
-    expect(validateRestaurantInput(input({ dishes: [{ name: "Soup", price: "", description: "" }] })).dishes).toBeTruthy();
+    expect(validateRestaurantInput(input({ dishes: [{ name: "", price: "12,00", description: "" }] })).dishes).toBeTruthy();
+  });
+
+  // O PREÇO NÃO É OBRIGATÓRIO
+  //
+  // Descoberto a replicar um restaurante verdadeiro: o Mariscar, na Rua das Flores, não
+  // publica preço nenhum no site dele. Marisqueiras vendem a peso. Exigir o preço não era
+  // fricção para essas casas - era uma porta fechada, e nem chegavam a ver o produto.
+  it("aceita um prato sem preço, porque há casas que vendem a peso", () => {
+    expect(validateRestaurantInput(input({ dishes: [{ name: "Sapateira recheada", price: "", description: "" }] })).dishes).toBeUndefined();
+  });
+
+  it("aceita um prato a que falte a chave do preço de todo", () => {
+    // O corpo do pedido é JSON de fora. Sem isto, um prato sem a chave `price` rebentava
+    // num endpoint público.
+    const semPreco = [{ name: "Sapateira recheada", description: "" } as never];
+    expect(() => validateRestaurantInput(input({ dishes: semPreco }))).not.toThrow();
+    expect(validateRestaurantInput(input({ dishes: semPreco })).dishes).toBeUndefined();
+  });
+
+  it("o prato sem preço sobrevive à normalização, com o preço vazio", () => {
+    const normalizado = normaliseRestaurantInput(input({ dishes: [{ name: "Sapateira", price: "", description: "" }] }));
+    expect(normalizado.dishes).toEqual([{ name: "Sapateira", price: "", description: "" }]);
   });
 
   it("does not police the shape of a phone number", () => {
@@ -309,7 +331,7 @@ describe("errors a real owner can act on", () => {
       expect(message, field).not.toMatch(/^(The|Choose|An|A phone|Opening|We need|That does|Add|Keep)\b/);
     }
     expect(errors.name).toBe("Escreva o nome do restaurante.");
-    expect(errors.dishes).toBe("Adicione pelo menos um prato, com nome e preço.");
+    expect(errors.dishes).toBe("Adicione pelo menos um prato.");
   });
 
   it("catches a paste that would break the page", () => {
