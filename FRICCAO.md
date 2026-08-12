@@ -64,20 +64,6 @@ qualquer um dos dois produtos**. É contra isso que se vende, não contra a Bent
 
 ## Aberto
 
-### F-1 · O formulário recusa quem não publica preços
-
-- **Problema.** É preciso pelo menos um prato **com preço** para gerar o site. O Mariscar,
-  no site dele, não publica preço nenhum — e não é um caso raro: marisqueiras vendem a
-  peso, e há casas que não querem o preço na internet.
-- **Impacto.** Não é fricção, é uma porta fechada. O restaurante não chega a ver o produto.
-- **Frequência.** *Estimado:* todas as casas que vendem a peso ou "ao preço do dia".
-- **Solução mais simples.** Aceitar um prato sem preço, e mostrá-lo sem a linha do preço.
-  O `tidyPrice` já deixa passar texto que não é número ("sob consulta"), portanto a página
-  já sabe desenhar isto — só a validação é que não deixa lá chegar.
-- **Posso eliminar em vez de melhorar?** Sim: deixar de exigir o preço. O nome do prato já
-  sozinho constrói a ementa.
-- **Prioridade.** P0.
-
 ### F-2 · O "Aberto agora" desaparece sem avisar
 
 - **Problema.** Escrevi o horário em português normal — *"Terça a sábado das 12h às 15h e
@@ -139,6 +125,20 @@ qualquer um dos dois produtos**. É contra isso que se vende, não contra a Bent
 
 ## Corrigido
 
+### F-1 · O formulário recusava quem não publica preços — `f335351`
+
+Era preciso pelo menos um prato **com preço**. O Mariscar, no site dele, não publica preço
+nenhum — e não é caso raro: marisqueiras vendem a peso. Para essas casas isto não era
+fricção, era uma porta fechada: não chegavam a ver o produto.
+
+O que estava errado não era faltar uma funcionalidade — era a **regra ser mais apertada do
+que o produto**. O `tidyPrice` já deixava passar "sob consulta" e "ao peso", testado desde
+sempre. A página sempre soube desenhar isto; só a validação é que não deixava lá chegar.
+
+Corrigido por **remoção**: exige-se o nome, não o preço. O `Menu` deixa de desenhar a
+coluna quando está vazia, como já fazia com a descrição. Verificado com os dados reais do
+Mariscar, três pratos e zero preços — site gerado em 1,46 s, sem uma única coluna vazia.
+
 ### F-7 · Os dois ecrãs diziam ao dono o endereço errado — `65e18cd`
 
 O "Último passo" mostrava `.../s/adega-do-manel`; o site vive em `/adega-do-manel`. No
@@ -181,5 +181,25 @@ aberto.
 O argumento de venda não é "mais bonito" nem "mais barato". É: **o site que já tem não
 responde ao cliente que está a decidir agora.**
 
-Enquanto o F-1 estiver aberto, esse restaurante em concreto nem sequer consegue
-experimentar — é recusado no formulário por não publicar preços.
+O F-1 fechou nesta ronda, e era ele que impedia esse restaurante em concreto de sequer
+experimentar. Hoje o Mariscar entra.
+
+---
+
+## Uma nota sobre o KPI
+
+> *"Esta alteração aumenta a probabilidade de um restaurante pagar 19€/mês?"*
+
+Aplicado à letra, esse critério **nunca constrói** o #6, o #7 nem o #9 do
+`LAUNCH_BLOCKERS.md` — e não é por serem técnicos:
+
+- **#7**, sem recuperação de password, um dono que a esqueça perde o site dele para sempre.
+- **#6**, o fim do período gratuito não faz nada: quem não paga fica igual a quem paga.
+- **#9**, o backup nunca foi restaurado, e as fotografias são a única coisa aqui que não se
+  gera outra vez.
+
+Nenhum aumenta a probabilidade do primeiro sim. Os três decidem se o sim se mantém.
+
+Por isso este documento usa o critério com uma segunda metade:
+
+> *"...ou impede que um restaurante que já paga deixe de pagar, ou perca o que é dele."*
