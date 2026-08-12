@@ -113,30 +113,6 @@ coisas diferentes, é categoria A e ninguém dá por ela.
 
 ## Aberto
 
-### F-3 · **A** · Cinco perguntas sem sítio para responder
-
-- **Problema.** Esplanada, estacionamento, animais, crianças, MB Way. O produto não tem
-  campo nenhum onde o dono possa dizer que sim.
-- **Impacto.** São as perguntas que decidem **entre dois restaurantes parecidos** — um
-  casal com um cão, uma família com carrinho, alguém que só tem MB Way. O concorrente
-  Eatbu já mostra as formas de pagamento.
-- **Frequência.** *Estimado:* todos os restaurantes, todos os dias.
-- **Solução mais simples.** Cinco caixas de selecção no formulário, uma linha de ícones na
-  página. Nada de campo livre — o objectivo é uma resposta de sim/não que o cliente lê num
-  segundo.
-- **Prioridade.** P0. É a mais barata da lista e responde a cinco das seis em falta.
-
-### F-4 · **A** · Quem salta a frase opcional fica com um hero vazio
-
-- **Problema.** Sem "Uma frase sobre a casa", o subtítulo é o tipo de cozinha com um ponto:
-  **"Cozinha portuguesa."** Verificado outra vez na réplica do Mariscar.
-- **Impacto.** A linha mais valiosa do site — a única que diz porque é que se vai ali e não
-  ao lado — fica a dizer nada.
-- **Frequência.** *Estimado:* alto. O campo é opcional, está no fim, e chama-se "opcional".
-- **Solução mais simples.** Subir o campo e trocar o rótulo por uma pergunta concreta:
-  *"o que é que as pessoas dizem quando saem daqui?"*. Deixar de lhe chamar opcional.
-- **Prioridade.** P1.
-
 ### F-5 · **A** · Não há resposta a "vale a pena?"
 
 - **Problema.** O produto não mostra prova social nenhuma. Por decisão — não inventamos
@@ -159,6 +135,35 @@ coisas diferentes, é categoria A e ninguém dá por ela.
 ---
 
 ## Corrigido
+
+### F-3 · **A** · Cinco perguntas sem sítio para responder — `83e2e03`
+
+Esplanada, estacionamento, cães, crianças, MB Way. Um cliente que já escolheu a zona e o tipo
+de comida decide o resto com estas cinco — e ia ao restaurante do lado quando a nossa página
+se calava. O concorrente medido na auditoria (Eatbu) já mostrava as formas de pagamento; nós
+não mostrávamos nenhuma das cinco.
+
+Cinco caixas de selecção **fora** da secção opcional, que a maioria não abre. Sem ícones: um
+símbolo de cão é ruído para quem não anda à procura dele, e ilegível por um leitor de ecrã
+sem uma etiqueta que já é a palavra. A ordem na página é a da decisão de quem lê — primeiro
+o que decide se **pode** ir, depois o que torna a ida melhor, e o MB Way no fim porque é o
+único que se resolve à saída.
+
+Só aparece o que for verdade. A ausência não afirma nada.
+
+### F-4 · **A** · Quem saltava a frase ficava com um hero vazio — `8bfd962`
+
+O campo estava no fim, depois dos nove campos dos pratos, e chamava-se "opcional". Quem o
+saltava ficava com o subtítulo a dizer **"Cozinha portuguesa."** e mais nada.
+
+Subiu para antes dos pratos, e deixou de ser um pedido para passar a ser uma pergunta que ele
+sabe responder: *"o que é que as pessoas dizem quando saem daqui?"*. A primeira versão era um
+trabalho de copywriting entregue a quem nunca fez nenhum; a segunda é uma coisa que ele ouve
+todas as semanas e repete sem pensar.
+
+**O recurso não mudou.** Continua a ser o tipo de cozinha, e continua a ser honesto: dizer
+mais sobre uma casa que não nos contou nada seria inventar. A resposta certa era tornar a
+pergunta respondível, não encher o silêncio.
 
 ### F-13 · **B** · "Tudo publicado" dito a quem tinha alterações por publicar — `3ed102e`
 
