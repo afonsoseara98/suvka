@@ -139,6 +139,40 @@ function lisbonNow(now: Date): { day: number; minute: number } {
   return { day: weekday, minute: minutes(Number(get("hour")), Number(get("minute"))) };
 }
 
+// O QUE PERCEBEMOS, PARA PODER SER DITO AO DONO
+//
+// Este módulo recusa-se a adivinhar, e recusa-se com frequência - é o desenho, não uma
+// falha. Mas até aqui a recusa era invisível: o dono escrevia o horário como quem escreve
+// um aviso à porta, o "Aberto agora" não aparecia, e ele não sabia que existia, portanto
+// não sabia que o tinha perdido. É o sinal que responde à pergunta de maior intenção que há
+// numa página de restaurante - "vou lá agora?" - e desaparecia em silêncio.
+//
+// Isto devolve o que foi entendido para o formulário o poder mostrar. Nunca para corrigir o
+// texto dele: o horário que a página imprime é o que ele escreveu, sempre.
+//
+// Os dias vão em lista e não em intervalo ("terça, quarta e quinta", não "de terça a
+// quinta") de propósito. O objectivo é ele reconhecer um erro nosso - ver lá "segunda"
+// quando fecha à segunda - e uma lista mostra isso; um intervalo esconde-o.
+export interface ScheduleReading {
+  readable: boolean;
+  days: string[];
+  ranges: string[];
+}
+
+export function readSchedule(schedule: string): ScheduleReading {
+  const text = strip(schedule);
+  const ranges = parseRanges(text);
+  const days = parseDays(text);
+
+  if (ranges.length === 0 || !days) return { readable: false, days: [], ranges: [] };
+
+  return {
+    readable: true,
+    days: days.map((open, index) => (open ? DAY_LABELS_PT[index] : null)).filter((day): day is string => day !== null),
+    ranges: ranges.map((range) => `${clock(range.from)}–${clock(range.to)}`),
+  };
+}
+
 // null means "say nothing" - see the note at the top of this file. Every caller must render
 // the schedule as written and no state at all when this returns null.
 export function openStateFor(schedule: string, now: Date = new Date()): OpenState | null {

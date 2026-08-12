@@ -15,6 +15,7 @@ import {
   type RestaurantInput,
 } from "@/app/lib/restaurant/input";
 import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, styleHint, type SiteLanguage } from "@/app/lib/restaurant/labels";
+import ScheduleReadback from "./ScheduleReadback";
 
 const EMPTY: RestaurantInput = {
   name: "",
@@ -282,6 +283,7 @@ function RestaurantForm() {
                 placeholder={"Terça a domingo\n12:00–15:00 e 19:00–22:30\nEncerrado à segunda"}
               />
               {errors.schedule && <p className={errorText}>{errors.schedule}</p>}
+              <ScheduleReadback schedule={input.schedule} />
             </div>
           </div>
 
@@ -294,7 +296,8 @@ function RestaurantForm() {
             </div>
             <p className="mt-1 text-sm text-zinc-500">
               Os mais pedidos, para o site ficar pronto agora. Depois acrescenta a ementa toda
-              no editor, quantos pratos quiser.
+              no editor, quantos pratos quiser. O preço é opcional — há casas que vendem a
+              peso.
             </p>
 
             <div className="mt-3 space-y-3">
@@ -311,10 +314,9 @@ function RestaurantForm() {
                     className={field.replace("mt-2 ", "")}
                     value={dish.price}
                     onChange={(e) => setDish(index, "price", e.target.value)}
-                    // "opcional" no sítio onde ele olha. A validação deixou de exigir o
-                    // preço, mas uma caixa que diz "18,50 €" e mais nada continua a ler-se
-                    // como obrigatória - e quem vende a peso continuava a desistir aqui.
-                    placeholder={index === 0 ? "18,50 € (opcional)" : "Preço"}
+                    // "(opcional)" vive na linha de ajuda acima, não aqui: a coluna tem 7rem
+                    // e o texto saía cortado a meio da palavra, que é pior do que não estar.
+                    placeholder="18,50 €"
                     aria-label={`Prato ${index + 1} — preço (opcional)`}
                   />
                   <input
