@@ -33,3 +33,9 @@ jobs:
         run: npx next build
         env:
           OPENAI_API_KEY: ci-placeholder-key
+          # O build recusa-se a correr sem isto (ver next.config.ts): o metadataBase fica
+          # escrito no <link rel="canonical"> das páginas estáticas, e um build sem endereço
+          # gravava lá localhost. A CI não serve ninguém, portanto o valor não interessa -
+          # mas tem de ser declarado, e é de propósito que não é o domínio real: um artefacto
+          # da CI que fosse por engano para produção tem de se denunciar em vez de passar.
+          APP_URL: https://ci.invalid
