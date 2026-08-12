@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/app/lib/prisma";
 import { stripeClient, stripePriceId, trialEndFor } from "@/app/lib/stripe";
+import { appUrl } from "@/app/lib/appUrl";
 
 // Starts a subscription. One plan, 19 EUR a month, and the free period already under way.
-export async function POST(request: Request) {
+export async function POST() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ success: false, message: "Inicie sessão." }, { status: 401 });
@@ -39,7 +40,12 @@ export async function POST(request: Request) {
       await prisma.user.update({ where: { id: session.user.id }, data: { stripeCustomerId: customerId } });
     }
 
-    const origin = new URL(request.url).origin;
+    // Da configuração, não do pedido. Atrás do Caddy o Node é contactado em
+    // http://127.0.0.1:3000, e um `origin` reconstruído daqui devolvia quem acabou de pagar
+    // 19 EUR para um endereço http:// - resolve-se sozinho, porque o Caddy redirecciona,
+    // mas o momento em que isso acontece é o segundo a seguir a alguém pagar, que é o pior
+    // momento do produto para uma volta a mais pelo texto simples.
+    const origin = appUrl();
     const checkout = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,

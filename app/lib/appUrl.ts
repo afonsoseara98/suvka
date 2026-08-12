@@ -4,8 +4,8 @@
 // e o Google recusa o ficheiro inteiro se as URLs não forem do domínio onde o encontrou.
 //
 // Atrás do Caddy, o Node é contactado em http://127.0.0.1:3000. Reconstruir o endereço a
-// partir do pedido (`new URL(request.url).origin`, que é o que o checkout do Stripe ainda
-// faz - BLOCKER #3) dá exactamente isso: um sitemap com
+// partir do pedido (`new URL(request.url).origin`, que era o que o checkout do Stripe fazia
+// até ao BLOCKER #3 fechar) dá exactamente isso: um sitemap com
 // `<loc>http://127.0.0.1:3000/taberna-do-goncalo</loc>`, que não aponta para lado nenhum
 // e que ninguém repara que está errado, porque o ficheiro existe e abre.
 //

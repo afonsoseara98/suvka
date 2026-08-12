@@ -36,7 +36,7 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 | ✅ | Variáveis validadas no arranque | **Fechado em `7072def`** — `instrumentation.ts` + `app/lib/env.ts`, 22 testes |
 | ✅ | Falta uma `ENV` → falha imediata | **Verificado**: `DATABASE_URL="mysql://errado"` → saída 1, e **nenhum pedido chegou a ser servido** durante o arranque |
 | ✅ | Sem referências a `localhost` | Zero fora dos testes |
-| ⚠️ | URLs construídas a partir de `APP_URL` | `APP_URL` existe, é obrigatória em produção e recusa discordar da `AUTH_URL` (`app/lib/appUrl.ts`). O sitemap e o robots já a usam; **o checkout do Stripe ainda não** — BLOCKER #3 |
+| ✅ | URLs construídas a partir de `APP_URL` | **Fechado** — `app/lib/appUrl.ts`, obrigatória em produção e recusa discordar da `AUTH_URL`. Usada pelo sitemap, pelo robots e pelo checkout do Stripe. A rota do checkout deixou de receber um `Request` |
 
 ### 🔴 Persistência
 
@@ -207,16 +207,25 @@ Stripe.
 **Correção.** `APP_URL` no ambiente, obrigatória em produção (entra no #2), e as duas URLs
 construídas a partir dela.
 
-**Metade feita.** O sitemap precisou exactamente da mesma coisa — URLs absolutas que não
-podem vir do pedido — por isso a variável foi criada aí: `app/lib/appUrl.ts`, obrigatória
-em produção, verificada no arranque, e recusa-se a discordar da `AUTH_URL` (duas variáveis
-que têm de dizer o mesmo e podem discordar são uma armadilha por si só). O `/sitemap.xml` e
-o `/robots.txt` já a usam.
+**Correção aplicada.** A variável nasceu no trabalho do sitemap, que precisava exactamente
+da mesma coisa — URLs absolutas que não podem vir do pedido. `app/lib/appUrl.ts`,
+obrigatória em produção, verificada no arranque, e recusa-se a discordar da `AUTH_URL`
+(duas variáveis que têm de dizer o mesmo e podem discordar são uma armadilha por si só).
 
-**O que falta.** Uma linha em `app/api/stripe/checkout/route.ts:44`: trocar
-`new URL(request.url).origin` por `appUrl()`. Deixa de ser meia hora e passa a ser minutos.
+O checkout passou a construir as duas URLs a partir dela. E **a rota deixou de receber um
+`Request`**: enquanto o pedido estivesse ao alcance, havia sempre a hipótese de alguém
+voltar a reconstruir o `origin` a partir dele. Sem parâmetro, não há de onde — a garantia
+está na assinatura e não só nos 4 testes.
 
-**Estado.** 🟠 Aberto — não bloqueia a beta.
+Uma varredura ao resto do código confirma que não sobrou mais nenhum sítio a derivar um
+endereço do pedido: os outros `new URL(request.url)` lêem `searchParams`, e os
+`x-forwarded-for` são do rate limiting, onde é o comportamento pretendido.
+
+**O que continua por verificar.** Isto corrige o endereço para onde o Stripe devolve o
+cliente. Se está certo do lado do Stripe, só se vê no painel depois do primeiro checkout a
+sério — o que é o #5, não este.
+
+**Estado.** ✅ Fechado.
 
 ---
 
@@ -400,7 +409,11 @@ pessoas e compensa à mão tudo o que falta. Num lançamento público não pode,
 ainda não sabe cobrar sozinho, avisar sozinho, devolver o acesso a quem o perdeu, nem
 sequer dizer-lhe que alguma coisa correu mal.
 
-**A ordem que eu seguiria a seguir**, e é a ordem do risco, não a da dificuldade: #9
-(restauro ensaiado, no dia do deploy, enquanto a base de dados ainda está vazia) → #8
-(observabilidade, meia hora) → #3 (`APP_URL`) → #5 (webhook, assim que houver domínio) → #7
-(recuperação de password) → #6 (política de fim do período) → #4 (fotografias órfãs).
+**A ordem que eu seguiria a seguir**, e é a ordem do risco, não a da dificuldade: ~~#3~~
+(fechado) → #9 (restauro ensaiado, enquanto a base de dados ainda tem pouca coisa) → #8
+(observabilidade, meia hora) → #5 (webhook, que agora já tem domínio) → #7 (recuperação de
+password) → #6 (política de fim do período) → #4 (fotografias órfãs).
+
+O #9 mudou de urgência desde que isto foi escrito: o site está no ar, e a janela em que um
+ensaio de restauro custava vinte minutos porque a base de dados estava vazia está a
+fechar-se sozinha.
