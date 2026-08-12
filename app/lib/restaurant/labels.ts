@@ -25,6 +25,13 @@ export interface SiteLabels {
   seeMenu: string;
   // Shown only when the owner supplied the channel. See OpeningHours.
   bookTable: string;
+  // O MESMO BOTÃO, A DIZER PARA ONDE VAI
+  //
+  // "Reservar mesa" num restaurante sem sistema de reservas descreve o que o cliente quer,
+  // não o que vai acontecer: ele carrega à espera de um calendário e abre-se-lhe o WhatsApp.
+  // Quem não gosta de mandar mensagem sai; quem gosta teria carregado na mesma - e teria
+  // carregado mais depressa se soubesse. Dizer o canal antes do toque não perde ninguém.
+  bookViaWhatsapp: string;
   howToGetThere: string;
   whatsapp: string;
   email: string;
@@ -125,6 +132,7 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     callToBook: "Ligar para reservar",
     seeMenu: "Ver a ementa",
     bookTable: "Reservar mesa",
+    bookViaWhatsapp: "Reservar por WhatsApp",
     howToGetThere: "Como chegar",
     whatsapp: "WhatsApp",
     email: "Email",
@@ -146,6 +154,7 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     callToBook: "Call to book",
     seeMenu: "See the menu",
     bookTable: "Book a table",
+    bookViaWhatsapp: "Book via WhatsApp",
     howToGetThere: "How to get there",
     whatsapp: "WhatsApp",
     email: "Email",

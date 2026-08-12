@@ -235,13 +235,35 @@ describe("the calls to action actually do something", () => {
     expect(built.hero.primaryHref).toBe("https://thefork.pt/taberna");
   });
 
-  it("falls to WhatsApp with the message already written", () => {
+  it("falls to WhatsApp with the message already written, e diz que é por WhatsApp", () => {
     // Second best, and well ahead of a phone call: it works at 23:40 and costs the customer
     // nothing to send.
+    //
+    // O rótulo diz o canal. "Reservar mesa" descrevia o que o cliente quer, não o que ia
+    // acontecer - carregava à espera de um calendário e abria-se-lhe uma conversa.
     const built = buildRestaurantPage(input({ whatsapp: "912345678" }), { hero: null, gallery: [] });
-    expect(built.hero.primaryCTA).toBe("Reservar mesa");
+    expect(built.hero.primaryCTA).toBe("Reservar por WhatsApp");
     expect(built.hero.primaryHref).toContain("wa.me/351912345678");
     expect(built.hero.primaryHref).toContain(encodeURIComponent("reservar uma mesa no Taberna do Bairro"));
+  });
+
+  // Só quando existe mesmo um sistema de reservas é que o botão promete um.
+  it("só diz 'Reservar mesa' quando há uma página de reservas a sério", () => {
+    const comSistema = buildRestaurantPage(
+      input({ bookingUrl: "https://thefork.pt/taberna", whatsapp: "912345678" }),
+      { hero: null, gallery: [] }
+    );
+    expect(comSistema.hero.primaryCTA).toBe("Reservar mesa");
+
+    const semSistema = buildRestaurantPage(input({ whatsapp: "912345678" }), { hero: null, gallery: [] });
+    expect(semSistema.hero.primaryCTA).not.toBe("Reservar mesa");
+  });
+
+  it("a linha do WhatsApp nos contactos leva a mesma mensagem que o botão", () => {
+    // Era o botão do hero a abrir uma conversa já escrita e a linha da secção de contactos
+    // a abrir uma caixa em branco - o mesmo número, duas experiências diferentes.
+    const built = buildRestaurantPage(input({ whatsapp: "912345678" }), { hero: null, gallery: [] });
+    expect(built.hours?.labels?.whatsappMessage).toContain("reservar uma mesa no Taberna do Bairro");
   });
 
   it("says 'Ligar para reservar' when the phone is all there is", () => {

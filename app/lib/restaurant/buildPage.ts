@@ -161,7 +161,15 @@ export function buildRestaurantPage(
       // how well it converts: their own booking page, then a WhatsApp message already
       // written, then the phone. It never promises a booking system that does not exist -
       // the words change with the destination.
-      primaryCTA: input.bookingUrl || input.whatsapp ? labels.bookTable : labels.callToBook,
+      //
+      // Os três destinos dizem os três nomes. "Reservar mesa" com o WhatsApp por trás
+      // descrevia o que o cliente quer, não o que ia acontecer: carregava à espera de um
+      // calendário e abria-se-lhe uma conversa. Agora o botão diz o canal antes do toque.
+      primaryCTA: input.bookingUrl
+        ? labels.bookTable
+        : input.whatsapp
+          ? labels.bookViaWhatsapp
+          : labels.callToBook,
       secondaryCTA: labels.howToGetThere,
       primaryHref: bookingHref(input),
       secondaryHref: mapsHref(input.address),
@@ -224,6 +232,10 @@ export function buildRestaurantPage(
         instagram: labels.instagram,
         openInMaps: labels.openInMaps,
         contactSubject: labels.contactSubject,
+        // A mesma mensagem que o botão do hero já levava. A linha do WhatsApp na secção de
+        // contactos abria uma conversa em branco - e uma caixa vazia às 23:40 é onde a
+        // pessoa desiste, porque tem de decidir como se apresenta a um restaurante.
+        whatsappMessage: labels.bookingMessage(input.name),
       },
     },
     footer: {

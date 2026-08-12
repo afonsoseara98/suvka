@@ -62,7 +62,11 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
       label: data.labels?.whatsapp ?? "WhatsApp",
       field: "whatsapp",
       value: data.whatsapp ?? "",
-      href: data.whatsapp ? whatsappHref(data.whatsapp) : undefined,
+      // Com a mensagem já escrita, como o botão do hero. Sem ela, o cliente abre uma caixa
+      // em branco e tem de decidir como se apresenta a um restaurante - que às 23:40 é onde
+      // desiste. `whatsappMessage` é opcional: os sites publicados antes disto existir têm o
+      // snapshot congelado sem ela, e nesses o link abre sem texto, como abria ontem.
+      href: data.whatsapp ? whatsappHref(data.whatsapp, data.labels?.whatsappMessage) : undefined,
       external: true,
     },
     {

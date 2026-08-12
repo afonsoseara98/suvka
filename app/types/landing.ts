@@ -132,6 +132,11 @@ export interface OpeningHours {
     instagram: string;
     openInMaps: string;
     contactSubject: string;
+    // A mensagem já escrita para o cliente, como a do botão do hero. Opcional porque os
+    // sites publicados ANTES disto existir têm o snapshot congelado sem ela - e nesses o
+    // link continua a abrir o WhatsApp sem texto, que é exactamente o que fazia ontem.
+    // Passam a tê-la quando o dono voltar a publicar.
+    whatsappMessage?: string;
   };
 }
 
