@@ -1,155 +1,185 @@
-# Auditoria de fricção
+# Fricção
 
-Onde o dono hesita, e onde o cliente dele desiste. Não é uma lista de defeitos — o
-`LAUNCH_BLOCKERS.md` é essa. Isto é o percurso percorrido de ponta a ponta, a olhar para
-o ecrã.
+Documento vivo. Cada descoberta entra e não sai — quando algo é corrigido, muda de estado,
+não desaparece. A pergunta que decide se uma entrada pertence aqui é sempre a mesma:
 
-**Como foi medido.** Contra um build de produção (`next start`), com o fluxo público real:
-`POST /api/restaurant/draft` sem sessão, o formulário preenchido no browser, a
-pré-visualização aberta, e o botão de publicar carregado. Os tempos são desta máquina,
-sem o Caddy pelo meio. Onde não consegui medir, está escrito que não consegui.
+> **Como é que isto aumenta reservas, ou faz um restaurante escolher o Suvka?**
 
-**O caminho que escolhi é o provável, não o completo.** Preenchi o que o formulário pede e
-**não abri** a secção "Mais informações — opcional". É o que faz um dono de 55 anos com
-vinte minutos: preenche o que lhe pedem e carrega no botão. Metade do que se segue só
-aparece nesse caminho.
+Uma entrada que não responda a isso não é fricção — é gosto pessoal, e não entra.
 
----
+## Sobre os números deste documento
 
-## O percurso do dono
+**Medido** significa cronometrado ou lido contra um build de produção nesta máquina.
+**Estimado** significa que é o meu raciocínio, e não um dado. Não converto fricção em euros:
+não tenho os cobertos por serviço nem o ticket médio de nenhum destes restaurantes, e um
+número inventado com duas casas decimais é pior do que nenhum, porque decide-se com ele.
 
-| Passo | O que acontece | Tempo |
-|---|---|---|
-| Abre `/new/restaurant` | Formulário, sem conta e sem cartão | imediato |
-| Preenche | 25 campos, 11 no caminho mínimo, nenhum obrigatório marcado | o grosso do tempo |
-| "Criar o meu site" | Site gerado, com fotografias | **0,12 – 0,57 s** |
-| Pré-visualização | O site num telemóvel a sério, com o botão de publicar | **0,07 – 0,39 s** |
-| "Publicar este site" | Pede email, password e endereço | — |
-| Site no ar | | não medido — exige conta |
-
-A geração não é o problema. **Meio segundo**, e é determinística: não há chamada a modelo
-nenhum, os campos *são* o conteúdo. A promessa de "menos de 2 minutos" da homepage é
-verdadeira, e o que a consome é o dono a escrever, não a máquina a pensar.
-
-### O que está bem feito, e vale a pena não estragar
-
-- **Os exemplos nos campos são reais.** `Bacalhau à Braga`, `Rua das Flores 112, Porto`,
-  `Terça a domingo 12:00–15:00`. Não são `Introduza o nome`. O dono lê e percebe o que se
-  espera dele sem ler instrução nenhuma.
-- **"Estilo" está traduzido para uma sala.** `Rústico → pedra, madeira, tasca de aldeia`.
-  Um dono de restaurante não sabe se a casa dele é "moderna" ou "rústica" — sabe como é a
-  sala dele. Isto é a diferença entre uma pergunta que ele responde e uma em que hesita.
-- **Sem conta para ver o resultado.** O paywall está no publicar, não no ver. É a decisão
-  de produto mais importante deste fluxo e está do lado certo.
-- **A pré-visualização de telemóvel é um telemóvel a sério** (um iframe, com o seu próprio
-  viewport), e não um `div` de 375px a fingir.
-
-### Onde ele hesita
-
-**1. O horário é uma caixa de texto livre.** É a decisão certa — obrigar a uma grelha de
-sete dias com dois turnos é onde ele desiste. Mas o "Aberto agora", que é o sinal mais
-valioso da página, só aparece quando o texto se consegue ler com certeza. Escrevi
-*"Terça a sábado das 12h às 15h e das 19h30 às 23h. Domingo só almoços. Segunda fechado."* —
-português normal, como quem escreve um aviso à porta — e o distintivo não apareceu.
-Ele não sabe que existe, portanto não sabe que o perdeu.
-
-**2. Quem salta a frase opcional fica com um hero vazio.** Sem "Uma frase sobre a casa", o
-subtítulo passa a ser o tipo de cozinha com um ponto final: **"Cozinha portuguesa."** A
-linha mais valiosa do site — a única que diz porque é que se vai ali e não ao lado — fica
-a dizer nada. O campo é opcional e está no fim; o caminho provável salta-o.
-
-**3. Três pratos são nove campos.** Nome, descrição e preço, três vezes. É a parte mais
-pesada do formulário e a descrição é opcional em todos.
+O instrumento que substitui as estimativas já existe no produto e não está a ser usado:
+`app/lib/events.ts` e `/api/events/funnel` contam o funil sem identificar ninguém. Com
+tráfego a sério, a coluna "frequência" deixa de ser minha e passa a ser dele. **Até lá, as
+frequências abaixo são categorias — "todos", "quem salta o campo", "quem escreve em
+português normal" — e não percentagens.**
 
 ---
 
-## O que o cliente pergunta, e o que a página responde
+## Teste: um restaurante verdadeiro, replicado
 
-Testado contra uma página gerada com todos os canais preenchidos.
+Escolhi o **Mariscar** (R. das Flores 179, Porto), que tem site próprio, e repliquei-o no
+Suvka a partir dos dados públicos dele. Depois medi o mesmo, com os mesmos instrumentos,
+no site dele e no de um restaurante servido por um concorrente directo — a **Tasca
+Caseira**, feita com o **Eatbu**, que é um construtor de sites para restaurantes.
 
-| Pergunta | Responde? |
-|---|---|
-| Onde fica? | ✅ |
-| Como chego lá? | ✅ mapa a um toque |
-| Qual é o horário? | ✅ como o dono o escreveu |
-| Está aberto agora? | ⚠️ só depois do JavaScript, e só se o horário for legível |
-| Como ligo? | ✅ `tel:` com `+351` |
-| Como reservo? | ✅ e o botão diz o canal |
-| Tem WhatsApp? | ✅ com a mensagem já escrita |
-| Tem ementa? | ✅ |
-| Quanto custa? | ✅ preços alinhados |
-| Qual é o prato da casa? | ✅ os três que ele escolheu |
-| Há fotografias? | ✅ |
-| Tem take-away? | ✅ |
-| Tem Glovo/Uber Eats? | ✅ se o dono abrir a secção opcional |
-| **Tem esplanada?** | ❌ |
-| **Tem estacionamento?** | ❌ |
-| **Aceita cães?** | ❌ |
-| **É bom para crianças?** | ❌ |
-| **Aceita MB Way / multibanco?** | ❌ |
-| **Vale a pena? (prova social)** | ❌ por desenho |
+| O cliente quer saber | Site próprio do Mariscar | Tasca Caseira (Eatbu) | Mariscar refeito no Suvka |
+|---|---|---|---|
+| Onde fica | ✅ | ✅ | ✅ |
+| Mapa | ✅ | ✅ | ✅ |
+| Horário | ✅ | ✅ | ✅ |
+| Está aberto agora | ❌ | ❌ | ⚠️ só se o horário for legível |
+| Telefone a um toque | ❌ | ✅ | ✅ |
+| Como reservo | ❌ | ❌ | ✅ |
+| WhatsApp | ❌ | ❌ | ✅ |
+| Ementa | ❌ | ⚠️ PDF | ✅ em HTML |
+| Preços | ❌ | ❌ | ✅ |
+| Fotografias da comida | ❌ | ✅ | ✅ |
+| Take-away / entregas | ❌ | ❌ | ✅ |
+| **Formas de pagamento** | ❌ | ✅ | ❌ |
+| **Avaliações** | ❌ | ✅ | ❌ |
+| **Esplanada / estacionamento / animais** | ❌ | ❌ | ❌ |
 
-**11 de 19.** As oito primeiras — as que decidem se a pessoa vai — estão todas
-respondidas, e bem.
+**O que isto diz.** O concorrente ganha-nos em duas coisas concretas — **formas de
+pagamento** e **avaliações** — e nós ganhamos-lhe em quatro: reservar, WhatsApp, ementa
+legível com preços em vez de um PDF, e take-away. O PDF é a diferença mais subestimada:
+um PDF no telemóvel abre noutra aplicação, não se lê, e o Google não o indexa como ementa.
 
-As cinco que faltam não são exóticas: são as que fazem escolher **entre dois restaurantes
-parecidos**. Um casal com um cão, uma família com um carrinho, alguém que só tem MB Way.
-Hoje o produto não tem sítio nenhum onde o dono possa dizer que sim.
+E o site que o restaurante tem hoje, feito à medida, responde a **menos perguntas do que
+qualquer um dos dois produtos**. É contra isso que se vende, não contra a BentoBox.
 
-A prova social falta **por decisão**, e concordo com ela: o produto não inventa avaliações.
-Mas "não inventar" e "não ter" são coisas diferentes, e o dono tem avaliações verdadeiras
-no Google que este site não mostra.
+**Tempo de máquina para refazer o Mariscar inteiro: 1,4 s.** O que custa é ele escrever.
 
----
-
-## Corrigido nesta ronda
-
-**Os dois ecrãs diziam ao dono o endereço errado** (`65e18cd`). O ecrã "Último passo",
-onde ele escolhe o seu endereço, mostrava `.../s/adega-do-manel`. O site vive em
-`/adega-do-manel` desde que passou para a raiz. O `/s/` ainda redirecciona, portanto nada
-estoirava — mas é o endereço que ele escreve na ementa. No dashboard era pior: o link
-apontava para o certo, o botão copiava o certo, e só o texto grande, o que se lê, dizia o
-errado. Ele lia um endereço e copiava outro.
-
-Nenhum teste apanharia isto. Apanhou-se a olhar para o ecrã.
-
-**O botão do hero prometia reservas a quem não as tem** (`2318c4d`), e **"Como chegar"
-substituía a página do restaurante pelo mapa** (`b20e590`).
+> **Não consigo cronometrar a BentoBox, a Owner nem a Popmenu.** Os três exigem criar conta
+> e passar por uma demonstração comercial. O que consigo medir são os sites que produzem,
+> que são públicos, com estes mesmos instrumentos — e é o que está acima.
 
 ---
 
-## O que proponho a seguir
+## Aberto
 
-Por ordem de quanto muda, não de dificuldade.
+### F-1 · O formulário recusa quem não publica preços
 
-**1. Um campo para as facilidades.** Esplanada, estacionamento, cães, crianças, MB Way.
-Cinco caixas de seleção no formulário, uma linha de ícones na página. Responde a cinco das
-seis perguntas em falta e é a mais barata da lista. *Que problema real resolve:* o cliente
-que está a escolher entre dois sítios e vai ao que responde.
+- **Problema.** É preciso pelo menos um prato **com preço** para gerar o site. O Mariscar,
+  no site dele, não publica preço nenhum — e não é um caso raro: marisqueiras vendem a
+  peso, e há casas que não querem o preço na internet.
+- **Impacto.** Não é fricção, é uma porta fechada. O restaurante não chega a ver o produto.
+- **Frequência.** *Estimado:* todas as casas que vendem a peso ou "ao preço do dia".
+- **Solução mais simples.** Aceitar um prato sem preço, e mostrá-lo sem a linha do preço.
+  O `tidyPrice` já deixa passar texto que não é número ("sob consulta"), portanto a página
+  já sabe desenhar isto — só a validação é que não deixa lá chegar.
+- **Posso eliminar em vez de melhorar?** Sim: deixar de exigir o preço. O nome do prato já
+  sozinho constrói a ementa.
+- **Prioridade.** P0.
 
-**2. Dizer ao dono quando o horário não foi entendido.** Não corrigir o texto dele — nunca —
-mas mostrar-lhe, ali no formulário, `✓ Percebemos: aberto de terça a domingo` ou
-`Não conseguimos ler isto, e por isso o site não vai poder dizer "Aberto agora"`. Ele
-escolhe se reescreve. *Que problema real resolve:* hoje perde o sinal mais valioso da
-página sem saber que ele existe.
+### F-2 · O "Aberto agora" desaparece sem avisar
 
-**3. Puxar a frase sobre a casa para cima, e deixar de a chamar opcional.** Uma pergunta
-concreta — *"o que é que as pessoas dizem quando saem daqui?"* — em vez de "uma frase sobre
-a casa". *Que problema real resolve:* o hero de quem a salta diz "Cozinha portuguesa." e
-mais nada.
+- **Problema.** Escrevi o horário em português normal — *"Terça a sábado das 12h às 15h e
+  das 19h30 às 23h. Domingo só almoços. Segunda fechado."* — e o distintivo não apareceu.
+  Só aparece quando o texto se lê com certeza.
+- **Impacto.** É o sinal mais valioso da página: responde à pergunta que decide se a pessoa
+  sai de casa. Perde-se em silêncio, e o dono não sabe que existia.
+- **Frequência.** *Estimado:* alto. O campo é texto livre, de propósito, e o texto livre de
+  um dono de restaurante parece-se com um aviso à porta, não com uma grelha.
+- **Solução mais simples.** Não corrigir o texto dele — nunca. Mostrar-lhe no formulário o
+  que percebemos: `✓ Percebemos: aberto de terça a domingo` ou `Não conseguimos ler este
+  horário — o site não vai poder dizer "Aberto agora"`. Ele decide se reescreve.
+- **Prioridade.** P0.
 
-**4. As avaliações do Google, se as tiver.** Não inventadas: as dele, com a ligação para a
-ficha. É a única resposta honesta a "vale a pena?".
+### F-3 · Cinco perguntas sem sítio para responder
 
-**Não proponho** mexer nos nove campos dos pratos. É o mais pesado do formulário e também é
-o que constrói metade do site — cortá-lo dava um site mais rápido de fazer e mais pobre de
-ler.
+- **Problema.** Esplanada, estacionamento, animais, crianças, MB Way. O produto não tem
+  campo nenhum onde o dono possa dizer que sim.
+- **Impacto.** São as perguntas que decidem **entre dois restaurantes parecidos** — um
+  casal com um cão, uma família com carrinho, alguém que só tem MB Way. O concorrente
+  Eatbu já mostra as formas de pagamento.
+- **Frequência.** *Estimado:* todos os restaurantes, todos os dias.
+- **Solução mais simples.** Cinco caixas de selecção no formulário, uma linha de ícones na
+  página. Nada de campo livre — o objectivo é uma resposta de sim/não que o cliente lê num
+  segundo.
+- **Prioridade.** P0. É a mais barata da lista e responde a cinco das seis em falta.
+
+### F-4 · Quem salta a frase opcional fica com um hero vazio
+
+- **Problema.** Sem "Uma frase sobre a casa", o subtítulo é o tipo de cozinha com um ponto:
+  **"Cozinha portuguesa."** Verificado outra vez na réplica do Mariscar.
+- **Impacto.** A linha mais valiosa do site — a única que diz porque é que se vai ali e não
+  ao lado — fica a dizer nada.
+- **Frequência.** *Estimado:* alto. O campo é opcional, está no fim, e chama-se "opcional".
+- **Solução mais simples.** Subir o campo e trocar o rótulo por uma pergunta concreta:
+  *"o que é que as pessoas dizem quando saem daqui?"*. Deixar de lhe chamar opcional.
+- **Prioridade.** P1.
+
+### F-5 · Não há resposta a "vale a pena?"
+
+- **Problema.** O produto não mostra prova social nenhuma. Por decisão — não inventamos
+  avaliações — e concordo com a decisão.
+- **Impacto.** Mas "não inventar" e "não ter" são coisas diferentes. O dono tem avaliações
+  verdadeiras no Google, e o site dele não as mostra. O Eatbu mostra o TripAdvisor.
+- **Solução mais simples.** As avaliações **dele**, com ligação para a ficha do Google.
+  Nunca um número que nós escrevamos.
+- **Prioridade.** P1.
+
+### F-6 · Três pratos são nove campos
+
+- **Problema.** É a parte mais pesada do formulário.
+- **Impacto.** *Não medido.* Não sei onde as pessoas desistem — o funil sabe.
+- **Solução.** **Nenhuma, para já.** É também o que constrói metade do site: cortá-lo dava
+  um site mais rápido de fazer e mais pobre de ler. Fica aqui para ser medido, não para ser
+  resolvido por instinto.
+- **Prioridade.** P3 — medir primeiro.
 
 ---
 
-## Uma nota para quem desenvolve
+## Corrigido
 
-`/preview/d/<id>/frame` **dá 404 em `next dev`** e 200 em produção, com o mesmo draft e a
-mesma base de dados. Reproduzível, três drafts diferentes. Não afeta clientes — mas quem
-trabalhar na pré-visualização localmente vê um 404 onde devia estar o site, e vai procurar
-o erro no sítio errado. Não investiguei até ao fim.
+### F-7 · Os dois ecrãs diziam ao dono o endereço errado — `65e18cd`
+
+O "Último passo" mostrava `.../s/adega-do-manel`; o site vive em `/adega-do-manel`. No
+dashboard, o link apontava para o certo, o botão copiava o certo, e só o texto que se lê
+dizia o errado. É o endereço que ele escreve na ementa. Nenhum teste apanharia isto.
+
+### F-8 · O botão prometia reservas a quem não as tem — `2318c4d`
+
+"Reservar mesa" com o WhatsApp por trás. Agora os três destinos dizem três nomes.
+
+### F-9 · "Como chegar" deixava o restaurante para trás — `b20e590`
+
+Abria o Google Maps na mesma aba. No telemóvel, a aplicação de mapas tomava conta do ecrã.
+
+### F-10 · A mensagem do WhatsApp só ia escrita a meio — `2318c4d`
+
+O botão do hero abria a conversa já escrita; a linha dos contactos abria-a em branco.
+
+---
+
+## Notas de desenvolvimento (não afectam clientes)
+
+- `/preview/d/<id>/frame` dá **404 em `next dev` e 200 em produção**, com o mesmo draft e a
+  mesma base de dados. Reproduzível com três drafts. Quem trabalhar na pré-visualização
+  localmente vê um 404 onde devia estar o site. Não investiguei até ao fim.
+- O formulário mostra três lugares para pratos e diz "Comece por três pratos", mas a
+  validação aceita **um**. Mais permissivo do que parece, e o dono não sabe.
+
+---
+
+## A pergunta que fecha cada ronda
+
+> **O que faria um restaurante dizer: "isto é melhor do que contratar um web designer"?**
+
+Nesta ronda, a resposta veio do teste e não de mim: o Mariscar **pagou** por um site que
+responde a menos perguntas do que o que o Suvka gera em 1,4 segundos a partir de nove
+campos. Não tem ementa, não tem preços, não tem forma de reservar, e não diz se está
+aberto.
+
+O argumento de venda não é "mais bonito" nem "mais barato". É: **o site que já tem não
+responde ao cliente que está a decidir agora.**
+
+Enquanto o F-1 estiver aberto, esse restaurante em concreto nem sequer consegue
+experimentar — é recusado no formulário por não publicar preços.
