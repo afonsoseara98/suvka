@@ -139,6 +139,58 @@ function lisbonNow(now: Date): { day: number; minute: number } {
   return { day: weekday, minute: minutes(Number(get("hour")), Number(get("minute"))) };
 }
 
+// O QUE FICOU POR REPRESENTAR
+//
+// CONFIDENCE OR SILENCE. NEVER CONFIDENCE WITHOUT CERTAINTY.
+//
+// O parser lia "Terça a sábado ... Domingo só almoços. Segunda fechado." e produzia um
+// horário de terça a sábado. O "só almoços" era deitado fora e o domingo ficava marcado
+// como FECHADO — a um cliente que consultasse o site ao domingo à hora de almoço, com o
+// restaurante cheio, dizia-se que abria terça-feira.
+//
+// Não era uma recusa. Era uma afirmação confiante e errada, que é a única coisa que o
+// cabeçalho deste ficheiro diz que nunca pode acontecer: um "Fechado" errado é um cliente
+// que não telefona, e ninguém dá por isso.
+//
+// A REGRA
+//
+// Toda a menção a um dia da semana tem de estar contabilizada — ou é uma das pontas do
+// intervalo ("terça a sábado"), ou é uma declaração de encerramento ("segunda fechado").
+// Uma menção que não seja nenhuma das duas é uma instrução que não sabemos representar, e
+// a partir daí o módulo cala-se por completo.
+//
+// Deliberadamente conservador. Prefere calar-se de mais a acertar por sorte: o custo de não
+// mostrar o distintivo é pequeno e visível; o custo de o mostrar errado é um cliente
+// perdido que nunca ninguém contabiliza.
+//
+// O texto devolvido é o ORIGINAL, com acentos e maiúsculas como o dono os escreveu. Ele tem
+// de reconhecer a sua própria frase para saber o que reescrever — e nunca lha reescrevemos.
+function segmentsOf(schedule: string): string[] {
+  return schedule
+    .split(/[.;\n]+/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+}
+
+const DAY_WORD = /(domingo|segunda|terca|quarta|quinta|sexta|sabado)/;
+const CLOSED_WORD = /(encerrad\w*|fechad\w*)/;
+const DAY_SPAN = /(domingo|segunda|terca|quarta|quinta|sexta|sabado)\s*(?:a|ate|até|-|–)\s*(domingo|segunda|terca|quarta|quinta|sexta|sabado)/;
+
+function unrepresentedSegments(schedule: string): string[] {
+  return segmentsOf(schedule).filter((segment) => {
+    const text = strip(segment);
+    // "todos os dias" e "diariamente" não nomeiam dia nenhum, portanto não caem aqui - e é
+    // de propósito que NÃO há uma excepção para eles. "Todos os dias EXCEPTO domingo" nomeia
+    // o domingo, e o "excepto" não é lido por ninguém: o dia ficava marcado como aberto, e
+    // o site mandava alguém a uma porta fechada ao domingo. É o erro simétrico ao que isto
+    // veio corrigir, e estava aqui desde sempre.
+    if (!DAY_WORD.test(text)) return false;
+    if (DAY_SPAN.test(text)) return false;
+    if (CLOSED_WORD.test(text)) return false;
+    return true;
+  });
+}
+
 // O QUE PERCEBEMOS, PARA PODER SER DITO AO DONO
 //
 // Este módulo recusa-se a adivinhar, e recusa-se com frequência - é o desenho, não uma
@@ -157,19 +209,39 @@ export interface ScheduleReading {
   readable: boolean;
   days: string[];
   ranges: string[];
+  // As frases exactas, como o dono as escreveu, que fizeram o módulo calar-se. Vazio quando
+  // o horário foi lido por inteiro, e vazio também quando não se percebeu nada de nada -
+  // aí não há uma frase a apontar, há um horário que não é um horário.
+  unrepresented: string[];
 }
 
 export function readSchedule(schedule: string): ScheduleReading {
   const text = strip(schedule);
+  const unrepresented = unrepresentedSegments(schedule);
   const ranges = parseRanges(text);
   const days = parseDays(text);
 
-  if (ranges.length === 0 || !days) return { readable: false, days: [], ranges: [] };
+  if (ranges.length === 0 || !days) {
+    // Uma frase por representar só se aponta quando o resto FOI entendido. Se nem os dias
+    // nem as horas se leram, dizer "não percebemos esta linha" mandava o dono corrigir uma
+    // linha quando o problema é o texto todo.
+    return { readable: false, days: [], ranges: [], unrepresented: [] };
+  }
+
+  if (unrepresented.length > 0) {
+    return {
+      readable: false,
+      days: [],
+      ranges: [],
+      unrepresented,
+    };
+  }
 
   return {
     readable: true,
     days: days.map((open, index) => (open ? DAY_LABELS_PT[index] : null)).filter((day): day is string => day !== null),
     ranges: ranges.map((range) => `${clock(range.from)}–${clock(range.to)}`),
+    unrepresented: [],
   };
 }
 
@@ -177,6 +249,11 @@ export function readSchedule(schedule: string): ScheduleReading {
 // the schedule as written and no state at all when this returns null.
 export function openStateFor(schedule: string, now: Date = new Date()): OpenState | null {
   const text = strip(schedule);
+
+  // Silêncio à primeira instrução que não sabemos representar. É a mesma verificação que o
+  // readSchedule faz, e tem de ser: o formulário promete ao dono que "o site vai poder dizer
+  // Aberto agora", e as duas funções a discordarem seria mentir-lhe no ecrã.
+  if (unrepresentedSegments(schedule).length > 0) return null;
 
   const ranges = parseRanges(text);
   if (ranges.length === 0) return null;

@@ -31,6 +31,33 @@ export default function ScheduleReadback({ schedule }: { schedule: string }) {
 
   const leitura = readSchedule(schedule);
 
+  // PERCEBEMOS QUASE TUDO, E DIZEMOS EXACTAMENTE O QUE NÃO
+  //
+  // Esconder o distintivo em silêncio é seguro para o cliente e inútil para o dono: ele fica
+  // sem saber o que fazer. Mostrar-lhe a frase - a dele, com os acentos e as maiúsculas
+  // dele - transforma um comportamento silencioso num comportamento que se percebe.
+  //
+  // Sem corrigir, sem alterar, sem sugerir uma reescrita. A frase é dele.
+  if (leitura.unrepresented.length > 0) {
+    return (
+      <div className="mt-2 text-sm leading-relaxed text-amber-500/90">
+        <p>Conseguimos perceber quase todo o horário. Não conseguimos interpretar:</p>
+        <ul className="mt-1 space-y-1">
+          {leitura.unrepresented.map((frase) => (
+            <li key={frase} className="border-l-2 border-amber-500/40 pl-3 text-amber-300/90">
+              &ldquo;{frase}&rdquo;
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2">
+          O site vai mostrar o horário tal como o escreveu — mas não vai dizer{" "}
+          <strong>&ldquo;Aberto agora&rdquo;</strong>, para não arriscar dizer a um cliente
+          que está fechado quando está aberto.
+        </p>
+      </div>
+    );
+  }
+
   if (!leitura.readable) {
     return (
       <p className="mt-2 text-sm leading-relaxed text-amber-500/90">

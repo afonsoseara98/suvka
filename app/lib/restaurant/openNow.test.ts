@@ -105,35 +105,76 @@ describe("readSchedule", () => {
   //
   // O que ele não percebe é a EXCEPÇÃO. "Domingo só almoços" é descartado, e o domingo fica
   // marcado como fechado - ver o teste a seguir, que é o defeito a sério.
-  it("percebe o horário que eu tinha dado como ilegível", () => {
+  it("cala-se, e aponta a frase que não soube representar", () => {
     const leitura = readSchedule(
       "Terça a sábado das 12h às 15h e das 19h30 às 23h. Domingo só almoços. Segunda fechado."
     );
 
-    expect(leitura.readable).toBe(true);
-    expect(leitura.days).toEqual(["terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"]);
+    expect(leitura.readable).toBe(false);
+    // A frase exacta, com o acento e a maiúscula dele. É o que ele tem de reconhecer.
+    expect(leitura.unrepresented).toEqual(["Domingo só almoços"]);
   });
 
-  // O DEFEITO QUE A LISTA DE DIAS TORNA VISÍVEL
+  it("o intervalo e o encerramento não contam como frases por perceber", () => {
+    // O exemplo que está no próprio formulário. Se isto fosse apontado como dúvida, o aviso
+    // aparecia a toda a gente e deixava de querer dizer alguma coisa.
+    const leitura = readSchedule("Terça a domingo\n12:00–15:00 e 19:00–22:30\nEncerrado à segunda");
+
+    expect(leitura.unrepresented).toEqual([]);
+    expect(leitura.readable).toBe(true);
+  });
+
+  // O ERRO SIMÉTRICO, QUE ESTAVA CÁ DESDE SEMPRE
   //
-  // O dono escreveu que abre ao domingo para almoços. O site diz a um cliente, ao domingo
-  // à hora de almoço, que está fechado até terça-feira.
+  // "excepto" não é lido por ninguém neste módulo. "Todos os dias" abria a semana inteira, o
+  // domingo ficava marcado como ABERTO, e o site mandava alguém a uma porta fechada.
   //
-  // É exactamente a falha que o cabeçalho deste módulo diz ser a pior: "a wrong Fechado is a
-  // customer who does not call, and we never find out it happened". Não é uma recusa - é uma
-  // afirmação confiante e errada.
+  // Apareceu a medir quantos horários reais a regra nova silenciava - não a procurá-lo.
+  it("cala-se em vez de dizer que abre num dia que o dono excluiu", () => {
+    const horario = "Todos os dias excepto domingo, das 12h às 22h";
+
+    expect(readSchedule(horario).unrepresented).toEqual(["Todos os dias excepto domingo, das 12h às 22h"]);
+    // Domingo às 14:00: estaria aberto segundo o parser antigo, e a casa está fechada.
+    expect(openStateFor(horario, new Date("2026-08-16T13:00:00Z"))).toBeNull();
+  });
+
+  it("mas 'todos os dias' sem excepção nenhuma continua a valer", () => {
+    expect(openStateFor("Todos os dias das 12h às 23h", new Date("2026-08-16T13:00:00Z"))).toEqual({
+      open: true,
+      closesAt: "23:00",
+    });
+  });
+
+  it("não aponta frase nenhuma quando não percebeu nada de nada", () => {
+    // Mandar corrigir uma linha quando o problema é o texto todo era pior do que calar.
+    const leitura = readSchedule("Consulte o nosso Facebook");
+    expect(leitura.readable).toBe(false);
+    expect(leitura.unrepresented).toEqual([]);
+  });
+
+  // CONFIDENCE OR SILENCE
   //
-  // Este teste FIXA o comportamento actual para que a correcção o tenha de mudar de
-  // propósito. Ver FRICCAO.md, F-11.
-  it("DEFEITO CONHECIDO: uma excepção de meio dia é lida como dia fechado", () => {
+  // Era aqui que o módulo dizia a um cliente, ao domingo à hora de almoço e com o
+  // restaurante cheio, que aquela casa abria terça-feira. O dono escreveu "Domingo só
+  // almoços"; o parser deitava a excepção fora e marcava o domingo como fechado.
+  //
+  // Um "Fechado" errado é um cliente que não telefona, e ninguém dá por isso. Agora cala-se.
+  it("cala-se ao domingo em vez de dizer que está fechado", () => {
     const horario = "Terça a sábado das 12h às 15h e das 19h30 às 23h. Domingo só almoços. Segunda fechado.";
-    const domingoAoAlmoco = new Date("2026-08-16T12:00:00Z");
 
-    const estado = openStateFor(horario, domingoAoAlmoco);
+    // Ao domingo ao almoço, que era o caso que perdia o cliente.
+    expect(openStateFor(horario, new Date("2026-08-16T12:00:00Z"))).toBeNull();
+    // E em todos os outros dias também: uma instrução que não sabemos ler põe em causa a
+    // leitura inteira, não só a daquele dia.
+    expect(openStateFor(horario, new Date("2026-08-19T12:00:00Z"))).toBeNull();
+  });
 
-    expect(estado).toEqual({ open: false, opensAt: "12:00", opensDay: "terça-feira" });
-    // O que devia acontecer é uma destas duas, e a decisão está por tomar: ou aberto, ou
-    // silêncio. O que não pode continuar é "fechado até terça" a quem está à porta.
+  it("o silêncio não se estende a horários que sempre foram legíveis", () => {
+    // A garantia de não regressão que interessa: fechar a porta ao confiante-e-errado não
+    // pode fechá-la também a quem estava bem.
+    const horario = "Terça a domingo\n12:00–15:00 e 19:00–22:30\nEncerrado à segunda";
+
+    expect(openStateFor(horario, new Date("2026-08-19T12:00:00Z"))).toEqual({ open: true, closesAt: "15:00" });
   });
 
   it("não inventa nada a partir de texto que não é um horário", () => {
