@@ -72,6 +72,39 @@ export function checkEnvironment(env: NodeJS.ProcessEnv): EnvReport {
     }
   }
 
+  // --- Endereço público --------------------------------------------------------------
+  //
+  // Tudo o que sai deste servidor para fora dele precisa de saber o seu próprio endereço:
+  // as URLs absolutas do sitemap, a linha `Sitemap:` do robots.txt e - quando o BLOCKER #3
+  // fechar - o regresso do checkout do Stripe. Nenhum desses o pode ir buscar ao pedido:
+  // atrás do Caddy o pedido diz 127.0.0.1:3000.
+  //
+  // Em falta, o sitemap sairia com URLs de localhost. É o pior tipo de erro que este
+  // ficheiro existe para apanhar: o servidor arranca, o /sitemap.xml responde 200, o
+  // ficheiro abre - e nenhum restaurante é indexado.
+  const appUrl = value(env, "APP_URL");
+  if (!appUrl) {
+    if (production && !authUrl) {
+      fail("APP_URL", "em falta - sem isto o sitemap sai com endereços localhost e nenhum site é indexado");
+    }
+  } else {
+    try {
+      const parsed = new URL(appUrl);
+      if (production && parsed.protocol !== "https:") {
+        fail("APP_URL", "tem de ser https:// em produção");
+      }
+    } catch {
+      fail("APP_URL", `não é um endereço válido: ${appUrl}`);
+    }
+  }
+
+  // Duas variáveis que têm de dizer a mesma coisa são uma armadilha se puderem discordar:
+  // as sessões seriam emitidas para um domínio e o Google indexaria o outro. Nunca é
+  // intencional, e o sintoma não aponta para aqui.
+  if (appUrl && authUrl && appUrl.replace(/\/+$/, "") !== authUrl.replace(/\/+$/, "")) {
+    fail("APP_URL", `não coincide com AUTH_URL ("${appUrl}" vs "${authUrl}") - têm de ser o mesmo domínio`);
+  }
+
   // --- Fotografias -------------------------------------------------------------------
   const uploads = value(env, "SUVKA_UPLOADS_DIR");
   if (uploads && !uploads.startsWith("/") && !/^[A-Za-z]:[\\/]/.test(uploads)) {

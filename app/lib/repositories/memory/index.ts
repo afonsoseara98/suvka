@@ -16,9 +16,14 @@ export { InMemoryAssetRepository } from "./assetRepository";
 // same discipline app/ai/builders/DiversityTracker.ts's resetDiversityHistory() exists
 // to enforce for its own module-level state.
 export function createInMemoryRepositories(): RepositoryBundle {
+  // Built before the bundle because the project store needs it: listPublished() spans
+  // projects and pages, which is a join on the Prisma side and an explicit dependency
+  // here (see InMemoryProjectRepository's constructor).
+  const pages = new InMemoryPageRepository();
+
   const bundle: RepositoryBundle = {
-    projects: new InMemoryProjectRepository(),
-    pages: new InMemoryPageRepository(),
+    projects: new InMemoryProjectRepository(pages),
+    pages,
     sections: new InMemorySectionRepository(),
     operationLog: new InMemoryOperationLogRepository(),
     assets: new InMemoryAssetRepository(),

@@ -8,6 +8,7 @@ function production(extra: Record<string, string | undefined> = {}): NodeJS.Proc
     NODE_ENV: "production",
     DATABASE_URL: "postgresql://suvka:pw@localhost:5432/suvka",
     AUTH_SECRET: SECRET,
+    APP_URL: "https://suvka.com",
     PEXELS_API_KEY: "pexels-abc",
     ...extra,
   } as NodeJS.ProcessEnv;
@@ -77,6 +78,51 @@ describe("checkEnvironment", () => {
     it("recusa um AUTH_URL que não é sequer um endereço", () => {
       const report = checkEnvironment(production({ AUTH_URL: "suvka.com" }));
       expect(names(report.fatal)).toContain("AUTH_URL");
+    });
+  });
+
+  describe("endereço público", () => {
+    // Sem isto o /sitemap.xml sai com URLs de localhost: responde 200, o ficheiro abre, e
+    // nenhum restaurante é indexado. Falha silenciosa, que é o que este ficheiro existe
+    // para não deixar acontecer.
+    it("recusa arrancar em produção sem APP_URL nem AUTH_URL", () => {
+      const report = checkEnvironment(production({ APP_URL: undefined }));
+      expect(names(report.fatal)).toContain("APP_URL");
+    });
+
+    it("aceita só com AUTH_URL, que diz a mesma coisa", () => {
+      const report = checkEnvironment(production({ APP_URL: undefined, AUTH_URL: "https://suvka.com" }));
+      expect(names(report.fatal)).not.toContain("APP_URL");
+    });
+
+    it("recusa APP_URL em http em produção", () => {
+      const report = checkEnvironment(production({ APP_URL: "http://suvka.com" }));
+      expect(names(report.fatal)).toContain("APP_URL");
+    });
+
+    it("recusa um APP_URL que não é um endereço", () => {
+      const report = checkEnvironment(production({ APP_URL: "suvka.com" }));
+      expect(names(report.fatal)).toContain("APP_URL");
+    });
+
+    // Duas variáveis que têm de concordar e podem discordar: as sessões saíam para um
+    // domínio e o Google indexava o outro, e o sintoma não aponta para a configuração.
+    it("recusa APP_URL e AUTH_URL em domínios diferentes", () => {
+      const report = checkEnvironment(production({ APP_URL: "https://suvka.com", AUTH_URL: "https://outro.com" }));
+      expect(names(report.fatal)).toContain("APP_URL");
+    });
+
+    it("uma barra final não conta como discordância", () => {
+      const report = checkEnvironment(production({ APP_URL: "https://suvka.com/", AUTH_URL: "https://suvka.com" }));
+      expect(names(report.fatal)).not.toContain("APP_URL");
+    });
+
+    it("fora de produção não é preciso configurar nada", () => {
+      const report = checkEnvironment({
+        NODE_ENV: "development",
+        DATABASE_URL: "postgresql://localhost:5432/suvka",
+      } as NodeJS.ProcessEnv);
+      expect(names(report.fatal)).not.toContain("APP_URL");
     });
   });
 

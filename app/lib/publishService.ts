@@ -1,4 +1,4 @@
-import type { RepositoryBundle, OperationRecordRow } from "./repositories/types";
+import type { RepositoryBundle, OperationRecordRow, PublishedSiteRef } from "./repositories/types";
 import type { PageState } from "@/app/editor/pageState";
 import { applyOperation } from "@/app/editor/operations";
 
@@ -187,6 +187,17 @@ export interface PublishedSite {
   slug: string;
   state: PageState;
   publishedAt: Date;
+}
+
+// Every published address, for the sitemap. The counterpart to loadPublishedSite: that
+// one answers "is THIS slug live", this one answers "which slugs are live" - and the two
+// must never disagree, or we hand the Google a URL that 404s.
+//
+// Sorted by slug so the sitemap is stable between requests: a file that reshuffles on
+// every fetch looks changed to a crawler even when nothing was published.
+export async function listPublishedSites(repos: RepositoryBundle): Promise<PublishedSiteRef[]> {
+  const sites = await repos.projects.listPublished();
+  return sites.sort((a, b) => a.slug.localeCompare(b.slug));
 }
 
 // The only read path a public visitor takes. Returns null - never throws, never leaks

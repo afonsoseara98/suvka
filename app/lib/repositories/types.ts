@@ -48,12 +48,25 @@ export interface ProjectPatch {
   settings?: ProjectSettings;
 }
 
+// Just enough to put a site in the sitemap: the address and when it last changed. No
+// snapshot - the sitemap needs neither, and loading every published PageState to emit a
+// list of URLs would make one crawler request read every restaurant's page in full.
+export interface PublishedSiteRef {
+  slug: string;
+  publishedAt: Date;
+}
+
 export interface ProjectRepository {
   create(input: NewProjectInput): Promise<ProjectRecord>;
   findById(id: string): Promise<ProjectRecord | null>;
   // The public lookup: the only way an anonymous visitor's request reaches a project.
   findBySlug(slug: string): Promise<ProjectRecord | null>;
   listByOwner(ownerId: string): Promise<ProjectRecord[]>;
+  // Every site a stranger can reach today - the sitemap's read path. Must agree exactly
+  // with what loadPublishedSite() would return for each slug: a URL listed here that
+  // 404s is a Search Console error, and a published site missing from here is a
+  // restaurant that never gets found.
+  listPublished(): Promise<PublishedSiteRef[]>;
   update(id: string, patch: ProjectPatch): Promise<ProjectRecord>;
   // Cascades to the project's pages/sections/operation log/version tags/assets - the
   // Prisma implementation relies on schema.prisma's `onDelete: Cascade` on every one of

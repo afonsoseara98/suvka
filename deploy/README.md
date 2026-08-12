@@ -59,7 +59,11 @@ DATABASE_URL="postgresql://suvka:A-PASSWORD@localhost:5432/suvka?schema=public"
 # every session cookie, and anyone holding it can mint a session for any account.
 AUTH_SECRET="$(openssl rand -base64 32)"
 
-# The public origin, used to build absolute URLs and to validate auth callbacks.
+# The public origin, used to build absolute URLs and to validate auth callbacks. All
+# three must name the same domain - startup refuses if APP_URL and AUTH_URL disagree.
+# APP_URL is what /sitemap.xml and /robots.txt are built from: without it the sitemap
+# would serve localhost URLs, return 200, and index nothing.
+APP_URL="https://suvka.com"
 AUTH_URL="https://suvka.com"
 NEXTAUTH_URL="https://suvka.com"
 

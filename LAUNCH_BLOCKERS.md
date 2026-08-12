@@ -36,7 +36,7 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 | ✅ | Variáveis validadas no arranque | **Fechado em `7072def`** — `instrumentation.ts` + `app/lib/env.ts`, 22 testes |
 | ✅ | Falta uma `ENV` → falha imediata | **Verificado**: `DATABASE_URL="mysql://errado"` → saída 1, e **nenhum pedido chegou a ser servido** durante o arranque |
 | ✅ | Sem referências a `localhost` | Zero fora dos testes |
-| ❌ | URLs construídas a partir de `APP_URL` | O Stripe usa `new URL(request.url).origin` — BLOCKER #3 |
+| ⚠️ | URLs construídas a partir de `APP_URL` | `APP_URL` existe, é obrigatória em produção e recusa discordar da `AUTH_URL` (`app/lib/appUrl.ts`). O sitemap e o robots já a usam; **o checkout do Stripe ainda não** — BLOCKER #3 |
 
 ### 🔴 Persistência
 
@@ -207,7 +207,16 @@ Stripe.
 **Correção.** `APP_URL` no ambiente, obrigatória em produção (entra no #2), e as duas URLs
 construídas a partir dela.
 
-**Estado.** 🟠 Aberto — não bloqueia a beta, mas é meia hora.
+**Metade feita.** O sitemap precisou exactamente da mesma coisa — URLs absolutas que não
+podem vir do pedido — por isso a variável foi criada aí: `app/lib/appUrl.ts`, obrigatória
+em produção, verificada no arranque, e recusa-se a discordar da `AUTH_URL` (duas variáveis
+que têm de dizer o mesmo e podem discordar são uma armadilha por si só). O `/sitemap.xml` e
+o `/robots.txt` já a usam.
+
+**O que falta.** Uma linha em `app/api/stripe/checkout/route.ts:44`: trocar
+`new URL(request.url).origin` por `appUrl()`. Deixa de ser meia hora e passa a ser minutos.
+
+**Estado.** 🟠 Aberto — não bloqueia a beta.
 
 ---
 

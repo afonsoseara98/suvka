@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createInMemoryRepositories } from "./repositories/memory";
 import type { RepositoryBundle } from "./repositories/types";
 import { createProjectFromGeneration, dispatchAndPersist } from "./projectService";
-import { publishProject, unpublishProject, loadPublishedSite, slugify, resolveAvailableSlug, RESERVED_SLUGS } from "./publishService";
+import { publishProject, unpublishProject, loadPublishedSite, listPublishedSites, slugify, resolveAvailableSlug, RESERVED_SLUGS } from "./publishService";
 import { neutralStrategyDna } from "@/app/ai/testFixtures";
 import type { LandingPage } from "@/app/types/landing";
 import type { BusinessProfile } from "@/app/ai/types";
@@ -362,5 +362,68 @@ describe("the address the owner chose", () => {
     const again = await publishProject(repos, project.id, new Date(), "outra-coisa");
 
     expect(again.slug).toBe("acme-porto");
+  });
+});
+
+// A LISTA QUE VAI PARA O GOOGLE
+//
+// listPublishedSites e loadPublishedSite respondem à mesma pergunta de dois lados: uma diz
+// quais existem, a outra diz se aquele existe. O que estes testes protegem é o acordo entre
+// as duas - um slug na lista que dê 404 é um erro no Search Console, e um site publicado
+// que falte na lista é um restaurante que nunca é encontrado.
+describe("listPublishedSites", () => {
+  it("um projecto por publicar não aparece", async () => {
+    await newProject("Acme");
+    expect(await listPublishedSites(repos)).toEqual([]);
+  });
+
+  it("aparece assim que é publicado, com a data da publicação", async () => {
+    const project = await newProject("Tasca do Sameiro");
+    const quando = new Date("2026-08-01T10:00:00Z");
+    await publishProject(repos, project.id, quando);
+
+    expect(await listPublishedSites(repos)).toEqual([{ slug: "tasca-do-sameiro", publishedAt: quando }]);
+  });
+
+  it("desaparece quando o site é retirado", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    await unpublishProject(repos, project.id);
+
+    expect(await listPublishedSites(repos)).toEqual([]);
+  });
+
+  it("volta a aparecer quando é publicado outra vez", async () => {
+    const project = await newProject("Acme");
+    await publishProject(repos, project.id);
+    await unpublishProject(repos, project.id);
+    await publishProject(repos, project.id);
+
+    expect((await listPublishedSites(repos)).map((s) => s.slug)).toEqual(["acme"]);
+  });
+
+  it("todo o slug listado é servido de facto pela rota pública", async () => {
+    for (const nome of ["Tasca do Sameiro", "Padaria Céu", "Acme"]) {
+      const project = await newProject(nome);
+      await publishProject(repos, project.id);
+    }
+    const naoPublicado = await newProject("Fantasma");
+    expect(naoPublicado).toBeTruthy();
+
+    const sites = await listPublishedSites(repos);
+    expect(sites).toHaveLength(3);
+
+    for (const site of sites) {
+      expect(await loadPublishedSite(repos, site.slug), `${site.slug} está na lista mas não é servido`).not.toBeNull();
+    }
+  });
+
+  it("sai ordenado, para o ficheiro não mudar sozinho entre pedidos", async () => {
+    for (const nome of ["Zebra", "Acme", "Manuel"]) {
+      const project = await newProject(nome);
+      await publishProject(repos, project.id);
+    }
+
+    expect((await listPublishedSites(repos)).map((s) => s.slug)).toEqual(["acme", "manuel", "zebra"]);
   });
 });
