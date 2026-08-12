@@ -23,6 +23,18 @@ function sectionContent(state: PageState, type: string): unknown {
   return state.sections.find((section) => section.type === type)?.content ?? null;
 }
 
+// Completa um caminho relativo com a origem do próprio site. Se não houver por onde
+// completar, devolve o que recebeu em vez de inventar um domínio - uma URL errada num
+// campo que o Google lê é pior do que um campo em falta.
+export function absolute(url: string, siteUrl?: string): string {
+  if (!url.startsWith("/") || !siteUrl) return url;
+  try {
+    return new URL(url, siteUrl).toString();
+  } catch {
+    return url;
+  }
+}
+
 function asMenuItems(content: unknown): MenuItem[] {
   if (Array.isArray(content)) return content as MenuItem[];
   if (content && typeof content === "object") {
@@ -50,7 +62,10 @@ export default function RestaurantSchema({ state, siteUrl }: Props) {
 
   if (state.site?.seo?.description) schema.description = state.site.seo.description;
   if (siteUrl) schema.url = siteUrl;
-  if (hero?.image?.url) schema.image = hero.image.url;
+  // A fotografia é servida de /uploads/..., que é relativo. O schema.org exige URLs
+  // completas e descarta em silêncio o que não seja - e o que se perde aqui é precisamente
+  // a imagem do cartão que faz alguém escolher este restaurante e não o do lado.
+  if (hero?.image?.url) schema.image = absolute(hero.image.url, siteUrl);
 
   if (hours?.phone?.trim()) schema.telephone = hours.phone.trim();
 

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Landing from "@/app/components/Landing";
 import { repos } from "@/app/lib/repos";
 import { loadPublishedSite } from "@/app/lib/publishService";
+import { appUrl } from "@/app/lib/appUrl";
 import RestaurantSchema from "./RestaurantSchema";
 import SiteEvents from "./SiteEvents";
 
@@ -40,19 +41,50 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = seo.title?.trim() || site.projectName;
   const description = seo.description?.trim() || undefined;
 
+  // A FOTOGRAFIA QUE APARECE QUANDO ALGUÉM PARTILHA O RESTAURANTE
+  //
+  // Um restaurante é partilhado por WhatsApp mais vezes do que é encontrado no Google, e até
+  // aqui o cartão saía só com texto. A fotografia do hero é a que o dono escolheu para ser a
+  // primeira coisa que se vê - não há razão para gerar outra por cima dela.
+  //
+  // Sem fotografia nenhuma (um hero editorial, ou o PEXELS_API_KEY em falta) fica sem
+  // `images` em vez de com uma imagem falsa. Um cartão sem foto é pior do que um com foto;
+  // um cartão com a foto errada é pior do que os dois.
+  const hero = site.state.sections.find((section) => section.type === "hero")?.content as
+    | { image?: { url: string; width: number; height: number; alt: string } | null }
+    | undefined;
+
+  const photo = hero?.image?.url ? hero.image : null;
+  const images = photo
+    ? [{ url: photo.url, width: photo.width, height: photo.height, alt: photo.alt }]
+    : undefined;
+
+  const path = `/${slug}`;
+
   return {
     title,
     description,
     keywords: seo.keywords?.length ? seo.keywords : undefined,
+    // O endereço verdadeiro deste site, sem o ?fbclid=... que o Facebook cola a cada
+    // partilha e sem o ?utm_source=... do QR code na ementa. Cada um desses criava, para o
+    // Google, mais uma cópia do mesmo restaurante a competir com o original.
+    alternates: { canonical: path },
     openGraph: {
       title: seo.ogTitle?.trim() || title,
       description: seo.ogDescription?.trim() || description,
       type: "website",
+      // Resolvido contra o metadataBase (app/layout.tsx). Sem `url`, quem partilha um
+      // endereço com parâmetros de campanha vê o cartão apontar para esse endereço.
+      url: path,
+      siteName: site.projectName,
+      locale: "pt_PT",
+      images,
     },
     twitter: {
       card: "summary_large_image",
       title: seo.ogTitle?.trim() || title,
       description: seo.ogDescription?.trim() || description,
+      images,
     },
     robots: { index: true, follow: true },
   };
@@ -74,7 +106,9 @@ export default async function PublishedSitePage({ params }: Props) {
       {/* What turns a blue link into a card with the address, the hours and a call button
           on the phone of someone standing on the street. For a local business that card is
           the search result that matters. */}
-      <RestaurantSchema state={site.state} siteUrl={`/${slug}`} />
+      {/* Absoluto, não `/${slug}`: o schema.org exige URLs completas e descarta em silêncio
+          as que não sejam - o cartão do restaurante deixava de aparecer sem erro nenhum. */}
+      <RestaurantSchema state={site.state} siteUrl={`${appUrl()}/${slug}`} />
       {/* Counts taps on the actions, and nothing about the person tapping. */}
       <SiteEvents projectId={site.projectId} />
       <Landing state={site.state} />

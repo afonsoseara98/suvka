@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacidade — Suvka",
   robots: { index: true, follow: true },
+  alternates: { canonical: "/privacidade" },
 };
 
 // A factual description of what this system does with data, written from the code rather

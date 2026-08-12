@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: "O restaurante já existe. Falta o website. | Suvka",
   description:
     "Criamos o site do seu restaurante em minutos. Sem designer, sem código. Menu, fotos, horário e contacto. Primeiro mês gratuito.",
+  // Um anúncio no Facebook devolve as pessoas a suvka.com/?fbclid=IwAR3x..., e cada visitante
+  // traz um valor diferente. Sem isto, o Google vê uma página nova de cada vez que alguém
+  // partilha, e reparte por todas elas a autoridade que devia ser de uma só.
+  alternates: { canonical: "/" },
 };
 
 // Terracotta rather than a tech blue. A restaurant is warmth, food and company, and the

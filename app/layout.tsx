@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { appUrl } from "@/app/lib/appUrl";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
@@ -14,6 +15,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // A RAIZ DE TUDO O QUE SAI DAQUI PARA FORA
+  //
+  // Sem isto, um `og:image` escrito como "/uploads/foto.jpg" chega ao Facebook exactamente
+  // assim - e o Facebook não tem como saber de que domínio é. O metadataBase é o que torna
+  // absoluto tudo o que abaixo se escreve relativo: canonical, og:image, og:url.
+  //
+  // Lido no build, não no pedido, porque as páginas do produto são estáticas. Na VPS o
+  // `next build` corre com o .env.production carregado, portanto apanha o APP_URL a sério;
+  // num build sem ele (a CI) fica localhost, que é correcto para o que a CI faz - verificar
+  // que compila - e nunca chega a servir ninguém.
+  metadataBase: new URL(appUrl()),
   // The browser tab, on every page that does not set its own. "AI Conversion System" is
   // what we call it internally; a restaurant owner filling in the form saw it in their tab
   // and it told them nothing about what they were doing.
@@ -31,8 +43,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // O produto inteiro está escrito em português e isto dizia "en". Um leitor de ecrã lia
+    // "Aberto agora" com fonética inglesa, e o Google usa este atributo como sinal de idioma
+    // ao decidir a quem mostra o site de um restaurante em Braga.
     <html
-      lang="en"
+      lang="pt-PT"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

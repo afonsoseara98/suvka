@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Termos — Suvka",
   robots: { index: true, follow: true },
+  alternates: { canonical: "/termos" },
 };
 
 // Same standard as the privacy page: true, plain, and not yet reviewed by a lawyer. The
