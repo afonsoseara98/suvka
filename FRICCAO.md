@@ -7,6 +7,17 @@ não desaparece. A pergunta que decide se uma entrada pertence aqui é sempre a 
 
 Uma entrada que não responda a isso não é fricção — é gosto pessoal, e não entra.
 
+**O que se procura, além de defeitos.** As descobertas que valeram mais até aqui não vieram
+de procurar bugs. Vieram de procurar estas cinco situações, e é isso que se continua a
+fazer:
+
+1. Um teste contradiz uma hipótese minha *(foi assim que apareceu o F-11)*.
+2. Um utilizador pode interpretar mal o sistema.
+3. O sistema tem razão e parece estar errado *(o F-2: a recusa era correcta e invisível)*.
+4. O sistema está errado e ninguém percebe *(o F-12, encontrado a medir outra coisa)*.
+5. **O dono perde dinheiro sem nunca saber que fomos nós** — a categoria de prioridade
+   máxima, com secção própria abaixo.
+
 ## Sobre os números deste documento
 
 **Medido** significa cronometrado ou lido contra um build de produção nesta máquina.
@@ -62,30 +73,35 @@ qualquer um dos dois produtos**. É contra isso que se vende, não contra a Bent
 
 ---
 
+## Onde o dono perde dinheiro sem saber que fomos nós
+
+A categoria com prioridade máxima, acima de qualquer funcionalidade. O que a define não é a
+gravidade — é **não deixar rasto**. Um site em baixo toda a gente vê; um "Fechado" errado ao
+domingo não aparece em lado nenhum, e o dono conclui que o negócio esteve fraco.
+
+Fechados nesta ronda: **F-11** e **F-12**, os dois em que o site respondia com confiança a
+"está aberto?" e respondia mal.
+
+Por investigar, por ordem de quanto custa em silêncio:
+
+1. **O webhook do Stripe nunca recebeu um evento real** (`LAUNCH_BLOCKERS.md` #5). O dono
+   paga 19 €, o Stripe cobra, e o produto pode nunca ficar a saber. Cobrado e sem
+   reconhecimento é a pior combinação que existe.
+2. **O fim do período gratuito não faz nada** (#6). Quem não paga fica igual a quem paga —
+   e é o dono a perder o serviço que julgava ter, ou nós a perder a receita.
+3. **Alterações por publicar, vistas do dashboard.** O editor avisa — *"Tem alterações por
+   publicar"* — mas o dashboard mostra um `🟢 online em ...` sem dizer que o horário novo
+   nunca chegou ao site. Quem mudar o horário do Natal, fechar o separador e vier confirmar
+   ao dashboard vê tudo verde. **Por verificar** se o dashboard tem essa informação
+   disponível.
+4. **Um draft expira em 24 h** a contar da última visita. Quem gera o site à noite, decide
+   falar com o sócio, e volta na quinta-feira, encontra-o desaparecido — e a conclusão dele
+   é que o produto perdeu o trabalho. **Por medir** quantos voltam depois das 24 h; o funil
+   sabe responder.
+
+---
+
 ## Aberto
-
-### F-11 · O site diz "fechado" a um restaurante que está aberto
-
-- **Problema.** *"Terça a sábado das 12h às 15h e das 19h30 às 23h. **Domingo só almoços.**
-  Segunda fechado."* — a excepção é descartada, e o domingo fica marcado como fechado. Ao
-  domingo à hora de almoço, com o restaurante cheio, o site diz a quem o consulta que abre
-  **terça-feira**.
-- **Impacto.** É a pior falha que este módulo pode ter, e está escrita no cabeçalho dele:
-  *"a wrong Fechado is a customer who does not call, and we never find out it happened."*
-  Não é uma recusa — é uma afirmação confiante e errada. O dono nunca descobre; o cliente
-  vai a outro sítio.
-- **Frequência.** *Estimado:* alto. "Domingo só almoços" e "sábado só jantares" é como meia
-  restauração portuguesa escreve o seu horário.
-- **Estado.** Fixado num teste marcado `DEFEITO CONHECIDO`, para que a correcção o tenha de
-  mudar de propósito.
-- **Solução, e a decisão está por tomar.** Duas saídas, e não é minha:
-  1. **Silêncio** — ao ver uma excepção que não sabe representar, o parser recusa-se a
-    dizer o estado nesse dia. Perde-se o distintivo, não se perde o cliente.
-  2. **Representar o dia parcial** — mais trabalho, e mais superfície onde errar.
-  Recomendo a 1: é a que segue a regra que o módulo já tem escrita.
-- **Como medimos.** Não conseguimos, e é esse o problema — um "Fechado" errado não deixa
-  rasto nenhum. É argumento para a 1.
-- **Prioridade.** P0.
 
 ### F-3 · Cinco perguntas sem sítio para responder
 
@@ -134,6 +150,16 @@ qualquer um dos dois produtos**. É contra isso que se vende, não contra a Bent
 
 ## Corrigido
 
+### F-12 · "Todos os dias excepto domingo" mandava alguém a uma porta fechada — `d7826da`
+
+O erro simétrico do F-11, e estava cá desde sempre. A palavra "excepto" não é lida por
+ninguém neste módulo: "todos os dias" abria a semana inteira e o domingo ficava marcado como
+**aberto**. Um cliente conduzia até lá ao domingo e encontrava a porta fechada.
+
+**Não o encontrei a procurá-lo.** Encontrei-o a medir quantos horários reais a correcção do
+F-11 ia silenciar — onze horários, três silenciados — e este continuava a falar. A minha
+primeira versão da regra até o preservava, com uma excepção para "todos os dias" que tirei.
+
 ### F-1 · O formulário recusava quem não publica preços — `f335351`
 
 Era preciso pelo menos um prato **com preço**. O Mariscar, no site dele, não publica preço
@@ -147,6 +173,30 @@ sempre. A página sempre soube desenhar isto; só a validação é que não deix
 Corrigido por **remoção**: exige-se o nome, não o preço. O `Menu` deixa de desenhar a
 coluna quando está vazia, como já fazia com a descrição. Verificado com os dados reais do
 Mariscar, três pratos e zero preços — site gerado em 1,46 s, sem uma única coluna vazia.
+
+### F-11 · O site dizia "fechado" a um restaurante que estava aberto — `d7826da`
+
+- **Problema.** *"Terça a sábado das 12h às 15h e das 19h30 às 23h. **Domingo só almoços.**
+  Segunda fechado."* — a excepção é descartada, e o domingo fica marcado como fechado. Ao
+  domingo à hora de almoço, com o restaurante cheio, o site diz a quem o consulta que abre
+  **terça-feira**.
+- **Impacto.** É a pior falha que este módulo pode ter, e está escrita no cabeçalho dele:
+  *"a wrong Fechado is a customer who does not call, and we never find out it happened."*
+  Não é uma recusa — é uma afirmação confiante e errada. O dono nunca descobre; o cliente
+  vai a outro sítio.
+- **Frequência.** *Estimado:* alto. "Domingo só almoços" e "sábado só jantares" é como meia
+  restauração portuguesa escreve o seu horário.
+- **Decisão tomada — silêncio.** *Confidence or silence. Never confidence without certainty.*
+  Toda a menção a um dia tem de estar contabilizada: ou é uma ponta do intervalo, ou é uma
+  declaração de encerramento. Qualquer outra é uma instrução que não sabemos representar, e
+  a partir daí o módulo cala-se por completo. Deliberadamente conservador — prefere calar-se
+  de mais a acertar por sorte.
+- **E o dono passa a saber porquê.** O formulário mostra-lhe a frase exacta, com os acentos e
+  as maiúsculas dele: *Não conseguimos interpretar: "Domingo só almoços"*. Sem corrigir, sem
+  alterar, sem sugerir uma reescrita. A frase é dele.
+- **Custo medido, não estimado.** Onze horários reais: silenciam **três** — a excepção de
+  meio dia, o "excepto domingo" (F-12), e o horário dia-a-dia, que já era silencioso antes.
+  Os outros oito continuam a dizer o estado, incluindo o exemplo do formulário.
 
 ### F-2 · O "Aberto agora" desaparecia sem avisar — `43ad299`
 
