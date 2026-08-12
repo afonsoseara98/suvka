@@ -8,6 +8,16 @@ contra um build de produção real (`NODE_ENV=production`, `next start`), não c
 |---|---|---|
 | Auditoria | `0286bb8` | READY FOR BETA: **NO** — #1 e #2 |
 | Correção de #1 e #2 | `7072def` | READY FOR BETA: **YES**, com três condições |
+| SEO, #3 e revisão | `47d2f3b` | READY FOR BETA: **YES**, com as mesmas três condições menos uma |
+
+**O que mudou desde a última ronda, e não foi por código:** o site está no ar. O
+`https://suvka.com` responde, com Caddy e certificado válido. Duas frases deste documento
+deixaram de ser verdade — a que dizia que nada tinha corrido numa VPS, e a que tratava o
+#9 como uma decisão para "o dia do deploy", que já passou.
+
+A base de dados de produção **ainda não tem nenhum restaurante publicado** (verificado:
+`/taberna-do-goncalo` dá 404 lá, e 200 aqui). É a última janela em que o ensaio de restauro
+do #9 custa vinte minutos em vez de arriscar dados de um cliente.
 
 **Aviso que não desaparece com nenhuma ronda:** "verificado" aqui significa contra um build
 de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
@@ -67,7 +77,19 @@ de produção nesta máquina. Nada disto correu ainda numa VPS. O primeiro
 | ✅ | Healthcheck | `/api/health` → `{"ok":true}`, faz `SELECT 1` |
 | ✅ | Logs | `journald` (`SyslogIdentifier=suvka`) + Caddy em JSON |
 | ✅ | Restart automático | `Restart=always`, `RestartSec=3`, `WantedBy=multi-user.target` |
-| ⚠️ | HTTPS | Caddy trata dos certificados sozinho. Sem CSP nem `X-Frame-Options` explícitos |
+| ⚠️ | HTTPS | Caddy trata dos certificados sozinho — **verificado em produção**, `https://suvka.com` responde 200 com certificado válido. Sem CSP nem `X-Frame-Options` explícitos |
+
+### 🟡 SEO e desempenho
+
+| | Item | Evidência |
+|---|---|---|
+| ✅ | `/sitemap.xml` | Páginas do produto + todos os sites publicados, com `lastmod` real. Estável entre pedidos |
+| ✅ | `/robots.txt` | Com `Sitemap:` e `Host:`. `/s/` fica aberto de propósito, para o 308 transferir |
+| ✅ | Canonical | Em todas as páginas públicas — mata a duplicação de `?fbclid=`, `?utm_*` |
+| ✅ | Open Graph / Twitter | Com a fotografia do restaurante, `og:url`, `alt`, `summary_large_image` |
+| ✅ | JSON-LD `Restaurant` | Com URLs absolutas (antes eram relativas e eram descartadas em silêncio) |
+| ⚠️ | Core Web Vitals | Lighthouse local: homepage **97/96/100/100**, restaurante **83/100/79/100**. LCP de 4,7 s no site do restaurante — a fotografia do hero vem de `images.pexels.com` num `<img>` simples, sem `next/image`, sem WebP e sem tamanhos responsivos. **Medido em localhost, sem o Caddy pelo meio** |
+| ⚠️ | Uma consulta a dobrar | `loadPublishedSite` corre duas vezes por visita (`generateMetadata` e a página). Um `cache()` do React resolve; ninguém mediu se dói |
 
 ---
 
@@ -377,7 +399,13 @@ sigo a sua chamada: na beta as fotografias já são de restaurantes reais, e sã
 aqui que não se gera outra vez. Um ensaio de restauro custa vinte minutos no dia do deploy,
 enquanto a base de dados ainda está vazia — que é o único momento em que sai barato.
 
-**Estado.** 🟠 Aberto — bloqueia o lançamento público por decisão sua.
+**Actualização.** O dia do deploy passou: o site está no ar. A janela que eu descrevia como
+"o único momento em que sai barato" ainda está aberta — a base de dados de produção não tem
+nenhum restaurante publicado — mas fecha-se no primeiro cliente, e a partir daí o ensaio
+passa a ser feito por cima de fotografias de outra pessoa.
+
+**Estado.** 🟠 Aberto — bloqueia o lançamento público por decisão sua, e é agora o primeiro
+da lista.
 
 ---
 
@@ -399,6 +427,17 @@ O YES vem com três condições, e valem por serem ditas em voz alta antes e nã
 3. **Uma password esquecida é um telefonema para si**, e você repõe-na à mão na base de
    dados. Isto só funciona enquanto conhecer as pessoas todas pelo nome — é o número de
    restaurantes que define quando deixa de funcionar, não o calendário.
+
+**Nesta ronda, a condição 1 fica mais barata e as outras duas não mudaram.** O #3 estava a
+mandar o cliente de volta para um endereço reconstruído do pedido; agora vem da
+configuração, portanto o que resta por verificar no primeiro pagamento é só se o evento
+chega — não também se a pessoa aterra no sítio certo.
+
+E acrescento uma quarta, que é nova e é do deploy, não do produto:
+
+4. **O `APP_URL` tem de estar no `.env.production` antes do próximo deploy.** Se faltar, o
+   build pára — de propósito, e antes de tocar no site que está online. Se estiver errado, o
+   sitemap e os canonicals apontam para o domínio errado e isso não dá erro nenhum.
 
 **READY FOR PUBLIC LAUNCH: NO**
 

@@ -101,8 +101,12 @@ nano .env.production          # preencher tudo
 chmod 600 .env.production
 ```
 
-O ficheiro de exemplo explica cada variável. Os três valores que as pessoas erram:
+O ficheiro de exemplo explica cada variável. Os quatro valores que as pessoas erram:
 
+- **`APP_URL`** — o seu domínio, com `https://`. Sem ela o `next build` **recusa-se a
+  correr**, de propósito: o endereço fica escrito no `<link rel="canonical">` das páginas
+  estáticas, e um build sem ele grava lá `localhost`, o que diz ao Google para não indexar
+  nenhuma delas. Tem de coincidir com a `AUTH_URL` — o arranque recusa se discordarem.
 - **`AUTH_SECRET`** — gere um novo com `openssl rand -base64 32`. Nunca reutilize o de
   desenvolvimento: quem o tiver consegue forjar uma sessão para qualquer conta.
 - **`STRIPE_PRICE_ID`** — tem de ser um Price criado no **modo live**. Um `price_` de teste
@@ -200,6 +204,15 @@ A [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md) tem a lista completa.
 ---
 
 ## Quando correr mal
+
+**O `deploy.sh` para no build a dizer `APP_URL em falta`**
+É o que devia acontecer. Ponha `APP_URL="https://o-seu-dominio"` no `.env.production` e
+volte a correr. O build parou antes de gravar `localhost` no canonical de todas as páginas
+estáticas — o site que está online não foi tocado.
+
+**Arranca e morre logo, a dizer que `APP_URL` não coincide com `AUTH_URL`**
+São duas variáveis que têm de nomear o mesmo domínio. Uma diferença aqui punha as sessões
+num domínio e o Google no outro.
 
 **Não responde, e o `journalctl` diz `UntrustedHost`**
 Falta `AUTH_URL` no `.env.production`, ou não coincide com o domínio real.
