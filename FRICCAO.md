@@ -1,22 +1,35 @@
-# Fricção
+# Loss Ledger
 
 Documento vivo. Cada descoberta entra e não sai — quando algo é corrigido, muda de estado,
-não desaparece. A pergunta que decide se uma entrada pertence aqui é sempre a mesma:
+não desaparece. E cada entrada responde a uma pergunta só:
 
-> **Como é que isto aumenta reservas, ou faz um restaurante escolher o Suvka?**
+> **Como pode um restaurante perder dinheiro sem perceber que a culpa foi do Suvka?**
 
-Uma entrada que não responda a isso não é fricção — é gosto pessoal, e não entra.
+Não é uma lista de defeitos. Um defeito que se vê é um pedido de suporte; o que este
+documento persegue é o que **não deixa rasto** — o dono não reclama, não muda de produto,
+não nos diz nada. Só conclui que o negócio esteve fraco, e um dia deixa de recomendar.
 
-**O que se procura, além de defeitos.** As descobertas que valeram mais até aqui não vieram
-de procurar bugs. Vieram de procurar estas cinco situações, e é isso que se continua a
-fazer:
+## As três categorias
+
+| | | Quem paga a factura |
+|---|---|---|
+| **A** | **Perda de clientes** — horário errado, telefone que não liga, link partido, mapa errado | O restaurante, e nunca sabe |
+| **B** | **Perda de confiança** — a pré-visualização difere do publicado, alterações desaparecem, o produto diz que está tudo bem e não está | O restaurante primeiro, nós a seguir |
+| **C** | **Perda de receita do Suvka** — webhook, período gratuito, renovação | Nós |
+
+A ordem não é acidental. Um problema de categoria A custa dinheiro ao cliente que confiou
+em nós; um de categoria C custa-nos a nós. O primeiro é pior.
+
+## Onde estas coisas aparecem
+
+As descobertas que valeram mais não vieram de procurar bugs. Vieram destas cinco situações:
 
 1. Um teste contradiz uma hipótese minha *(foi assim que apareceu o F-11)*.
 2. Um utilizador pode interpretar mal o sistema.
 3. O sistema tem razão e parece estar errado *(o F-2: a recusa era correcta e invisível)*.
 4. O sistema está errado e ninguém percebe *(o F-12, encontrado a medir outra coisa)*.
-5. **O dono perde dinheiro sem nunca saber que fomos nós** — a categoria de prioridade
-   máxima, com secção própria abaixo.
+5. Eu procurei no sítio errado e o defeito estava ao lado *(o F-13: fui ao dashboard e
+   estava no editor, onde eu tinha assumido que estava resolvido)*.
 
 ## Sobre os números deste documento
 
@@ -73,37 +86,34 @@ qualquer um dos dois produtos**. É contra isso que se vende, não contra a Bent
 
 ---
 
-## Onde o dono perde dinheiro sem saber que fomos nós
+## Por investigar
 
-A categoria com prioridade máxima, acima de qualquer funcionalidade. O que a define não é a
-gravidade — é **não deixar rasto**. Um site em baixo toda a gente vê; um "Fechado" errado ao
-domingo não aparece em lado nenhum, e o dono conclui que o negócio esteve fraco.
+Por ordem de quanto custam em silêncio.
 
-Fechados nesta ronda: **F-11** e **F-12**, os dois em que o site respondia com confiança a
-"está aberto?" e respondia mal.
+**C · O webhook do Stripe nunca recebeu um evento real** (`LAUNCH_BLOCKERS.md` #5). O dono
+paga 19 €, o Stripe cobra, e o produto pode nunca ficar a saber. Cobrado e sem
+reconhecimento é a pior combinação que existe.
 
-Por investigar, por ordem de quanto custa em silêncio:
+**C · O fim do período gratuito não faz nada** (#6). Quem não paga fica igual a quem paga.
 
-1. **O webhook do Stripe nunca recebeu um evento real** (`LAUNCH_BLOCKERS.md` #5). O dono
-   paga 19 €, o Stripe cobra, e o produto pode nunca ficar a saber. Cobrado e sem
-   reconhecimento é a pior combinação que existe.
-2. **O fim do período gratuito não faz nada** (#6). Quem não paga fica igual a quem paga —
-   e é o dono a perder o serviço que julgava ter, ou nós a perder a receita.
-3. **Alterações por publicar, vistas do dashboard.** O editor avisa — *"Tem alterações por
-   publicar"* — mas o dashboard mostra um `🟢 online em ...` sem dizer que o horário novo
-   nunca chegou ao site. Quem mudar o horário do Natal, fechar o separador e vier confirmar
-   ao dashboard vê tudo verde. **Por verificar** se o dashboard tem essa informação
-   disponível.
-4. **Um draft expira em 24 h** a contar da última visita. Quem gera o site à noite, decide
-   falar com o sócio, e volta na quinta-feira, encontra-o desaparecido — e a conclusão dele
-   é que o produto perdeu o trabalho. **Por medir** quantos voltam depois das 24 h; o funil
-   sabe responder.
+**B · Um draft expira em 24 h** a contar da última visita. Quem gera o site à noite, decide
+falar com o sócio, e volta na quinta-feira, encontra-o desaparecido — e a conclusão dele é
+que o produto perdeu o trabalho. **Por medir** quantos voltam depois das 24 h; o funil sabe
+responder.
+
+**B · O dashboard não diz que há alterações por publicar.** O editor passou a dizê-lo
+(F-13), mas quem for confirmar ao dashboard continua a ver um `🟢 online em ...` sem
+ressalva. Menor agora que o editor está honesto, mas o dashboard é onde ele vai confirmar.
+
+**A · A pré-visualização e o publicado podem divergir?** Não verificado. A pré-visualização
+desenha o draft; o site publicado desenha um retrato. Se houver um caminho em que mostrem
+coisas diferentes, é categoria A e ninguém dá por ela.
 
 ---
 
 ## Aberto
 
-### F-3 · Cinco perguntas sem sítio para responder
+### F-3 · **A** · Cinco perguntas sem sítio para responder
 
 - **Problema.** Esplanada, estacionamento, animais, crianças, MB Way. O produto não tem
   campo nenhum onde o dono possa dizer que sim.
@@ -116,7 +126,7 @@ Por investigar, por ordem de quanto custa em silêncio:
   segundo.
 - **Prioridade.** P0. É a mais barata da lista e responde a cinco das seis em falta.
 
-### F-4 · Quem salta a frase opcional fica com um hero vazio
+### F-4 · **A** · Quem salta a frase opcional fica com um hero vazio
 
 - **Problema.** Sem "Uma frase sobre a casa", o subtítulo é o tipo de cozinha com um ponto:
   **"Cozinha portuguesa."** Verificado outra vez na réplica do Mariscar.
@@ -127,7 +137,7 @@ Por investigar, por ordem de quanto custa em silêncio:
   *"o que é que as pessoas dizem quando saem daqui?"*. Deixar de lhe chamar opcional.
 - **Prioridade.** P1.
 
-### F-5 · Não há resposta a "vale a pena?"
+### F-5 · **A** · Não há resposta a "vale a pena?"
 
 - **Problema.** O produto não mostra prova social nenhuma. Por decisão — não inventamos
   avaliações — e concordo com a decisão.
@@ -137,7 +147,7 @@ Por investigar, por ordem de quanto custa em silêncio:
   Nunca um número que nós escrevamos.
 - **Prioridade.** P1.
 
-### F-6 · Três pratos são nove campos
+### F-6 · **B** · Três pratos são nove campos
 
 - **Problema.** É a parte mais pesada do formulário.
 - **Impacto.** *Não medido.* Não sei onde as pessoas desistem — o funil sabe.
@@ -150,7 +160,23 @@ Por investigar, por ordem de quanto custa em silêncio:
 
 ## Corrigido
 
-### F-12 · "Todos os dias excepto domingo" mandava alguém a uma porta fechada — `d7826da`
+### F-13 · **B** · "Tudo publicado" dito a quem tinha alterações por publicar — `3ed102e`
+
+O `pendingChanges` era estado da sessão: arrancava em `false` e só ligava com uma edição
+feita naquele separador. O dono mudava o horário do Natal, fechava o separador, voltava no
+dia seguinte — e o botão dizia **"Tudo publicado"**, desactivado, enquanto o site continuava
+a mostrar o horário antigo aos clientes. Desactivado quer dizer que ele nem sequer podia
+publicar sem fazer primeiro uma edição qualquer.
+
+Não havia nada no ecrã a avisá-lo. Havia uma coisa a dizer-lhe o contrário — que é o que faz
+disto categoria B e não A.
+
+**Fui procurá-lo ao dashboard.** Estava no editor, onde eu tinha assumido que estava
+resolvido por ter visto a mensagem *"Tem alterações por publicar"* — que existe, e só
+funciona dentro da mesma sessão. A rota do editor passa a devolver o `publishedIndex` de
+cada página, e o editor deixa de assumir e passa a ler.
+
+### F-12 · **A** · "Todos os dias excepto domingo" mandava alguém a uma porta fechada — `d7826da`
 
 O erro simétrico do F-11, e estava cá desde sempre. A palavra "excepto" não é lida por
 ninguém neste módulo: "todos os dias" abria a semana inteira e o domingo ficava marcado como
@@ -160,7 +186,7 @@ ninguém neste módulo: "todos os dias" abria a semana inteira e o domingo ficav
 F-11 ia silenciar — onze horários, três silenciados — e este continuava a falar. A minha
 primeira versão da regra até o preservava, com uma excepção para "todos os dias" que tirei.
 
-### F-1 · O formulário recusava quem não publica preços — `f335351`
+### F-1 · **B** · O formulário recusava quem não publica preços — `f335351`
 
 Era preciso pelo menos um prato **com preço**. O Mariscar, no site dele, não publica preço
 nenhum — e não é caso raro: marisqueiras vendem a peso. Para essas casas isto não era
@@ -174,7 +200,7 @@ Corrigido por **remoção**: exige-se o nome, não o preço. O `Menu` deixa de d
 coluna quando está vazia, como já fazia com a descrição. Verificado com os dados reais do
 Mariscar, três pratos e zero preços — site gerado em 1,46 s, sem uma única coluna vazia.
 
-### F-11 · O site dizia "fechado" a um restaurante que estava aberto — `d7826da`
+### F-11 · **A** · O site dizia "fechado" a um restaurante que estava aberto — `d7826da`
 
 - **Problema.** *"Terça a sábado das 12h às 15h e das 19h30 às 23h. **Domingo só almoços.**
   Segunda fechado."* — a excepção é descartada, e o domingo fica marcado como fechado. Ao
@@ -198,7 +224,7 @@ Mariscar, três pratos e zero preços — site gerado em 1,46 s, sem uma única 
   meio dia, o "excepto domingo" (F-12), e o horário dia-a-dia, que já era silencioso antes.
   Os outros oito continuam a dizer o estado, incluindo o exemplo do formulário.
 
-### F-2 · O "Aberto agora" desaparecia sem avisar — `43ad299`
+### F-2 · **A** · O "Aberto agora" desaparecia sem avisar — `43ad299`
 
 O distintivo só aparece quando o horário se lê com certeza, e essa recusa é o desenho
 certo. O que estava errado era ser **invisível**: o dono não sabia que o sinal existia,
@@ -212,21 +238,21 @@ distintivo. Estava errado: procurei-o no HTML do servidor e o `OpenNow` é compo
 cliente — nunca lá está. O teste que escrevi para provar a minha versão falhou, e ao
 investigar apareceu o F-11, que é pior do que aquilo que eu tinha reportado.
 
-### F-7 · Os dois ecrãs diziam ao dono o endereço errado — `65e18cd`
+### F-7 · **A** · Os dois ecrãs diziam ao dono o endereço errado — `65e18cd`
 
 O "Último passo" mostrava `.../s/adega-do-manel`; o site vive em `/adega-do-manel`. No
 dashboard, o link apontava para o certo, o botão copiava o certo, e só o texto que se lê
 dizia o errado. É o endereço que ele escreve na ementa. Nenhum teste apanharia isto.
 
-### F-8 · O botão prometia reservas a quem não as tem — `2318c4d`
+### F-8 · **A** · O botão prometia reservas a quem não as tem — `2318c4d`
 
 "Reservar mesa" com o WhatsApp por trás. Agora os três destinos dizem três nomes.
 
-### F-9 · "Como chegar" deixava o restaurante para trás — `b20e590`
+### F-9 · **A** · "Como chegar" deixava o restaurante para trás — `b20e590`
 
 Abria o Google Maps na mesma aba. No telemóvel, a aplicação de mapas tomava conta do ecrã.
 
-### F-10 · A mensagem do WhatsApp só ia escrita a meio — `2318c4d`
+### F-10 · **A** · A mensagem do WhatsApp só ia escrita a meio — `2318c4d`
 
 O botão do hero abria a conversa já escrita; a linha dos contactos abria-a em branco.
 
