@@ -138,6 +138,17 @@ export interface OpeningHours {
     // Passam a tê-la quando o dono voltar a publicar.
     whatsappMessage?: string;
   };
+
+  // AS RESPOSTAS QUE DECIDEM ENTRE DOIS RESTAURANTES PARECIDOS
+  //
+  // Esplanada, estacionamento, cães, crianças, MB Way. Guardadas já escritas, na língua do
+  // site, pela mesma razão que os `labels` acima: um retrato publicado tem de continuar a
+  // desenhar-se sem depender de nada que o código faça a seguir.
+  //
+  // Só entra o que for verdade. A ausência não afirma nada - um restaurante sem esta lista
+  // não está a dizer que não tem esplanada, está a não dizer nada, que é o que os sites
+  // publicados antes disto existir continuam a fazer.
+  amenities?: string[];
 }
 
 export interface HeroStat {

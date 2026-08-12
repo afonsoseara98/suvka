@@ -55,6 +55,17 @@ export interface SiteLabels {
 
   // Only used when the owner leaves the description blank.
   fallbackSubtitle: (cuisine: string) => string;
+
+  // As cinco respostas que decidem entre dois restaurantes parecidos. Escritas como o
+  // cliente as leria numa montra, não como uma etiqueta de formulário: "Aceitamos cães" e
+  // não "Animais: sim".
+  amenities: {
+    esplanada: string;
+    estacionamento: string;
+    aceitaAnimais: string;
+    bomParaCriancas: string;
+    mbway: string;
+  };
 }
 
 // Cuisines are stored in English because that is the stable key the image queries and the
@@ -144,6 +155,13 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     restaurant: "Restaurante",
     takeaway: "Take-away e entregas",
     fallbackSubtitle: (cuisine) => `${cuisine}.`,
+    amenities: {
+      esplanada: "Esplanada",
+      estacionamento: "Estacionamento",
+      aceitaAnimais: "Aceitamos cães",
+      bomParaCriancas: "Bom para crianças",
+      mbway: "MB Way",
+    },
   },
   en: {
     menu: "Menu",
@@ -166,6 +184,13 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     restaurant: "Restaurant",
     takeaway: "Takeaway and delivery",
     fallbackSubtitle: (cuisine) => `${cuisine} cooking.`,
+    amenities: {
+      esplanada: "Outdoor seating",
+      estacionamento: "Parking",
+      aceitaAnimais: "Dogs welcome",
+      bomParaCriancas: "Good for children",
+      mbway: "MB Way",
+    },
   },
 };
 

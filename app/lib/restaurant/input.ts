@@ -73,6 +73,27 @@ export interface RestaurantInput {
   glovo: string;
   boltFood: string;
 
+  // AS PERGUNTAS QUE DECIDEM ENTRE DOIS RESTAURANTES PARECIDOS
+  //
+  // Um cliente que já escolheu a zona e o tipo de comida decide o resto com cinco perguntas
+  // que o produto não tinha onde responder: o casal com um cão, a família com carrinho, quem
+  // chega de carro a uma zona sem lugar, quem quer jantar na rua, quem só anda com o
+  // telemóvel. Cada uma delas manda a pessoa ao restaurante do lado se a nossa página se
+  // calar - e o dono nunca sabe que foi por isto.
+  //
+  // Sim/não e não texto livre, de propósito: o cliente lê isto de relance, e uma frase
+  // obriga-o a interpretar. Só aparece o que for verdade - um "sim" é uma afirmação sobre o
+  // negócio de outra pessoa, e a ausência não afirma nada.
+  //
+  // Opcionais no tipo porque tudo o que foi gerado antes disto existir não as tem.
+  esplanada?: boolean;
+  estacionamento?: boolean;
+  aceitaAnimais?: boolean;
+  bomParaCriancas?: boolean;
+  // MB Way e não "aceita cartão": o terminal de cartões é quase universal e ninguém
+  // pergunta por ele. O que se pergunta à porta é se dá para pagar pelo telemóvel.
+  mbway?: boolean;
+
   // Which language the finished SITE speaks. Portugal is the market, so the default is
   // Portuguese - an owner who wants English can switch.
   language: SiteLanguage;
@@ -266,6 +287,14 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     uberEats: (input.uberEats ?? "").trim(),
     glovo: (input.glovo ?? "").trim(),
     boltFood: (input.boltFood ?? "").trim(),
+    // `=== true` e não `Boolean(...)`: o corpo do pedido é JSON de fora, e um "sim" que
+    // chegue como a string "false" ou como 0 tem de continuar a ser um não. Um sim inventado
+    // aqui é uma afirmação falsa sobre o negócio de outra pessoa.
+    esplanada: input.esplanada === true,
+    estacionamento: input.estacionamento === true,
+    aceitaAnimais: input.aceitaAnimais === true,
+    bomParaCriancas: input.bomParaCriancas === true,
+    mbway: input.mbway === true,
     language: input.language ?? "pt",
     dishes: input.dishes
       // O nome é o que faz um prato existir. Sem preço a linha sai sem preço - ver a

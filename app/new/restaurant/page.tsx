@@ -17,6 +17,17 @@ import {
 import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, styleHint, type SiteLanguage } from "@/app/lib/restaurant/labels";
 import ScheduleReadback from "./ScheduleReadback";
 
+// A ordem é a da decisão de quem lê o site, não a do formulário: primeiro o que decide se a
+// pessoa PODE ir, depois o que torna a ida melhor. O texto aqui é a pergunta como o dono a
+// ouve à porta - "aceita cães?" -, não o rótulo que sai na página.
+const AMENIDADES = [
+  { campo: "aceitaAnimais", texto: "Aceitamos cães" },
+  { campo: "bomParaCriancas", texto: "Bom para crianças" },
+  { campo: "estacionamento", texto: "Estacionamento fácil" },
+  { campo: "esplanada", texto: "Esplanada" },
+  { campo: "mbway", texto: "Aceitamos MB Way" },
+] as const;
+
 const EMPTY: RestaurantInput = {
   name: "",
   cuisine: "Portuguese",
@@ -341,6 +352,31 @@ function RestaurantForm() {
             />
             Fazemos take-away ou entregas
           </label>
+
+          {/* AS PERGUNTAS QUE O CLIENTE FAZ E O SITE NÃO SABIA RESPONDER
+              Cinco caixas, e ficam fora da secção "Mais informações" de propósito: quem não
+              a abre é a maioria, e estas cinco decidem entre este restaurante e o do lado.
+              Custam cinco toques a quem as tem, e zero a quem não tem. */}
+          <div>
+            <span className={label}>O que a casa tem</span>
+            <p className="mt-1 text-sm text-zinc-500">
+              Só o que for verdade. O que deixar por marcar não aparece no site — não diz que
+              não tem, não diz nada.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {AMENIDADES.map(({ campo, texto }) => (
+                <label key={campo} className="flex items-center gap-3 text-sm text-zinc-300">
+                  <input
+                    type="checkbox"
+                    checked={input[campo] === true}
+                    onChange={(e) => set(campo, e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-950"
+                  />
+                  {texto}
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div>
             <div className="flex items-baseline justify-between">

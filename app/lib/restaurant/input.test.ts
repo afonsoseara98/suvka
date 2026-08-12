@@ -472,3 +472,47 @@ describe("takeaway is answered on the page", () => {
     expect(built.hours?.schedule).toContain("Tue-Sun 12:00-22:30");
   });
 });
+
+// AS CINCO RESPOSTAS QUE DECIDEM ENTRE DOIS RESTAURANTES PARECIDOS
+//
+// Esplanada, estacionamento, cães, crianças, MB Way. Um cliente que já escolheu a zona e o
+// tipo de comida decide o resto com estas - e ia ao restaurante do lado quando a nossa
+// página se calava, sem o dono nunca saber que foi por isto.
+describe("o que a casa tem", () => {
+  it("não afirma nada quando o dono não marcou nada", () => {
+    const built = buildRestaurantPage(input(), { hero: null, gallery: [] });
+    // `undefined` e não uma lista vazia: um campo ausente não desenha secção nenhuma, e a
+    // ausência não diz que o restaurante não tem esplanada - não diz nada.
+    expect(built.hours?.amenities).toBeUndefined();
+  });
+
+  it("mostra só o que foi marcado, e pela ordem da decisão", () => {
+    const built = buildRestaurantPage(
+      input({ mbway: true, aceitaAnimais: true, esplanada: true }),
+      { hero: null, gallery: [] }
+    );
+
+    // Primeiro o que decide se a pessoa PODE ir, depois o que torna a ida melhor, e o MB Way
+    // no fim porque é o único que se resolve à saída.
+    expect(built.hours?.amenities).toEqual(["Aceitamos cães", "Esplanada", "MB Way"]);
+  });
+
+  it("fala a língua do site", () => {
+    const built = buildRestaurantPage(
+      input({ language: "en", aceitaAnimais: true, bomParaCriancas: true }),
+      { hero: null, gallery: [] }
+    );
+    expect(built.hours?.amenities).toEqual(["Dogs welcome", "Good for children"]);
+  });
+
+  // O corpo do pedido é JSON de fora. Um "sim" que chegue como a string "false" ou como 0
+  // seria uma afirmação falsa sobre o negócio de outra pessoa.
+  it("só aceita um sim verdadeiro", () => {
+    const sujo = { ...input(), esplanada: "false" as never, mbway: 1 as never };
+    const normalizado = normaliseRestaurantInput(sujo);
+
+    expect(normalizado.esplanada).toBe(false);
+    expect(normalizado.mbway).toBe(false);
+    expect(buildRestaurantPage(normalizado, { hero: null, gallery: [] }).hours?.amenities).toBeUndefined();
+  });
+});

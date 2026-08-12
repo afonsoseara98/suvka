@@ -101,6 +101,33 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
         description={heading?.description}
       />
 
+      {/* AS CINCO RESPOSTAS QUE DECIDEM ENTRE DOIS RESTAURANTES PARECIDOS
+
+          Acima da morada e do horário de propósito. Quem chega aqui já decidiu a zona e o
+          tipo de comida; o que falta saber é se PODE ir - com o cão, com o carrinho, de
+          carro. Uma pessoa que não encontre a resposta vai ao restaurante do lado, e o dono
+          nunca fica a saber que foi por isto.
+
+          Sem ícones. Um símbolo de cão e um símbolo de carrinho de bebé são reconhecidos por
+          quem já sabe o que procura, e são ruído para todos os outros - e nenhum deles é
+          legível por um leitor de ecrã sem uma etiqueta que já é a palavra. A palavra chega.
+
+          Renderiza nada quando não há nada: os sites publicados antes disto existir não têm
+          este campo, e a ausência não afirma que o restaurante não tem esplanada. */}
+      {data.amenities && data.amenities.length > 0 && (
+        <ul className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-3 gap-y-2">
+          {data.amenities.map((item) => (
+            <li
+              key={item}
+              className="rounded-full border px-3 py-1 text-sm"
+              style={{ borderColor: theme.colors.border, color: theme.colors.secondary }}
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+
       {/* Two columns rather than three: with WhatsApp and email the section can carry five
           entries, and three columns left an orphan on its own row. */}
       <div className="mx-auto mt-10 grid max-w-3xl gap-8 sm:grid-cols-2">

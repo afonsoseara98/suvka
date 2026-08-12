@@ -4,7 +4,7 @@ import type { ResolvedImage } from "@/app/ai/types/visual";
 import { DEFAULT_DNA } from "@/app/ai/types/dna";
 import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
-import { labelsFor, cuisineName } from "./labels";
+import { labelsFor, cuisineName, type SiteLabels } from "./labels";
 import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref } from "./tidy";
 
 // BUILDING THE PAGE FROM THE FORM
@@ -98,6 +98,26 @@ export function bookingHref(input: RestaurantInput): string | undefined {
   if (viaWhatsapp) return viaWhatsapp;
 
   return input.phone ? `tel:${tidyPhoneHref(input.phone)}` : undefined;
+}
+
+// A ORDEM É A DA DECISÃO, NÃO A DO FORMULÁRIO
+//
+// Quem lê isto já escolheu a zona e o tipo de comida. Primeiro o que decide se PODE ir de
+// todo - o cão, as crianças, o carro - e só depois o que torna a ida melhor. O MB Way vai ao
+// fim porque é a única que se resolve à saída e não à entrada.
+//
+// Devolve `undefined` e não um array vazio quando não há nada: um campo ausente não desenha
+// secção nenhuma, e um array vazio obrigaria cada leitor a lembrar-se de o verificar.
+function amenitiesFor(input: RestaurantInput, labels: SiteLabels): string[] | undefined {
+  const lista = [
+    input.aceitaAnimais ? labels.amenities.aceitaAnimais : null,
+    input.bomParaCriancas ? labels.amenities.bomParaCriancas : null,
+    input.estacionamento ? labels.amenities.estacionamento : null,
+    input.esplanada ? labels.amenities.esplanada : null,
+    input.mbway ? labels.amenities.mbway : null,
+  ].filter((item): item is string => item !== null);
+
+  return lista.length > 0 ? lista : undefined;
 }
 
 // The platforms, in the order a Portuguese restaurant is most likely to be on them. Built
@@ -237,6 +257,9 @@ export function buildRestaurantPage(
         // pessoa desiste, porque tem de decidir como se apresenta a um restaurante.
         whatsappMessage: labels.bookingMessage(input.name),
       },
+      // Só o que for verdade, e já escrito na língua do site. Um "sim" aqui é uma afirmação
+      // sobre o negócio de outra pessoa; a ausência não afirma nada.
+      amenities: amenitiesFor(input, labels),
     },
     footer: {
       company: input.name,
