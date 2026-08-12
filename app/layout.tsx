@@ -21,10 +21,9 @@ export const metadata: Metadata = {
   // assim - e o Facebook não tem como saber de que domínio é. O metadataBase é o que torna
   // absoluto tudo o que abaixo se escreve relativo: canonical, og:image, og:url.
   //
-  // Lido no build, não no pedido, porque as páginas do produto são estáticas. Na VPS o
-  // `next build` corre com o .env.production carregado, portanto apanha o APP_URL a sério;
-  // num build sem ele (a CI) fica localhost, que é correcto para o que a CI faz - verificar
-  // que compila - e nunca chega a servir ninguém.
+  // Lido no build, não no pedido, porque as páginas do produto são estáticas: o valor fica
+  // escrito no HTML e não há segunda oportunidade. É por isso que o next.config.ts recusa
+  // um build de produção sem APP_URL - ver lá o comentário, que é onde essa decisão vive.
   metadataBase: new URL(appUrl()),
   // The browser tab, on every page that does not set its own. "AI Conversion System" is
   // what we call it internally; a restaurant owner filling in the form saw it in their tab

@@ -38,13 +38,28 @@ const nextConfig: NextConfig = {
 const configFor = (phase: string): NextConfig => {
   const configured = process.env.APP_URL?.trim() || process.env.AUTH_URL?.trim();
 
-  if (phase === PHASE_PRODUCTION_BUILD && !configured) {
-    throw new Error(
-      "\n\n  APP_URL em falta.\n\n" +
-        "  Este build ia gravar http://localhost:3000 no <link rel=\"canonical\"> das páginas\n" +
-        "  estáticas, o que diz ao Google para não indexar nenhuma delas.\n\n" +
-        "  Ponha APP_URL=\"https://o-seu-dominio\" no .env.production e volte a correr.\n"
-    );
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    if (!configured) {
+      throw new Error(
+        "\n\n  APP_URL em falta.\n\n" +
+          "  Este build ia gravar http://localhost:3000 no <link rel=\"canonical\"> das páginas\n" +
+          "  estáticas, o que diz ao Google para não indexar nenhuma delas.\n\n" +
+          "  Ponha APP_URL=\"https://o-seu-dominio\" no .env.production e volte a correr.\n"
+      );
+    }
+
+    // Um "suvka.com" sem protocolo passa pela verificação acima e rebenta mais à frente, no
+    // `new URL()` do app/layout.tsx - com um erro que fala de metadataBase e não da variável
+    // que está mal escrita. O app/lib/env.ts faz esta mesma verificação no arranque; aqui é
+    // preciso outra vez porque o build acontece antes de haver arranque nenhum.
+    try {
+      new URL(configured);
+    } catch {
+      throw new Error(
+        `\n\n  APP_URL não é um endereço válido: "${configured}"\n\n` +
+          "  Falta o https:// à frente?\n"
+      );
+    }
   }
 
   return nextConfig;

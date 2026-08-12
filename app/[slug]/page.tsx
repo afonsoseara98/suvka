@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { HeroData } from "@/app/types/landing";
 import { notFound } from "next/navigation";
 import Landing from "@/app/components/Landing";
 import { repos } from "@/app/lib/repos";
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // `images` em vez de com uma imagem falsa. Um cartão sem foto é pior do que um com foto;
   // um cartão com a foto errada é pior do que os dois.
   const hero = site.state.sections.find((section) => section.type === "hero")?.content as
-    | { image?: { url: string; width: number; height: number; alt: string } | null }
+    | HeroData
     | undefined;
 
   const photo = hero?.image?.url ? hero.image : null;
@@ -59,7 +60,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? [{ url: photo.url, width: photo.width, height: photo.height, alt: photo.alt }]
     : undefined;
 
-  const path = `/${slug}`;
+  // `site.slug`, não o `slug` do pedido. São iguais - o site só foi encontrado porque bateu
+  // certo - mas o que se declara ao Google como endereço oficial desta página tem de vir de
+  // onde está guardado, e não de uma string que chegou de fora. É a mesma regra que fechou o
+  // BLOCKER #3 no checkout.
+  const path = `/${site.slug}`;
 
   return {
     title,
@@ -108,7 +113,7 @@ export default async function PublishedSitePage({ params }: Props) {
           the search result that matters. */}
       {/* Absoluto, não `/${slug}`: o schema.org exige URLs completas e descarta em silêncio
           as que não sejam - o cartão do restaurante deixava de aparecer sem erro nenhum. */}
-      <RestaurantSchema state={site.state} siteUrl={`${appUrl()}/${slug}`} />
+      <RestaurantSchema state={site.state} siteUrl={`${appUrl()}/${site.slug}`} />
       {/* Counts taps on the actions, and nothing about the person tapping. */}
       <SiteEvents projectId={site.projectId} />
       <Landing state={site.state} />
