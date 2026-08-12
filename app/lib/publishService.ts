@@ -37,12 +37,36 @@ export function slugify(input: string): string {
   return base;
 }
 
-// Reserved because they are (or will be) real routes on the same origin - a project
-// slugged "dashboard" would shadow the app itself.
+// AGORA ISTO É A ÚNICA COISA QUE SEPARA UM CLIENTE DO PRODUTO
+//
+// Enquanto os sites viveram em /s/<slug>, esta lista era uma precaução: /s/entrar e /entrar
+// são endereços diferentes e nunca se tocavam. Desde que o site passou para a raiz
+// (suvka.com/taberna-do-goncalo), o slug de um restaurante e as rotas da aplicação
+// partilham o mesmo espaço de nomes - e o Next dá sempre precedência à rota estática.
+//
+// A falha, se faltar um nome aqui, é silenciosa e é a pior possível: o restaurante publica,
+// recebe o endereço, manda-o aos clientes, e quem lá vai encontra a nossa página de login.
+// Nada estoira, nada aparece nos registos. O dono só descobre quando alguém lhe telefona.
+//
+// Por isso a lista inclui rotas que ainda não existem. Reservar "precos" hoje custa nada;
+// descobrir daqui a um ano que não se pode criar /precos porque um restaurante o ocupou -
+// ou, pior, criá-la e apagar o site dele do mapa - custa um cliente.
 export const RESERVED_SLUGS = new Set([
-  "api", "dashboard", "editor", "new", "benchmark", "login", "logout", "signup",
-  "settings", "admin", "s", "static", "public", "assets", "_next", "about", "pricing",
-  "terms", "privacy", "support", "help", "docs", "blog", "app", "www",
+  // Rotas que existem hoje.
+  "api", "dashboard", "editor", "new", "benchmark", "s",
+  "entrar", "preview", "publicar", "publicado", "privacidade", "termos",
+
+  // Ficheiros servidos da raiz.
+  "_next", "static", "public", "assets", "favicon", "favicon.ico", "robots",
+  "robots.txt", "sitemap", "sitemap.xml", "manifest", "opensearch",
+
+  // Rotas que qualquer versão futura vai querer, em português e em inglês.
+  "conta", "contas", "perfil", "definicoes", "faturas", "faturacao", "pagamento",
+  "pagamentos", "subscricao", "planos", "precos", "ajuda", "sobre", "contacto",
+  "contactos", "suporte", "sair", "registar", "recuperar", "painel", "admin",
+  "login", "logout", "signup", "signin", "settings", "account", "billing",
+  "pricing", "plans", "about", "contact", "support", "help", "docs", "blog",
+  "terms", "privacy", "legal", "status", "app", "www", "mail", "email",
 ]);
 
 // Finds a free slug near the requested one. Appends -2, -3, ... rather than random

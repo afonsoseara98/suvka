@@ -160,7 +160,7 @@ function DashboardContent() {
           >
             <p className="text-sm text-emerald-400">🟢 {project.name} está online em</p>
             <a
-              href={`/s/${project.slug}`}
+              href={`/${project.slug}`}
               target="_blank"
               rel="noreferrer"
               className="mt-2 block break-all text-xl font-semibold text-white underline underline-offset-4 sm:text-2xl"
@@ -170,7 +170,7 @@ function DashboardContent() {
             <div className="mt-5 flex flex-wrap gap-3 text-sm">
               <button
                 onClick={() => {
-                  navigator.clipboard?.writeText(`${origin}/s/${project.slug}`);
+                  navigator.clipboard?.writeText(`${origin}/${project.slug}`);
                   setCopiedId(project.id);
                 }}
                 className="rounded-lg border border-emerald-500/40 px-4 py-2 text-emerald-300 transition hover:bg-emerald-500/20"
@@ -178,7 +178,7 @@ function DashboardContent() {
                 {copiedId === project.id ? "Link copiado" : "Copiar link"}
               </button>
               <a
-                href={`/s/${project.slug}`}
+                href={`/${project.slug}`}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-lg border border-emerald-500/40 px-4 py-2 text-emerald-300 transition hover:bg-emerald-500/20"
@@ -233,7 +233,7 @@ function DashboardContent() {
                       reachable by opening the editor first. */}
                   {project.published && project.slug && (
                     <a
-                      href={`/s/${project.slug}`}
+                      href={`/${project.slug}`}
                       target="_blank"
                       rel="noreferrer"
                       className="rounded-lg border border-zinc-700 px-3 py-2 text-zinc-300 transition hover:bg-zinc-900"

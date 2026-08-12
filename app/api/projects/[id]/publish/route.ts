@@ -27,7 +27,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   try {
     const { slug, publishedAt } = await publishProject(repos, id);
-    return NextResponse.json({ slug, url: `/s/${slug}`, publishedAt: publishedAt.toISOString() });
+    return NextResponse.json({ slug, url: `/${slug}`, publishedAt: publishedAt.toISOString() });
   } catch (error: unknown) {
     console.error(error);
     return NextResponse.json(

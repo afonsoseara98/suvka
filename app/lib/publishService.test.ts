@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createInMemoryRepositories } from "./repositories/memory";
 import type { RepositoryBundle } from "./repositories/types";
 import { createProjectFromGeneration, dispatchAndPersist } from "./projectService";
-import { publishProject, unpublishProject, loadPublishedSite, slugify, resolveAvailableSlug } from "./publishService";
+import { publishProject, unpublishProject, loadPublishedSite, slugify, resolveAvailableSlug, RESERVED_SLUGS } from "./publishService";
 import { neutralStrategyDna } from "@/app/ai/testFixtures";
 import type { LandingPage } from "@/app/types/landing";
 import type { BusinessProfile } from "@/app/ai/types";
@@ -105,11 +105,55 @@ describe("resolveAvailableSlug", () => {
     expect(await resolveAvailableSlug(repos, "Acme", project.id)).toBe("acme");
   });
 
-  // A project slugged "dashboard" would sit at /s/dashboard, which is harmless today,
-  // but the reserved list also guards the names most likely to become real routes.
+  // Deixou de ser inofensivo. Enquanto os sites viveram em /s/<slug>, um projecto slugged
+  // "dashboard" ficava em /s/dashboard e não tocava em /dashboard. Agora vive na raiz, e a
+  // rota estática ganha sempre - o site do restaurante deixaria de existir sem um único erro
+  // em lado nenhum.
   it("skips reserved names", async () => {
     const project = await newProject("Dashboard");
     expect(await resolveAvailableSlug(repos, "dashboard", project.id)).toBe("dashboard-2");
+  });
+
+  it("reserva também as rotas em português, que a raiz passou a tornar perigosas", async () => {
+    for (const nome of ["entrar", "termos", "privacidade", "publicar", "preview"]) {
+      const project = await newProject(nome);
+      expect(await resolveAvailableSlug(repos, nome, project.id)).toBe(`${nome}-2`);
+    }
+  });
+});
+
+// O TESTE QUE SE MANTÉM SOZINHO
+//
+// Uma lista escrita à mão fica desactualizada no dia em que alguém acrescenta uma rota e não
+// se lembra disto - e o sintoma é o pior que este produto tem: o site de um cliente pago
+// desaparece em silêncio, substituído por uma página nossa, sem erro nenhum em lado nenhum.
+//
+// Por isso a lista não é verificada contra si própria: é verificada contra o disco. Quem
+// criar app/precos/page.tsx sem reservar "precos" parte este teste antes de fazer commit.
+describe("RESERVED_SLUGS cobre todas as rotas reais", () => {
+  it("toda a rota de topo em app/ está reservada", async () => {
+    const { readdirSync, existsSync } = await import("fs");
+    const path = await import("path");
+
+    const appDir = path.join(process.cwd(), "app");
+    const rotas = readdirSync(appDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      // Segmentos dinâmicos ([slug]) e grupos ((grupo)) não ocupam nome nenhum na URL.
+      .filter((n) => !n.startsWith("[") && !n.startsWith("(") && !n.startsWith("_"))
+      // Só conta como rota se tiver um page.tsx ou um route.ts - o resto são pastas de
+      // código (lib, components, styles, types) que nunca aparecem num endereço.
+      .filter(
+        (n) =>
+          existsSync(path.join(appDir, n, "page.tsx")) ||
+          existsSync(path.join(appDir, n, "route.ts")) ||
+          n === "api"
+      );
+
+    expect(rotas.length).toBeGreaterThan(5);
+
+    const emFalta = rotas.filter((r) => !RESERVED_SLUGS.has(r));
+    expect(emFalta, `rotas por reservar em RESERVED_SLUGS: ${emFalta.join(", ")}`).toEqual([]);
   });
 });
 

@@ -20,7 +20,7 @@ function PublishedContent({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
   // Built in the browser so it is the address the owner is actually on, rather than one
   // guessed from an env var that is wrong in exactly the situations that matter.
-  const url = typeof window === "undefined" ? `/s/${slug}` : `${window.location.origin}/s/${slug}`;
+  const url = typeof window === "undefined" ? `/${slug}` : `${window.location.origin}/${slug}`;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-black px-6 py-16 text-white">

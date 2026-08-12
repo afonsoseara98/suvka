@@ -228,7 +228,7 @@ function EditorContent() {
   }
 
   const isPublished = project.settings.publishing.published;
-  const liveUrl = project.slug ? `${origin}/s/${project.slug}` : null;
+  const liveUrl = project.slug ? `${origin}/${project.slug}` : null;
 
   return (
     <main className="min-h-screen bg-black text-white">
