@@ -298,6 +298,50 @@ function RestaurantForm() {
             </div>
           </div>
 
+          {/* A ÚNICA LINHA DO SITE QUE NÃO SE PARECE COM NENHUM OUTRO
+
+              Estava no fim, depois dos nove campos dos pratos, e chamava-se "opcional".
+              Quem a saltava - que é a maioria, e foi o que me aconteceu a mim a percorrer o
+              formulário como um dono - ficava com o subtítulo do hero a dizer "Cozinha
+              portuguesa." e mais nada. A linha mais valiosa da página, a única que responde
+              a "porquê aqui e não no do lado", a dizer nada.
+
+              Duas mudanças, e nenhuma delas o obriga a escrever:
+
+              1. Subiu para antes dos pratos. No fim ele já gastou a atenção toda a escrever
+                 três nomes, três preços e três descrições.
+              2. Deixou de ser um pedido e passou a ser uma pergunta que ele sabe responder.
+                 "Uma frase sobre a casa" é um trabalho de copywriting entregue a quem nunca
+                 fez nenhum; "o que é que as pessoas dizem quando saem daqui?" é uma coisa
+                 que ele ouve todas as semanas e repete sem pensar.
+
+              Continua a poder ficar em branco - e continua a haver um recurso honesto para
+              quem a deixe assim. */}
+          <div>
+            <div className="flex items-baseline justify-between">
+              <label className={label} htmlFor="description">
+                O que é que as pessoas dizem quando saem daqui?
+              </label>
+              <span className="text-xs text-zinc-500">
+                {input.description.length}/{DESCRIPTION_MAX}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-zinc-500">
+              Uma frase, com as suas palavras. É o que aparece por baixo do nome, e é a única
+              parte do site que nenhum outro restaurante vai ter igual.
+            </p>
+            <textarea
+              id="description"
+              rows={2}
+              maxLength={DESCRIPTION_MAX}
+              className={field}
+              value={input.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Uma sala pequena na Rua das Flores, a cozinhar o que o mercado dá."
+            />
+            {errors.description && <p className={errorText}>{errors.description}</p>}
+          </div>
+
           <div>
             {/* "Três pratos mais pedidos / Ficam na ementa" read as a limit: an owner with
                 forty dishes concluded his site would show three. Saying that the rest come
@@ -376,27 +420,6 @@ function RestaurantForm() {
                 </label>
               ))}
             </div>
-          </div>
-
-          <div>
-            <div className="flex items-baseline justify-between">
-              <label className={label} htmlFor="description">
-                Uma frase sobre a casa (opcional)
-              </label>
-              <span className="text-xs text-zinc-500">
-                {input.description.length}/{DESCRIPTION_MAX}
-              </span>
-            </div>
-            <textarea
-              id="description"
-              rows={2}
-              maxLength={DESCRIPTION_MAX}
-              className={field}
-              value={input.description}
-              onChange={(e) => set("description", e.target.value)}
-              placeholder="Uma sala pequena na Rua das Flores, a cozinhar o que o mercado dá."
-            />
-            {errors.description && <p className={errorText}>{errors.description}</p>}
           </div>
 
           {/* MAIS INFORMAÇÕES — FECHADO POR OMISSÃO
