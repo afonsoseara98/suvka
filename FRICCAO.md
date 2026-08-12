@@ -64,18 +64,27 @@ qualquer um dos dois produtos**. É contra isso que se vende, não contra a Bent
 
 ## Aberto
 
-### F-2 · O "Aberto agora" desaparece sem avisar
+### F-11 · O site diz "fechado" a um restaurante que está aberto
 
-- **Problema.** Escrevi o horário em português normal — *"Terça a sábado das 12h às 15h e
-  das 19h30 às 23h. Domingo só almoços. Segunda fechado."* — e o distintivo não apareceu.
-  Só aparece quando o texto se lê com certeza.
-- **Impacto.** É o sinal mais valioso da página: responde à pergunta que decide se a pessoa
-  sai de casa. Perde-se em silêncio, e o dono não sabe que existia.
-- **Frequência.** *Estimado:* alto. O campo é texto livre, de propósito, e o texto livre de
-  um dono de restaurante parece-se com um aviso à porta, não com uma grelha.
-- **Solução mais simples.** Não corrigir o texto dele — nunca. Mostrar-lhe no formulário o
-  que percebemos: `✓ Percebemos: aberto de terça a domingo` ou `Não conseguimos ler este
-  horário — o site não vai poder dizer "Aberto agora"`. Ele decide se reescreve.
+- **Problema.** *"Terça a sábado das 12h às 15h e das 19h30 às 23h. **Domingo só almoços.**
+  Segunda fechado."* — a excepção é descartada, e o domingo fica marcado como fechado. Ao
+  domingo à hora de almoço, com o restaurante cheio, o site diz a quem o consulta que abre
+  **terça-feira**.
+- **Impacto.** É a pior falha que este módulo pode ter, e está escrita no cabeçalho dele:
+  *"a wrong Fechado is a customer who does not call, and we never find out it happened."*
+  Não é uma recusa — é uma afirmação confiante e errada. O dono nunca descobre; o cliente
+  vai a outro sítio.
+- **Frequência.** *Estimado:* alto. "Domingo só almoços" e "sábado só jantares" é como meia
+  restauração portuguesa escreve o seu horário.
+- **Estado.** Fixado num teste marcado `DEFEITO CONHECIDO`, para que a correcção o tenha de
+  mudar de propósito.
+- **Solução, e a decisão está por tomar.** Duas saídas, e não é minha:
+  1. **Silêncio** — ao ver uma excepção que não sabe representar, o parser recusa-se a
+    dizer o estado nesse dia. Perde-se o distintivo, não se perde o cliente.
+  2. **Representar o dia parcial** — mais trabalho, e mais superfície onde errar.
+  Recomendo a 1: é a que segue a regra que o módulo já tem escrita.
+- **Como medimos.** Não conseguimos, e é esse o problema — um "Fechado" errado não deixa
+  rasto nenhum. É argumento para a 1.
 - **Prioridade.** P0.
 
 ### F-3 · Cinco perguntas sem sítio para responder
@@ -138,6 +147,20 @@ sempre. A página sempre soube desenhar isto; só a validação é que não deix
 Corrigido por **remoção**: exige-se o nome, não o preço. O `Menu` deixa de desenhar a
 coluna quando está vazia, como já fazia com a descrição. Verificado com os dados reais do
 Mariscar, três pratos e zero preços — site gerado em 1,46 s, sem uma única coluna vazia.
+
+### F-2 · O "Aberto agora" desaparecia sem avisar — `43ad299`
+
+O distintivo só aparece quando o horário se lê com certeza, e essa recusa é o desenho
+certo. O que estava errado era ser **invisível**: o dono não sabia que o sinal existia,
+portanto não sabia que o tinha perdido.
+
+O formulário passa a dizer, enquanto ele escreve, o que percebemos — em lista de dias, não
+em intervalo, para ele reconhecer um erro *nosso*. Nunca corrige o texto dele.
+
+**E foi isto que me desmentiu.** Eu tinha escrito aqui que o horário do Mariscar perdia o
+distintivo. Estava errado: procurei-o no HTML do servidor e o `OpenNow` é componente de
+cliente — nunca lá está. O teste que escrevi para provar a minha versão falhou, e ao
+investigar apareceu o F-11, que é pior do que aquilo que eu tinha reportado.
 
 ### F-7 · Os dois ecrãs diziam ao dono o endereço errado — `65e18cd`
 
