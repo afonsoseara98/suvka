@@ -12,8 +12,12 @@ import { dispatch, currentState, type PageHistory } from "@/app/editor/history";
 type SaveStatus = "saved" | "saving" | "error";
 
 // `slug` is merged into the GET /api/projects/[id] response by the API layer - see the
-// comment there for why it isn't a field on the domain Project type.
-type EditorProject = Project & { slug: string | null };
+// comment there for why it isn't a field on the domain Project type. `publishedIndex` comes
+// from the same place e pela mesma razão.
+type EditorProject = Project & {
+  slug: string | null;
+  pages: Array<Project["pages"][number] & { publishedIndex: number | null }>;
+};
 
 const SAVE_STATUS_LABEL: Record<SaveStatus, string> = { saved: "Guardado", saving: "A guardar…", error: "Não foi possível guardar" };
 const SAVE_STATUS_CLASS: Record<SaveStatus, string> = {
@@ -69,6 +73,20 @@ function EditorContent() {
         const data = (await response.json()) as EditorProject;
         setProject(data);
         setHistory(data.pages[0]?.history ?? null);
+
+        // O ESTADO NÃO COMEÇA A FALSO
+        //
+        // Isto arrancava sempre em `false` e só ligava com uma edição DESTA sessão. Quem
+        // mudasse o horário do Natal e fechasse o separador voltava no dia seguinte a um
+        // botão que dizia "Tudo publicado" - desactivado, portanto sem sequer o deixar
+        // publicar - enquanto o site continuava a mostrar o horário antigo aos clientes.
+        //
+        // Uma mentira que ninguém apanha: o dono confirma no ecrã que está tudo bem, e o
+        // prejuízo cai todo no restaurante, num dia em que ele conclui que esteve fraco.
+        const primeira = data.pages[0];
+        if (primeira) {
+          setPendingChanges(primeira.publishedIndex !== null && primeira.history.cursor !== primeira.publishedIndex);
+        }
       } catch (err) {
         if (!cancelled) {
           console.error(err);

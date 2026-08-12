@@ -427,3 +427,66 @@ describe("listPublishedSites", () => {
     expect((await listPublishedSites(repos)).map((s) => s.slug)).toEqual(["acme", "manuel", "zebra"]);
   });
 });
+
+// O QUE O EDITOR PRECISA DE SABER AO ABRIR
+//
+// O botão "Publicar alterações" arrancava sempre desactivado, a dizer "Tudo publicado", e
+// só ligava com uma edição da própria sessão. Quem mudasse o horário e fechasse o
+// separador voltava no dia seguinte a um ecrã que lhe confirmava que estava tudo bem -
+// enquanto o site continuava a mostrar o horário antigo aos clientes.
+//
+// A verdade está aqui: o índice a que o retrato foi tirado contra o cursor onde a edição
+// vai. É isto que a rota do editor passa a devolver.
+describe("alterações por publicar, depois de fechar o separador", () => {
+  it("logo a seguir a publicar, o retrato está no mesmo sítio que a edição", async () => {
+    const project = await newProject("Acme");
+    const pageId = project.pages[0].id;
+    await publishProject(repos, project.id);
+
+    const page = (await repos.pages.listPages(project.id)).find((p) => p.id === pageId)!;
+    const snapshot = await repos.pages.getPublishedSnapshot(pageId);
+
+    expect(snapshot!.index).toBe(page.cursor);
+  });
+
+  it("uma edição por publicar deixa os dois em sítios diferentes", async () => {
+    const project = await newProject("Acme");
+    const pageId = project.pages[0].id;
+    const heroId = project.pages[0].history.states[0].sections.find((s) => s.type === "hero")!.id;
+    await publishProject(repos, project.id);
+
+    await dispatchAndPersist(
+      repos,
+      pageId,
+      { kind: "UpdateContent", sectionId: heroId, content: { ...landingPage().hero, title: "Horário novo" } },
+      "user"
+    );
+
+    const page = (await repos.pages.listPages(project.id)).find((p) => p.id === pageId)!;
+    const snapshot = await repos.pages.getPublishedSnapshot(pageId);
+
+    // É esta diferença que o editor tem de ler ao abrir, em vez de assumir que não há nada
+    // por publicar só porque a sessão é nova.
+    expect(snapshot!.index).not.toBe(page.cursor);
+  });
+
+  it("voltar a publicar volta a alinhar os dois", async () => {
+    const project = await newProject("Acme");
+    const pageId = project.pages[0].id;
+    const heroId = project.pages[0].history.states[0].sections.find((s) => s.type === "hero")!.id;
+    await publishProject(repos, project.id);
+    await dispatchAndPersist(
+      repos,
+      pageId,
+      { kind: "UpdateContent", sectionId: heroId, content: { ...landingPage().hero, title: "Horário novo" } },
+      "user"
+    );
+
+    await publishProject(repos, project.id);
+
+    const page = (await repos.pages.listPages(project.id)).find((p) => p.id === pageId)!;
+    const snapshot = await repos.pages.getPublishedSnapshot(pageId);
+
+    expect(snapshot!.index).toBe(page.cursor);
+  });
+});
