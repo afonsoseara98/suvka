@@ -165,7 +165,10 @@ function DashboardContent() {
               rel="noreferrer"
               className="mt-2 block break-all text-xl font-semibold text-white underline underline-offset-4 sm:text-2xl"
             >
-              {origin}/s/{project.slug}
+              {/* O link já apontava para /<slug> e o botão já copiava /<slug>. Só o texto
+                  que o dono LÊ é que continuava a dizer /s/ - e é o texto que ele escreve
+                  na ementa e dita ao telefone. Lia um endereço e copiava outro. */}
+              {origin}/{project.slug}
             </a>
             <div className="mt-5 flex flex-wrap gap-3 text-sm">
               <button

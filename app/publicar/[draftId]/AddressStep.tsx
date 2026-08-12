@@ -202,7 +202,13 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
           Endereço
         </label>
         <div className="mt-2 flex items-center gap-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 focus-within:border-zinc-500">
-          <span className="shrink-0 text-sm text-zinc-500">{origin}/s/</span>
+          {/* Sem o /s/. O site passou para a raiz - suvka.com/adega-do-manel - e este ecrã
+              ficou a prometer o endereço antigo. Não estava partido, porque o /s/ ainda
+              redirecciona; estava a dizer ao dono, no momento em que ele decide o seu
+              endereço, um endereço que não é o dele. É o que ele escreve na ementa. E o
+              ecrã seguinte, o de sucesso, já mostrava o endereço certo - os dois diziam
+              coisas diferentes sobre a mesma coisa. */}
+          <span className="shrink-0 text-sm text-zinc-500">{origin}/</span>
           <input
             id="endereco"
             autoFocus
