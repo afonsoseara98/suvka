@@ -7,6 +7,7 @@ import type { RestaurantInput } from "./input";
 import { labelsFor, cuisineName, type SiteLabels } from "./labels";
 import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref } from "./tidy";
 import { composeSections } from "./compose";
+import { directionFor } from "./direction";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -252,15 +253,16 @@ export function buildRestaurantPage(
 
 // What the gallery and hero should show. Built from the cuisine the owner chose, so a
 // Japanese restaurant asks for sushi and a pizzeria asks for pizza.
+// AS FOTOGRAFIAS SAEM DA DIRECÇÃO CRIATIVA, NÃO DA COZINHA
+//
+// Isto era quatro perguntas iguais para toda a gente - "plated dish", "food close up",
+// "dining room warm interior", "chef plating in kitchen" - e uma fotografia de um prato bem
+// empratado é a imagem mais intercambiável que existe. Dois restaurantes na mesma rua
+// ficavam com fotografias irmãs, e nenhum layout diferente disfarça isso.
+//
+// Ver app/lib/restaurant/direction.ts: uma tasca pede mãos e vapor, uma casa de alta cozinha
+// pede uma mesa posta e espaço vazio, uma pastelaria pede a luz da manhã ao balcão.
 export function imageQueriesFor(input: RestaurantInput): { hero: string; gallery: string[] } {
-  const cuisine = input.cuisine.toLowerCase();
-  return {
-    hero: `${cuisine} restaurant plated dish`,
-    gallery: [
-      `${cuisine} food close up`,
-      "restaurant dining room warm interior",
-      "chef plating in kitchen",
-      `${cuisine} dessert plated`,
-    ],
-  };
+  const { fotografia } = directionFor(input);
+  return { hero: fotografia.hero, gallery: fotografia.galeria };
 }
