@@ -86,11 +86,20 @@ const OPTIONAL_FIELDS = [
     hint: "Onde já põe as fotos da comida.",
     max: LIMITS.instagram,
   },
+  {
+    key: "googleUrl",
+    label: "A sua ficha no Google",
+    placeholder: "https://maps.app.goo.gl/...",
+    // A instrução vale mais do que o campo: quem não sabe onde ir buscar o endereço não o
+    // preenche, e "vale a pena?" continua sem resposta no site.
+    hint: "No Google Maps, abra o seu restaurante e carregue em Partilhar. Mostramos a ligação, nunca uma nota escrita por nós.",
+    max: LIMITS.link,
+  },
   { key: "uberEats", label: "Uber Eats", placeholder: "https://ubereats.com/...", hint: "Para encomendarem sem sair do site.", max: LIMITS.link },
   { key: "glovo", label: "Glovo", placeholder: "https://glovoapp.com/...", hint: "Aparece só se preencher.", max: LIMITS.link },
   { key: "boltFood", label: "Bolt Food", placeholder: "https://food.bolt.eu/...", hint: "Aparece só se preencher.", max: LIMITS.link },
 ] as const satisfies ReadonlyArray<{
-  key: "bookingUrl" | "whatsapp" | "email" | "instagram" | "uberEats" | "glovo" | "boltFood";
+  key: "bookingUrl" | "whatsapp" | "email" | "instagram" | "googleUrl" | "uberEats" | "glovo" | "boltFood";
   label: string;
   placeholder: string;
   hint: string;

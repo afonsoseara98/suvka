@@ -66,6 +66,48 @@ export function whatsappHref(raw: string, message?: string): string | undefined 
   return `https://wa.me/${digits}${text}`;
 }
 
+// O ENDEREÇO DA FICHA DO GOOGLE, SEJA QUAL FOR O QUE ELE COPIOU
+//
+// Um dono de restaurante chega aqui com o que o telemóvel dele deu ao carregar em
+// "Partilhar" no Google Maps, e isso são cinco coisas diferentes conforme o caminho:
+// maps.app.goo.gl/xxxx, g.page/nome, google.com/maps/place/..., google.pt/maps/... ou
+// share.google/xxxx. Todas levam à ficha; nenhuma se parece com a outra.
+//
+// A lista é de anfitriões e não um "contém google": um endereço como
+// google-avaliacoes-falsas.com passaria num teste de substring, e o que está por trás
+// deste botão é uma afirmação nossa ao cliente do restaurante.
+const GOOGLE_HOSTS = [
+  "google.com",
+  "google.pt",
+  "maps.google.com",
+  "maps.app.goo.gl",
+  "goo.gl",
+  "g.page",
+  "share.google",
+];
+
+export function isGoogleLink(raw: string): boolean {
+  const value = raw.trim();
+  if (!value) return false;
+
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    return GOOGLE_HOSTS.includes(host);
+  } catch {
+    return false;
+  }
+}
+
+// Devolve sempre com protocolo, para o href não ser lido como um caminho relativo do
+// próprio site - um "google.pt/maps/..." sem https resolve para
+// suvka.com/google.pt/maps/... e dá 404 na cara de quem queria ler as opiniões.
+export function googleUrl(raw: string): string {
+  const value = raw.trim();
+  if (!value) return "";
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
 // Asked "qual é o seu Instagram?", a person answers "@tabernadosal", or "tabernadosal", or
 // pastes the whole URL. All three mean the same account, and rejecting two of them teaches
 // the owner that the form is fighting him. Turned into a link once, here, so nothing

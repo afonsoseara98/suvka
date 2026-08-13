@@ -128,6 +128,32 @@ export default function Hours({ data, theme, layout, rhythm, heading, onUpdateCo
         </ul>
       )}
 
+      {/* "VALE A PENA?"
+
+          A única pergunta que este produto não sabia responder, e a única em que o
+          concorrente medido nos ganhava.
+
+          Uma ligação, e nunca uma nota. Não mostramos estrelas nem contagens - nem as
+          copiadas de lá: uma nota copiada hoje está errada daqui a um mês, e uma nota errada
+          no site do próprio restaurante é pior do que nenhuma. Quem quiser saber toca e lê
+          o número na fonte, actual e escrito por quem lá esteve.
+
+          Por baixo das amenidades e acima da morada: é a última coisa que se confirma antes
+          de decidir ir, e a primeira que se procura quando a casa é desconhecida. */}
+      {data.reviewsUrl && data.reviewsLabel && !onUpdateContent && (
+        <p className="mt-6 text-center">
+          <a
+            href={data.reviewsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm hover:underline"
+            style={{ color: theme.colors.accent }}
+          >
+            {data.reviewsLabel} →
+          </a>
+        </p>
+      )}
+
       {/* Two columns rather than three: with WhatsApp and email the section can carry five
           entries, and three columns left an orphan on its own row. */}
       <div className="mx-auto mt-10 grid max-w-3xl gap-8 sm:grid-cols-2">

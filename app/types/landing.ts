@@ -149,6 +149,18 @@ export interface OpeningHours {
   // não está a dizer que não tem esplanada, está a não dizer nada, que é o que os sites
   // publicados antes disto existir continuam a fazer.
   amenities?: string[];
+
+  // "VALE A PENA?"
+  //
+  // A ligação para a ficha do Google do restaurante, e MAIS NADA. Nunca uma nota, nunca uma
+  // contagem de opiniões, nem sequer copiadas de lá: uma nota copiada hoje está errada daqui
+  // a um mês, e uma nota errada no site do próprio restaurante é pior do que nenhuma.
+  //
+  // O cliente toca e lê o número na fonte — actual, e escrito por quem lá esteve. É a única
+  // forma de responder a esta pergunta sem passar a inventar, que é a linha que este produto
+  // não atravessa.
+  reviewsUrl?: string;
+  reviewsLabel?: string;
 }
 
 export interface HeroStat {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref, instagramUrl, instagramHandle } from "./tidy";
+import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref, instagramUrl, instagramHandle, isGoogleLink, googleUrl } from "./tidy";
 
 // A real owner filled these three in, one after the other, and got a menu with three
 // different price formats on it.
@@ -111,5 +111,59 @@ describe("instagram", () => {
   it("has nothing to show when it was left blank", () => {
     expect(instagramUrl("")).toBe("");
     expect(instagramUrl("  @  ")).toBe("");
+  });
+});
+
+// A LIGAÇÃO PARA A FICHA DO GOOGLE
+//
+// É a única ligação cujo anfitrião verificamos, e a razão é o rótulo: um botão que diz
+// "Ver as avaliações no Google" e leva a outro sítio é uma mentira ao cliente do
+// restaurante, escrita por nós. Nos outros campos o rótulo é neutro e aceita-se o que o
+// dono escreveu.
+describe("isGoogleLink", () => {
+  it("aceita as cinco formas que o Partilhar do Google Maps produz", () => {
+    for (const url of [
+      "https://maps.app.goo.gl/aBcDeF123",
+      "https://g.page/taberna-do-bairro",
+      "https://www.google.com/maps/place/Taberna+do+Bairro/@41.14,-8.61,17z",
+      "https://google.pt/maps/place/Taberna",
+      "https://share.google/xYz",
+    ]) {
+      expect(isGoogleLink(url), url).toBe(true);
+    }
+  });
+
+  it("aceita sem o https à frente, que é como se cola de um telemóvel", () => {
+    expect(isGoogleLink("maps.app.goo.gl/aBcDeF123")).toBe(true);
+  });
+
+  // A verificação é por anfitrião e não por "contém google": um endereço destes passava
+  // num teste de substring, e o que está por trás do botão é uma afirmação nossa.
+  it("recusa um domínio que só se PARECE com o Google", () => {
+    for (const url of [
+      "https://google-avaliacoes.com/taberna",
+      "https://google.com.avaliacoes.net/x",
+      "https://tripadvisor.pt/taberna",
+      "não é um endereço",
+      "",
+    ]) {
+      expect(isGoogleLink(url), url).toBe(false);
+    }
+  });
+});
+
+describe("googleUrl", () => {
+  it("põe sempre o protocolo", () => {
+    // Sem ele, o href é lido como caminho relativo: suvka.com/google.pt/maps/... dá 404 na
+    // cara de quem queria ler as opiniões.
+    expect(googleUrl("google.pt/maps/place/Taberna")).toBe("https://google.pt/maps/place/Taberna");
+  });
+
+  it("não mexe no que já vem completo", () => {
+    expect(googleUrl("https://maps.app.goo.gl/abc")).toBe("https://maps.app.goo.gl/abc");
+  });
+
+  it("vazio continua vazio", () => {
+    expect(googleUrl("   ")).toBe("");
   });
 });

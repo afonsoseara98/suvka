@@ -516,3 +516,51 @@ describe("o que a casa tem", () => {
     expect(buildRestaurantPage(normalizado, { hero: null, gallery: [] }).hours?.amenities).toBeUndefined();
   });
 });
+
+// "VALE A PENA?" — A ÚNICA PERGUNTA QUE ESTE PRODUTO NÃO SABIA RESPONDER
+//
+// E a única em que o concorrente medido na auditoria nos ganhava. A regra de nunca inventar
+// avaliações não se toca; o que mudou é que "não inventar" deixou de significar "não ter".
+describe("as avaliações do Google", () => {
+  it("não mostra nada quando o dono não deu a ficha", () => {
+    const built = buildRestaurantPage(input(), { hero: null, gallery: [] });
+    expect(built.hours?.reviewsUrl).toBeUndefined();
+    expect(built.hours?.reviewsLabel).toBeUndefined();
+  });
+
+  it("mostra a ligação, com o texto na língua do site", () => {
+    const built = buildRestaurantPage(
+      input({ googleUrl: "https://maps.app.goo.gl/aBcDeF" }),
+      { hero: null, gallery: [] }
+    );
+    expect(built.hours?.reviewsUrl).toBe("https://maps.app.goo.gl/aBcDeF");
+    expect(built.hours?.reviewsLabel).toBe("Ver as avaliações no Google");
+  });
+
+  // A LINHA QUE ESTE PRODUTO NÃO ATRAVESSA
+  //
+  // Guardar uma nota - mesmo copiada da ficha verdadeira - era escrever um número nosso
+  // sobre o negócio de outra pessoa, e ficaria errado no mês seguinte. Só a ligação.
+  it("não guarda nota nenhuma, em sítio nenhum", () => {
+    const built = buildRestaurantPage(
+      input({ googleUrl: "https://maps.app.goo.gl/aBcDeF" }),
+      { hero: null, gallery: [] }
+    );
+    const serializado = JSON.stringify(built);
+    for (const inventado of ["4,8", "4.8", "estrelas", "★", "avaliações)"]) {
+      expect(serializado, inventado).not.toContain(inventado);
+    }
+  });
+
+  it("recusa uma ligação que não seja do Google, e diz onde ir buscá-la", () => {
+    const erros = validateRestaurantInput(input({ googleUrl: "https://tripadvisor.pt/taberna" }));
+    expect(erros.googleUrl).toContain("Google Maps");
+  });
+
+  it("aceita o que se cola de um telemóvel, sem https", () => {
+    expect(validateRestaurantInput(input({ googleUrl: "maps.app.goo.gl/aBcDeF" })).googleUrl).toBeUndefined();
+    expect(normaliseRestaurantInput(input({ googleUrl: "maps.app.goo.gl/aBcDeF" })).googleUrl).toBe(
+      "https://maps.app.goo.gl/aBcDeF"
+    );
+  });
+});

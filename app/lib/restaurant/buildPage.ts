@@ -260,6 +260,9 @@ export function buildRestaurantPage(
       // Só o que for verdade, e já escrito na língua do site. Um "sim" aqui é uma afirmação
       // sobre o negócio de outra pessoa; a ausência não afirma nada.
       amenities: amenitiesFor(input, labels),
+      // A ligação, e nunca a nota. Ver OpeningHours.reviewsUrl.
+      reviewsUrl: input.googleUrl || undefined,
+      reviewsLabel: input.googleUrl ? labels.googleReviews : undefined,
     },
     footer: {
       company: input.name,

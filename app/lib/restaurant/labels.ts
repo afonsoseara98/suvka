@@ -59,6 +59,9 @@ export interface SiteLabels {
   // As cinco respostas que decidem entre dois restaurantes parecidos. Escritas como o
   // cliente as leria numa montra, não como uma etiqueta de formulário: "Aceitamos cães" e
   // não "Animais: sim".
+  // O rótulo faz uma afirmação - por isso a ligação é verificada. Ver isGoogleLink.
+  googleReviews: string;
+
   amenities: {
     esplanada: string;
     estacionamento: string;
@@ -155,6 +158,7 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     restaurant: "Restaurante",
     takeaway: "Take-away e entregas",
     fallbackSubtitle: (cuisine) => `${cuisine}.`,
+    googleReviews: "Ver as avaliações no Google",
     amenities: {
       esplanada: "Esplanada",
       estacionamento: "Estacionamento",
@@ -184,6 +188,7 @@ const LABELS: Record<SiteLanguage, SiteLabels> = {
     restaurant: "Restaurant",
     takeaway: "Takeaway and delivery",
     fallbackSubtitle: (cuisine) => `${cuisine} cooking.`,
+    googleReviews: "Read the reviews on Google",
     amenities: {
       esplanada: "Outdoor seating",
       estacionamento: "Parking",

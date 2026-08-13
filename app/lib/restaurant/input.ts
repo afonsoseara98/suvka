@@ -10,7 +10,7 @@
 // businesses; this is a second entry point, not a replacement.
 
 import type { SiteLanguage } from "./labels";
-import { instagramUrl } from "./tidy";
+import { instagramUrl, isGoogleLink, googleUrl as tidyGoogleUrl } from "./tidy";
 
 export interface RestaurantDish {
   name: string;
@@ -93,6 +93,18 @@ export interface RestaurantInput {
   // MB Way e não "aceita cartão": o terminal de cartões é quase universal e ninguém
   // pergunta por ele. O que se pergunta à porta é se dá para pagar pelo telemóvel.
   mbway?: boolean;
+
+  // "VALE A PENA?" — A ÚNICA PERGUNTA A QUE ISTO NÃO SABIA RESPONDER
+  //
+  // O produto não inventa avaliações, e essa regra não se toca. Mas "não inventar" e "não
+  // ter" são coisas diferentes: o restaurante TEM avaliações verdadeiras, na ficha do Google
+  // dele, e o site que lhe fizemos era o único sítio onde elas não apareciam.
+  //
+  // O que se guarda é a ligação, e mais nada. Nunca uma nota, nunca um número de opiniões,
+  // nem sequer copiados de lá: uma nota copiada hoje é uma nota errada daqui a um mês, e
+  // uma nota errada no site do próprio restaurante é pior do que nenhuma. O cliente toca e
+  // lê o número na fonte, actual, escrito por quem lá esteve.
+  googleUrl?: string;
 
   // Which language the finished SITE speaks. Portugal is the market, so the default is
   // Portuguese - an owner who wants English can switch.
@@ -201,6 +213,19 @@ export function validateRestaurantInput(input: Partial<RestaurantInput>, options
     errors.instagram = "Esse Instagram parece demasiado longo.";
   }
 
+  // A ligação tem de ser mesmo do Google, e é a única que verificamos assim.
+  //
+  // Um botão que diz "Ver as avaliações no Google" e leva a outro sítio é uma mentira ao
+  // cliente do restaurante, escrita por nós. Em todos os outros campos aceitamos o que o
+  // dono escreveu porque o rótulo é neutro; aqui o rótulo faz uma afirmação, e ou ela é
+  // verdadeira ou o campo não pode ser aceite.
+  //
+  // A causa provável de um erro aqui não é má-fé, é ter copiado o link errado - e é
+  // exactamente aí que a mensagem tem de ajudar em vez de acusar.
+  if (!isBlank(input.googleUrl) && !isGoogleLink(String(input.googleUrl))) {
+    errors.googleUrl = "Essa ligação não parece ser do Google. Copie o endereço da sua ficha no Google Maps.";
+  }
+
   // O PREÇO DEIXOU DE SER OBRIGATÓRIO
   //
   // Era: nome E preço, senão o site não se gerava. Descoberto a replicar um restaurante
@@ -295,6 +320,7 @@ export function normaliseRestaurantInput(input: RestaurantInput): RestaurantInpu
     aceitaAnimais: input.aceitaAnimais === true,
     bomParaCriancas: input.bomParaCriancas === true,
     mbway: input.mbway === true,
+    googleUrl: tidyGoogleUrl(input.googleUrl ?? ""),
     language: input.language ?? "pt",
     dishes: input.dishes
       // O nome é o que faz um prato existir. Sem preço a linha sai sem preço - ver a
