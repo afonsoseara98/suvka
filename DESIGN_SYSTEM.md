@@ -1,11 +1,25 @@
 # Design system
 
-Este documento não descreve um sistema que existe. Descreve **o que já existe, onde não
-existe, e porque é que a diferença entre os dois é o problema.**
+## Estado
+
+| | Sites gerados | Interface do produto |
+|---|---|---|
+| Sistema | `ThemeConfig` + `palettes` + `layout` | `app/ui/` — Button, Field, Notice |
+| Componentes ligados | 35 | 12 |
+| Botões fora do sistema | 0 | **0** *(excepto `/benchmark`, interno)* |
+| Campos sem sinal de foco | — | **0** |
+
+Os dois sistemas são **separados de propósito**, e a razão é de custódia e não de estética:
+o tema de um site publicado está congelado no retrato, e uma alteração à nossa marca nunca
+pode ter como efeito secundário mudar o aspecto do site de um restaurante que já está no ar.
+
+**O que muda a partir daqui:** o próximo ecrã é consistente por omissão e não por disciplina.
+Quem escrever um botão novo tem de decidir activamente *não* usar o sistema — o inverso de
+como estava, onde usá-lo exigia saber que existia.
 
 ---
 
-## O inventário, medido
+## O inventário que motivou isto, medido antes
 
 | | Sites gerados (`app/components/`) | Interface do produto (o resto de `app/`) |
 |---|---|---|
@@ -68,7 +82,49 @@ outra metade — ou perceber se o que já existe serve as duas.
 
 ---
 
-## A pergunta em aberto, e é de arquitectura
+## O que o sistema decide, e porquê
+
+**Um só desenho para o estado desactivado.** Havia três — `opacity-50`, `opacity-40`, e um
+fundo cinzento com texto cinzento. Um utilizador não devia ter de aprender três maneiras de
+o produto dizer *"agora não"*.
+
+**O botão perigoso leva vermelho na borda e no texto, nunca no fundo.** Um fundo vermelho
+puxa o olho para a acção que menos queremos que seja carregada por engano.
+
+**O `id` do `Field` é obrigatório.** Um campo sem `<label for>` é anunciado por um leitor de
+ecrã como *"edit text"* e mais nada. Tornar isso possível de esquecer era garantir que ia ser
+esquecido.
+
+**`role="alert"` só nos erros.** Um `alert` interrompe o leitor de ecrã a meio — correcto
+para *"não foi possível publicar"*, grosseiro para *"link copiado"*, que usa `status`.
+
+**Três tons de aviso e não cinco.** O amarelo de "atenção" e o azul de "informação" não
+existem porque não existem no produto: tudo o que o Suvka diz ao dono é um erro, uma
+confirmação, ou uma explicação — e a explicação é texto normal, não uma caixa colorida.
+
+**`buttonClasses()` e `fieldClasses()` além dos componentes.** Um link que navega tem de ser
+uma âncora: um `<button>` com `router.push` dentro não abre em separador novo com Ctrl, não
+se copia com o botão direito, e é anunciado como botão quando leva a outro sítio. Em vez de
+dar um `as` ao `Button` — que é onde estas abstracções começam a mentir — exporta-se o
+desenho. A regra vive num sítio só; muda quem a veste.
+
+**Uma excepção, e está comentada onde vive.** O campo do endereço no ecrã de publicação
+mantém `outline-none`: está dentro de um grupo com o prefixo do domínio à esquerda, e o anel
+pertence ao contentor. Dois anéis, um dentro do outro, leem-se pior do que nenhum.
+
+---
+
+## O que falta
+
+**Densidade, ritmo vertical e hierarquia tipográfica.** Deliberadamente adiados: valiam pouco
+antes de os componentes existirem, porque cada ecrã continuaria a decidir por si.
+
+**O `/benchmark`.** Ferramenta interna, 404 em produção. Fica fora até deixar de ser as duas
+coisas.
+
+---
+
+## A pergunta que estava em aberto — decidida
 
 O `ThemeConfig` dos sites gerados é **por restaurante**: as cores vêm da paleta que a cozinha
 e o estilo do dono escolheram. A interface do produto é **uma só** — é sempre o Suvka.
@@ -81,8 +137,9 @@ separado ainda não está tomada:
 - **Separar** mantém o tema dos sites livre de restrições que só a nossa interface tem, e
   evita que uma mudança na nossa marca toque nos sites dos clientes.
 
-Inclino-me para **separar**, por uma razão de custódia e não de estética: o tema de um site
-publicado está congelado no retrato, e uma alteração ao nosso design system nunca pode ter
-como efeito secundário mudar o aspecto do site de um restaurante que já está no ar.
+**Decidido: separar**, por custódia e não por estética. O tema de um site publicado está
+congelado no retrato, e uma alteração ao nosso design system nunca pode ter como efeito
+secundário mudar o aspecto do site de um restaurante que já está no ar.
 
-Isto é uma ADR por escrever, não uma conclusão.
+O `app/ui/` é o nosso; o `app/components/ui/` é o deles. Os dois nomes são parecidos de mais
+para ficarem sem explicação — está no cabeçalho de ambos.
