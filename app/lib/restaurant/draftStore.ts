@@ -2,6 +2,8 @@ import { randomBytes } from "crypto";
 import type { PrismaClient, Prisma } from "@prisma/client";
 import { prisma } from "@/app/lib/prisma";
 import { slugify } from "@/app/lib/publishService";
+import { photoStore, type PhotoStore } from "./photoStore";
+import { photoKeysOf } from "./photoLimits";
 import type { RestaurantInput } from "./input";
 import type { LandingPage } from "@/app/types/landing";
 
@@ -60,7 +62,12 @@ export function previewId(name: string): string {
 export class InMemoryDraftStore implements DraftStore {
   private readonly drafts = new Map<string, Draft>();
 
-  constructor(private readonly ttlMs: number = DRAFT_TTL_MS, private readonly now: () => number = Date.now) {}
+  constructor(
+    private readonly ttlMs: number = DRAFT_TTL_MS,
+    private readonly now: () => number = Date.now,
+    // Opcional: sem ele, o comportamento é exactamente o de antes. Ver `expire`.
+    private readonly photos?: Pick<PhotoStore, "remove">
+  ) {}
 
   async create(input: RestaurantInput, landing: LandingPage): Promise<Draft> {
     this.evictExpired();
@@ -76,7 +83,7 @@ export class InMemoryDraftStore implements DraftStore {
     if (!draft) return null;
 
     if (this.now() - draft.lastViewedAt > this.ttlMs) {
-      this.drafts.delete(id);
+      await this.expire(draft);
       return null;
     }
 
@@ -85,6 +92,15 @@ export class InMemoryDraftStore implements DraftStore {
     return touched;
   }
 
+  // APAGAR PORQUE FOI RECLAMADO NÃO É APAGAR PORQUE MORREU
+  //
+  // Isto é chamado quando alguém publica (ver app/api/restaurant/publish/route.ts): o
+  // rascunho desaparece porque virou um projecto, e as fotografias passaram a pertencer ao
+  // retrato publicado desse projecto.
+  //
+  // Apagar os ficheiros aqui destruía as fotografias de um restaurante que acabou de
+  // publicar - e de um que paga. É por isso que a limpeza vive no `expire` e não neste
+  // método, apesar de os dois acabarem por remover a mesma linha.
   async delete(id: string): Promise<void> {
     this.drafts.delete(id);
   }
@@ -94,13 +110,26 @@ export class InMemoryDraftStore implements DraftStore {
     if (draft) this.drafts.set(id, { ...draft, landing });
   }
 
+  // Morreu de silêncio. Aqui as fotografias vão com ele: ninguém as reclamou, e ficar com
+  // elas é uma fuga de disco permanente contra o mesmo disco que guarda as dos clientes.
+  private async expire(draft: Draft): Promise<void> {
+    this.drafts.delete(draft.id);
+    if (!this.photos) return;
+
+    for (const key of photoKeysOf(draft.landing.gallery)) {
+      // Uma remoção que falhe não pode impedir a expiração: o pior caso volta a ser o de
+      // hoje, um ficheiro a mais no disco, e não um rascunho eterno.
+      await this.photos.remove(key).catch(() => undefined);
+    }
+  }
+
   // Swept on write rather than on a timer: a background interval keeps a server process
   // awake and has to be torn down in tests, for a map that is only ever a few hundred
   // entries.
   private evictExpired(): void {
     const cutoff = this.now() - this.ttlMs;
-    for (const [id, draft] of this.drafts) {
-      if (draft.lastViewedAt < cutoff) this.drafts.delete(id);
+    for (const draft of this.drafts.values()) {
+      if (draft.lastViewedAt < cutoff) void this.expire(draft);
     }
   }
 
@@ -121,16 +150,28 @@ export class InMemoryDraftStore implements DraftStore {
 // someone claims it, swept after 24 hours - a visitor who never returns leaves one row that
 // goes away on its own.
 export class PrismaDraftStore implements DraftStore {
-  constructor(private readonly client: PrismaClient, private readonly ttlMs: number = DRAFT_TTL_MS) {}
+  constructor(
+    private readonly client: PrismaClient,
+    private readonly ttlMs: number = DRAFT_TTL_MS,
+    private readonly photos: Pick<PhotoStore, "remove"> = photoStore
+  ) {}
 
   async create(input: RestaurantInput, landing: LandingPage): Promise<Draft> {
     // Opportunistic sweep on write, same as the in-memory store: no timer to keep alive and
     // no cron to install for a table that is only ever a few hundred rows.
     //
     // Swept on lastViewedAt, so the clock measures silence rather than age.
-    await this.client.draft
-      .deleteMany({ where: { lastViewedAt: { lt: new Date(Date.now() - this.ttlMs) } } })
-      .catch(() => undefined);
+    //
+    // AS FOTOGRAFIAS VÃO COM O RASCUNHO
+    //
+    // O `deleteMany` sozinho apagava a linha e deixava os ficheiros para sempre: até 6 × 10
+    // MB por cada pré-visualização que alguém começou e não terminou. E o disco que enche é
+    // o mesmo que guarda as fotografias dos restaurantes que pagam.
+    //
+    // Por isso lê-se antes de apagar. A ordem é esta e não a contrária: se a leitura falhar,
+    // não se apaga nada e tenta-se outra vez no próximo pedido - enquanto apagar primeiro
+    // perdia para sempre a lista do que havia para limpar.
+    await this.sweepExpired().catch(() => undefined);
 
     const row = await this.client.draft.create({
       data: {
@@ -152,6 +193,8 @@ export class PrismaDraftStore implements DraftStore {
     // Expiry is enforced on read as well as by the sweep, so a row the sweep has not
     // reached yet is still gone as far as anyone asking is concerned.
     if (Date.now() - row.lastViewedAt.getTime() > this.ttlMs) {
+      // Expirou, não foi reclamado: as fotografias vão com ele. Ver .
+      await this.removePhotos(row.landing as unknown as LandingPage);
       await this.delete(id);
       return null;
     }
@@ -175,8 +218,40 @@ export class PrismaDraftStore implements DraftStore {
     };
   }
 
+  // APAGAR PORQUE FOI RECLAMADO NÃO É APAGAR PORQUE MORREU
+  //
+  // Chamado quando alguém publica: o rascunho desaparece porque virou um projecto, e as
+  // fotografias passaram a pertencer ao retrato publicado desse projecto. Apagar os
+  // ficheiros aqui destruía as fotografias de um restaurante que acabou de publicar - e que
+  // paga. É por isso que a limpeza vive no sweepExpired e não aqui.
   async delete(id: string): Promise<void> {
     await this.client.draft.delete({ where: { id } }).catch(() => undefined);
+  }
+
+  private async removePhotos(landing: LandingPage): Promise<void> {
+    for (const key of photoKeysOf(landing.gallery)) {
+      // Uma remoção que falhe não pode impedir a expiração: o pior caso volta a ser o de
+      // hoje, um ficheiro a mais no disco, e não um rascunho eterno.
+      await this.photos.remove(key).catch(() => undefined);
+    }
+  }
+
+  private async sweepExpired(): Promise<void> {
+    const cutoff = new Date(Date.now() - this.ttlMs);
+
+    // Ler ANTES de apagar. Ao contrário perdia-se para sempre a lista do que havia para
+    // limpar, e um erro a meio deixava ficheiros órfãos sem ninguém que soubesse deles.
+    const expirados = await this.client.draft.findMany({
+      where: { lastViewedAt: { lt: cutoff } },
+      select: { id: true, landing: true },
+    });
+    if (expirados.length === 0) return;
+
+    await this.client.draft.deleteMany({ where: { id: { in: expirados.map((d) => d.id) } } });
+
+    for (const rascunho of expirados) {
+      await this.removePhotos(rascunho.landing as unknown as LandingPage);
+    }
   }
 
   // The photo endpoints mutate the gallery on a draft they hold. In memory that was a

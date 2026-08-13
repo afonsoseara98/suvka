@@ -32,6 +32,27 @@ export function isOwnPhoto(url: string): boolean {
   return url.startsWith(UPLOAD_PREFIX);
 }
 
+// AS FOTOGRAFIAS QUE UM RASCUNHO TROUXE CONSIGO
+//
+// Só as que estão em /uploads/ — as do banco de imagens vivem no servidor da Pexels e não
+// são nossas para apagar. Devolve as chaves de armazenamento, que é o que o PhotoStore
+// aceita.
+//
+// Isto existe porque um rascunho abandonado deixava os ficheiros para sempre: o
+// `deleteMany` apagava a linha e o disco ficava com até 6 × 10 MB por cada pré-visualização
+// que alguém começou e não terminou.
+//
+// E o disco que enche é o mesmo que guarda as fotografias dos restaurantes que PAGAM — a
+// única coisa neste produto que não se gera outra vez. Um sistema operativo que perde a
+// custódia do que lhe foi confiado não é um sistema operativo.
+export function photoKeysOf(gallery: ReadonlyArray<{ url: string }> | undefined | null): string[] {
+  if (!gallery) return [];
+  return gallery
+    .filter((image) => isOwnPhoto(image.url))
+    .map((image) => image.url.slice(UPLOAD_PREFIX.length))
+    .filter((key) => key.length > 0);
+}
+
 // Returns a Portuguese message rather than a boolean, because every one of these ends up in
 // front of a restaurant owner.
 export function rejectPhoto(size: number, contentType: string, currentCount: number): string | null {

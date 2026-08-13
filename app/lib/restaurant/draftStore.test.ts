@@ -117,3 +117,75 @@ describe("looking at a draft keeps it alive", () => {
     expect(await store.get(old.id)).not.toBeNull();
   });
 });
+
+// AS FOTOGRAFIAS DE UM RASCUNHO ABANDONADO
+//
+// O `deleteMany` apagava a linha e deixava os ficheiros para sempre: até 6 × 10 MB por cada
+// pré-visualização que alguém começou e não terminou. E o disco que enche é o mesmo que
+// guarda as fotografias dos restaurantes que PAGAM - a única coisa neste produto que não se
+// gera outra vez.
+describe("as fotografias vão com o rascunho, mas só quando ele morre", () => {
+  function fotos() {
+    const removidas: string[] = [];
+    return { removidas, remove: async (key: string) => void removidas.push(key) };
+  }
+
+  function comGaleria(urls: string[]): LandingPage {
+    return { ...landing, gallery: urls.map((url) => ({ url, alt: "", credit: null })) } as unknown as LandingPage;
+  }
+
+  it("expirar leva as fotografias dele", async () => {
+    const photos = fotos();
+    let agora = 0;
+    const store = new InMemoryDraftStore(1000, () => agora, photos);
+
+    const draft = await store.create(input, comGaleria(["/uploads/abc.jpg", "/uploads/def.jpg"]));
+    agora = 2000;
+
+    expect(await store.get(draft.id)).toBeNull();
+    expect(photos.removidas).toEqual(["abc.jpg", "def.jpg"]);
+  });
+
+  // O CASO QUE DESTRUÍA AS FOTOGRAFIAS DE UM CLIENTE
+  //
+  // Publicar TAMBÉM apaga o rascunho (app/api/restaurant/publish/route.ts). Se a limpeza
+  // vivesse no delete(), publicar destruía as fotografias que o restaurante acabou de pôr
+  // no site - e as de quem paga.
+  it("ser reclamado NÃO leva as fotografias", async () => {
+    const photos = fotos();
+    const store = new InMemoryDraftStore(1000, () => 0, photos);
+
+    const draft = await store.create(input, comGaleria(["/uploads/abc.jpg"]));
+    await store.delete(draft.id);
+
+    expect(photos.removidas).toEqual([]);
+  });
+
+  // As do banco de imagens vivem no servidor da Pexels e não são nossas para apagar.
+  it("só apaga as que são nossas", async () => {
+    const photos = fotos();
+    let agora = 0;
+    const store = new InMemoryDraftStore(1000, () => agora, photos);
+
+    const draft = await store.create(
+      input,
+      comGaleria(["/uploads/minha.jpg", "https://images.pexels.com/photos/1/x.jpeg"])
+    );
+    agora = 2000;
+    await store.get(draft.id);
+
+    expect(photos.removidas).toEqual(["minha.jpg"]);
+  });
+
+  it("uma remoção que falhe não impede a expiração", async () => {
+    const store = new InMemoryDraftStore(1000, () => 0, {
+      remove: async () => {
+        throw new Error("disco em baixo");
+      },
+    });
+
+    const draft = await store.create(input, comGaleria(["/uploads/abc.jpg"]));
+    // O pior caso volta a ser o de hoje - um ficheiro a mais - e não um rascunho eterno.
+    await expect(new InMemoryDraftStore(1000, () => 2000).get(draft.id)).resolves.toBeNull();
+  });
+});
