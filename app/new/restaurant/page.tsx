@@ -16,6 +16,8 @@ import {
 } from "@/app/lib/restaurant/input";
 import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, styleHint, type SiteLanguage } from "@/app/lib/restaurant/labels";
 import ScheduleReadback from "./ScheduleReadback";
+import { fieldClasses } from "@/app/ui/Field";
+import { buttonClasses } from "@/app/ui/Button";
 
 // A ordem é a da decisão de quem lê o site, não a do formulário: primeiro o que decide se a
 // pessoa PODE ir, depois o que torna a ida melhor. O texto aqui é a pergunta como o dono a
@@ -107,8 +109,9 @@ const OPTIONAL_FIELDS = [
 }>;
 
 const label = "block text-sm font-medium text-zinc-300";
-const field =
-  "mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-600 outline-none transition focus:border-zinc-600";
+// Uma só definição, e agora vinda de app/ui/Field: o anel de foco que faltava a todo o
+// produto aplica-se aos vinte e cinco campos deste formulário de uma vez.
+const field = `mt-2 ${fieldClasses()}`;
 const errorText = "mt-1 text-sm text-red-400";
 
 // Replaces "describe your business" for restaurants. Every field maps to one place on the
@@ -477,7 +480,8 @@ function RestaurantForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-xl bg-white px-6 py-4 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+            aria-busy={submitting || undefined}
+            className={buttonClasses("primary", "lg", true)}
           >
             {submitting ? "A criar o seu site…" : "Criar o meu site"}
           </button>

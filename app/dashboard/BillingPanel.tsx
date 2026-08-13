@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClasses } from "@/app/ui/Button";
 import { useEffect, useState } from "react";
 import type { BillingState } from "@/app/lib/billing";
 
@@ -131,7 +132,7 @@ export default function BillingPanel() {
             }
           }}
           disabled={opening}
-          className="mt-4 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+          className={`mt-4 ${buttonClasses()}`}
         >
           {opening ? "A abrir…" : state.kind === "past_due" ? "Atualizar pagamento" : "Ativar subscrição — 19 €/mês"}
         </button>

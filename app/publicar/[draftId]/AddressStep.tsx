@@ -1,5 +1,7 @@
 "use client";
 
+import { buttonClasses } from "@/app/ui/Button";
+import { fieldClasses } from "@/app/ui/Field";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
@@ -170,7 +172,7 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
                 setEmail(e.target.value);
                 if (error) setError(null);
               }}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
+              className={fieldClasses()}
             />
 
             <label htmlFor="password" className="block pt-2 text-sm font-medium">
@@ -188,7 +190,7 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
                 setPassword(e.target.value);
                 if (error) setError(null);
               }}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-zinc-500"
+              className={fieldClasses()}
             />
             {/* Said up front rather than after failing. Finding out the rule by breaking it
                 is the worst possible moment to learn it. */}
@@ -201,7 +203,7 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
         <label htmlFor="endereco" className="mt-10 block text-sm font-medium">
           Endereço
         </label>
-        <div className="mt-2 flex items-center gap-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 focus-within:border-zinc-500">
+        <div className="mt-2 flex items-center gap-1 rounded-xl border border-zinc-800 bg-black px-4 py-3 transition-colors focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-600 focus-within:ring-offset-2 focus-within:ring-offset-black">
           {/* Sem o /s/. O site passou para a raiz - suvka.com/adega-do-manel - e este ecrã
               ficou a prometer o endereço antigo. Não estava partido, porque o /s/ ainda
               redirecciona; estava a dizer ao dono, no momento em que ele decide o seu
@@ -219,6 +221,10 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
               setValue(e.target.value);
               setChecking(true);
             }}
+            // O único `outline-none` que fica no produto, e é correcto: este campo vive
+            // dentro de um grupo com o prefixo do domínio à esquerda, e o sinal de foco
+            // pertence ao contentor — dois anéis, um dentro do outro, leem-se pior do que
+            // nenhum. O contentor leva o anel do sistema, ver `focus-within` acima.
             className="min-w-0 flex-1 bg-transparent text-white outline-none"
           />
         </div>
@@ -250,7 +256,7 @@ export default function AddressStep({ draftId, name, suggested }: Props) {
         <button
           onClick={publish}
           disabled={publishing || checking || blocked || !value.trim()}
-          className="mt-8 w-full rounded-xl bg-white px-6 py-4 font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-default disabled:bg-zinc-800 disabled:text-zinc-500"
+          className={`mt-8 ${buttonClasses("primary", "lg", true)}`}
         >
           {publishing ? "A pôr online…" : "Pôr o meu site online"}
         </button>

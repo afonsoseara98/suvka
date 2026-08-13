@@ -28,6 +28,13 @@ const FIELD =
 const LABEL = "block text-sm font-medium text-zinc-300";
 const HINT = "mt-1 text-sm text-zinc-500";
 
+// Para as caixas que não levam rótulo visível — uma pesquisa, um campo em linha dentro de
+// uma lista. Continuam a precisar de `aria-label`, e continuam a precisar do anel de foco,
+// que é a razão de isto existir em vez de cada uma escrever as suas classes outra vez.
+export function fieldClasses(): string {
+  return FIELD;
+}
+
 interface Common {
   id: string;
   label: string;

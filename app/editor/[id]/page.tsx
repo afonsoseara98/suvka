@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClasses } from "@/app/ui/Button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -275,14 +276,14 @@ function EditorContent() {
                 <button
                   onClick={publish}
                   disabled={publishing || !pendingChanges}
-                  className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-default disabled:bg-zinc-800 disabled:text-zinc-500"
+                  className={buttonClasses("primary", "md")}
                 >
                   {publishing ? "Um momento…" : pendingChanges ? "Publicar alterações" : "Tudo publicado"}
                 </button>
                 <button
                   onClick={unpublish}
                   disabled={publishing}
-                  className="rounded-xl border border-zinc-700 px-5 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-900 disabled:opacity-50"
+                  className={buttonClasses("secondary", "md")}
                 >
                   Tirar de linha
                 </button>

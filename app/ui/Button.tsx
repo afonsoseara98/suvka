@@ -56,6 +56,19 @@ const SIZES: Record<Size, string> = {
   lg: "px-6 py-3",
 };
 
+// PARA OS QUE TÊM DE SER `<a>`
+//
+// Um link que navega tem de ser uma âncora — um `<button>` com um `router.push` dentro não
+// abre em separador novo com Ctrl, não se copia com o botão direito, e é anunciado como
+// botão por um leitor de ecrã quando na verdade leva a outro sítio.
+//
+// Em vez de dar um `as` ao Button e passar a ter dois elementos com um só conjunto de
+// props — que é onde estas abstracções costumam começar a mentir — exporta-se o desenho.
+// A regra continua a viver num sítio só; muda só quem a veste.
+export function buttonClasses(variant: Variant = "primary", size: Size = "md", block = false): string {
+  return `${BASE} ${VARIANTS[variant]} ${SIZES[size]}${block ? " w-full" : ""}`;
+}
+
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> {
   variant?: Variant;
   size?: Size;

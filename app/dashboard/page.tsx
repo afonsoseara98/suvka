@@ -5,6 +5,9 @@ import Link from "next/link";
 import RequireAuth from "@/app/components/RequireAuth";
 import BillingPanel from "./BillingPanel";
 import SiteActivity from "./SiteActivity";
+import { buttonClasses } from "@/app/ui/Button";
+import { fieldClasses } from "@/app/ui/Field";
+import Notice from "@/app/ui/Notice";
 
 interface ProjectSummary {
   id: string;
@@ -106,7 +109,7 @@ function DashboardContent() {
               "+ New Project" and landed in a different product. */}
           <Link
             href="/new/restaurant"
-            className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:scale-105 hover:bg-zinc-200"
+            className={buttonClasses("primary", "lg")}
           >
             + Novo site
           </Link>
@@ -121,14 +124,14 @@ function DashboardContent() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Procurar…"
             aria-label="Procurar sites"
-            className="mt-8 w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
+            className={`mt-8 max-w-sm ${fieldClasses()}`}
           />
         )}
 
         {error && (
-          <p role="alert" className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-3 text-sm text-red-400">
-            {error}
-          </p>
+          <div className="mt-6">
+            <Notice>{error}</Notice>
+          </div>
         )}
 
         {projects === null && !error && <p className="mt-12 text-zinc-500">A carregar…</p>}
@@ -138,7 +141,7 @@ function DashboardContent() {
             <p className="text-lg text-zinc-300">Ainda não tem nenhum site.</p>
             <Link
               href="/new/restaurant"
-              className="mt-6 inline-block rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:scale-105 hover:bg-zinc-200"
+              className={`mt-6 ${buttonClasses("primary", "lg")}`}
             >
               Criar o site do meu restaurante
             </Link>
@@ -177,7 +180,7 @@ function DashboardContent() {
                   navigator.clipboard?.writeText(`${origin}/${project.slug}`);
                   setCopiedId(project.id);
                 }}
-                className="rounded-lg border border-emerald-500/40 px-4 py-2 text-emerald-300 transition hover:bg-emerald-500/20"
+                className={buttonClasses("success", "sm")}
               >
                 {copiedId === project.id ? "Link copiado" : "Copiar link"}
               </button>
@@ -185,7 +188,7 @@ function DashboardContent() {
                 href={`/${project.slug}`}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-emerald-500/40 px-4 py-2 text-emerald-300 transition hover:bg-emerald-500/20"
+                className={buttonClasses("success", "sm")}
               >
                 Ver site
               </a>
@@ -211,7 +214,7 @@ function DashboardContent() {
                       if (e.key === "Escape") setRenamingId(null);
                     }}
                     onBlur={() => submitRename(project.id)}
-                    className="flex-1 rounded-lg border border-zinc-700 bg-black px-3 py-2 text-sm outline-none"
+                    className={`flex-1 ${fieldClasses()}`}
                   />
                 ) : (
                   <div className="min-w-0 flex-1">
@@ -232,7 +235,7 @@ function DashboardContent() {
                 <div className="flex shrink-0 items-center gap-2 text-sm">
                   <Link
                     href={`/editor/${project.id}`}
-                    className="rounded-lg border border-zinc-700 px-3 py-2 text-zinc-300 transition hover:bg-zinc-900"
+                    className={buttonClasses("secondary", "sm")}
                   >
                     Editar
                   </Link>
@@ -244,7 +247,7 @@ function DashboardContent() {
                       href={`/${project.slug}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border border-zinc-700 px-3 py-2 text-zinc-300 transition hover:bg-zinc-900"
+                      className={buttonClasses("secondary", "sm")}
                     >
                       Ver site
                     </a>
@@ -254,13 +257,13 @@ function DashboardContent() {
                     <>
                       <button
                         onClick={() => confirmDelete(project.id)}
-                        className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-red-400 transition hover:bg-red-500/20"
+                        className={buttonClasses("danger", "sm")}
                       >
                         Apagar mesmo?
                       </button>
                       <button
                         onClick={() => setConfirmingDeleteId(null)}
-                        className="rounded-lg border border-zinc-700 px-3 py-2 text-zinc-300 transition hover:bg-zinc-900"
+                        className={buttonClasses("secondary", "sm")}
                       >
                         Cancelar
                       </button>
@@ -272,13 +275,13 @@ function DashboardContent() {
                           setRenamingId(project.id);
                           setRenameValue(project.name);
                         }}
-                        className="rounded-lg border border-zinc-700 px-3 py-2 text-zinc-300 transition hover:bg-zinc-900"
+                        className={buttonClasses("secondary", "sm")}
                       >
                         Mudar o nome
                       </button>
                       <button
                         onClick={() => setConfirmingDeleteId(project.id)}
-                        className="rounded-lg border border-zinc-700 px-3 py-2 text-zinc-400 transition hover:bg-zinc-900"
+                        className={buttonClasses("secondary", "sm")}
                       >
                         Apagar
                       </button>
