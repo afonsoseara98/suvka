@@ -1,4 +1,4 @@
-import type { LandingPage, Section } from "@/app/types/landing";
+import type { LandingPage } from "@/app/types/landing";
 import type { StrategyDNA } from "@/app/ai/types/dna";
 import type { ResolvedImage } from "@/app/ai/types/visual";
 import { DEFAULT_DNA } from "@/app/ai/types/dna";
@@ -6,6 +6,7 @@ import { clamp01 } from "@/app/ai/utils/math";
 import type { RestaurantInput } from "./input";
 import { labelsFor, cuisineName, type SiteLabels } from "./labels";
 import { tidyPrice, tidyPhoneHref, mapsHref, whatsappHref } from "./tidy";
+import { composeSections } from "./compose";
 
 // BUILDING THE PAGE FROM THE FORM
 //
@@ -55,29 +56,6 @@ export function dnaForRestaurant(input: RestaurantInput): StrategyDNA {
     heroSplitLean: 0.2,
     heroImageryProminence: 0.85,
   };
-}
-
-// The architecture. A section is here because the owner gave content for it: no dishes
-// means no menu, no photos means no gallery. Nothing is padded to make the page look long.
-function sectionsFor(input: RestaurantInput, galleryCount: number, orderCount: number): Section[] {
-  const sections: Section[] = [{ type: "hero", variant: "centered", prominence: "primary", rhythm: "standard" }];
-
-  if (galleryCount > 0) {
-    sections.push({ type: "gallery", variant: "masonry", prominence: "primary", rhythm: "standard" });
-  }
-  if (input.dishes.length > 0) {
-    sections.push({ type: "menu", variant: "list", prominence: "primary", rhythm: "breather" });
-  }
-
-  // Right after the menu: the customer has just read the dishes and wants to order.
-  if (orderCount > 0) {
-    sections.push({ type: "orders", variant: "buttons", prominence: "primary", rhythm: "standard" });
-  }
-
-  sections.push({ type: "hours", variant: "columns", prominence: "standard", rhythm: "standard" });
-  sections.push({ type: "footer", variant: "simple", prominence: "compact", rhythm: "standard" });
-
-  return sections;
 }
 
 // THE BOOKING BUTTON, IN ORDER OF HOW WELL IT CONVERTS
@@ -163,7 +141,7 @@ export function buildRestaurantPage(
       branding: { primaryColor: "", secondaryColor: "", accentColor: "", fontHeading: "", fontBody: "", logoPrompt: "" },
       images: { heroPrompt: "", ogImagePrompt: "" },
     },
-    sections: sectionsFor(input, gallery.length, orders.links.length),
+    sections: composeSections({ input, galleryCount: gallery.length, orderCount: orders.links.length }),
     hero: {
       badge: cuisine,
       title: input.name,
