@@ -83,7 +83,7 @@ export function slugify(input: string): string {
 // ou, pior, criá-la e apagar o site dele do mapa - custa um cliente.
 export const RESERVED_SLUGS = new Set([
   // Rotas que existem hoje.
-  "api", "dashboard", "editor", "new", "benchmark", "s",
+  "api", "dashboard", "editor", "new", "benchmark", "s", "funil",
   "entrar", "preview", "publicar", "publicado", "privacidade", "termos",
 
   // Ficheiros servidos da raiz.
