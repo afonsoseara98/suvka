@@ -37,6 +37,22 @@ echo "==> Ambiente"
 # servidor arranca, porque um preflight que discorde do arranque é pior do que nenhum.
 npx tsx scripts/preflight.ts .env.production
 
+# O CLI DO PRISMA NÃO VÊ O .env.production SOZINHO
+#
+# O prisma.config.ts do Prisma 7 lê a ligação com `import "dotenv/config"`, e o dotenv carrega
+# `.env` — não `.env.production`. O DATABASE_URL de produção está no `.env.production`, e quem
+# o carrega é o systemd, para o SERVIÇO. Esta shell não o tem.
+#
+# Até ao Prisma 6 isto não se punha: o `datasource` do schema.prisma resolvia
+# env("DATABASE_URL") pelo carregador do próprio Prisma. No 7 passou para o ficheiro de config,
+# e o carregamento de ambiente é aquele dotenv explícito.
+#
+# Sem isto, o `migrate deploy` abaixo não sabe a que base se ligar.
+set -a
+# shellcheck disable=SC1091
+. "$APP_DIR/.env.production"
+set +a
+
 echo "==> Base de dados"
 # `migrate deploy` only applies migrations that already exist. It never generates one and
 # never prompts, which is what makes it safe to run unattended against production data.
