@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/app/components/RequireAuth";
+import ShareSite from "./ShareSite";
 
 // THE MOMENT SOMETHING BECAME REAL
 //
@@ -44,11 +45,12 @@ function PublishedContent({ slug }: { slug: string }) {
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <ShareSite url={url} />
           <a
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-zinc-200"
+            className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 transition hover:bg-zinc-900"
           >
             Ver o meu site
           </a>
@@ -72,7 +74,7 @@ function PublishedContent({ slug }: { slug: string }) {
           <ul className="mt-4 space-y-3 text-sm text-zinc-400">
             <li>1. Ponha este link na biografia do Instagram e do Facebook.</li>
             <li>2. Adicione-o à sua ficha do Google (Google Business).</li>
-            <li>3. Envie-o aos clientes que já lhe pedem a ementa por mensagem.</li>
+            <li>3. Envie-o aos clientes que já lhe pedem a ementa por mensagem — é o botão aqui em cima.</li>
           </ul>
         </div>
 

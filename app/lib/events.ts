@@ -24,6 +24,13 @@ export const EVENT_NAMES = [
   "signup_started",
   "signup_completed",
   "publish_completed",
+  // O ÚNICO MOMENTO EM QUE UM DONO PARTILHA UMA COISA NOSSA
+  //
+  // O ecrã de publicação dizia-lhe "envie o link aos clientes que já lhe pedem a ementa por
+  // mensagem" e não lhe dava por onde. Isto conta as vezes em que ele o faz - e é a única
+  // medida que temos do boca-a-boca, que é a forma como um produto para restaurantes cresce
+  // sem orçamento de aquisição.
+  "site_shared",
   // What visitors do on a published restaurant site. These are the ones the owner is paying
   // to see.
   "phone_clicked",
