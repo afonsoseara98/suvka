@@ -151,6 +151,30 @@ export function checkEnvironment(env: NodeJS.ProcessEnv): EnvReport {
     warn("STRIPE_SECRET_KEY", "sem pagamentos configurados - ninguém consegue subscrever");
   }
 
+  // --- Envio de email ------------------------------------------------------------------
+  //
+  // Grupo, como o Stripe, e pela mesma razão: uma chave sem remetente ou um remetente sem
+  // chave é configuração a meio, e o produto não envia nada na mesma.
+  //
+  // Avisa em vez de matar. Sem isto o site funciona todo - só a recuperação de password é
+  // que responde 503 a quem estiver fechado fora da conta. Mas é um aviso alto, porque a
+  // pessoa que dá por isto é sempre um dono de restaurante já sem acesso ao site dele.
+  const mailKey = value(env, "RESEND_API_KEY");
+  const mailFrom = value(env, "MAIL_FROM");
+
+  if (production) {
+    if (mailKey && !mailFrom) {
+      fail("MAIL_FROM", "em falta - com chave de envio e sem remetente não sai email nenhum");
+    } else if (!mailKey && mailFrom) {
+      fail("RESEND_API_KEY", "em falta - há remetente configurado mas nada com que enviar");
+    } else if (!mailKey) {
+      warn(
+        "RESEND_API_KEY",
+        "sem envio de email - quem se esquecer da palavra-passe fica sem forma de voltar a entrar sozinho"
+      );
+    }
+  }
+
   // --- Fotografias de banco ------------------------------------------------------------
   // Ausência é uma configuração suportada (ver createImageProvider: o herói passa a
   // editorial em vez de falso), por isso avisa e não mata. Mas em produção um site de

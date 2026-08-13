@@ -58,6 +58,7 @@ model User {
   accounts Account[]
   sessions Session[]
   projects Project[]
+  passwordResets PasswordResetToken[]
 
   // BILLING, AS A CACHE OF STRIPE
   //
@@ -106,6 +107,33 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// UM PEDIDO DE RECUPERAÇÃO DE PASSWORD
+//
+// O que aqui está é o SHA-256 do código, nunca o código. Uma cópia desta tabela que vaze não
+// dá para entrar em conta nenhuma - ver app/lib/passwordReset.ts, que explica cada decisão.
+//
+// Tabela própria e não a VerificationToken do next-auth: aquela é da biblioteca, com o
+// formato dela, e partilhá-la significava que uma actualização do next-auth podia mexer nas
+// nossas linhas sem ninguém perceber.
+model PasswordResetToken {
+  tokenHash String    @id
+  userId    String
+  expiresAt DateTime
+  // Uma vez, e só uma. O link fica no email para sempre; sem isto, quem tiver acesso ao
+  // email dele daqui a um ano entra na conta com um link antigo.
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // onDelete: Cascade - uma conta apagada não deixa para trás uma forma de lhe voltar a
+  // entrar.
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Para poder invalidar todos os pedidos de um utilizador quando um deles é usado.
+  @@index([userId])
+  // Para a limpeza dos expirados.
+  @@index([expiresAt])
 }
 
 model VerificationToken {

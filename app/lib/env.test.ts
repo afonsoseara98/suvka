@@ -10,6 +10,8 @@ function production(extra: Record<string, string | undefined> = {}): NodeJS.Proc
     AUTH_SECRET: SECRET,
     APP_URL: "https://suvka.com",
     PEXELS_API_KEY: "pexels-abc",
+    RESEND_API_KEY: "re_abc",
+    MAIL_FROM: "ola@suvka.com",
     ...extra,
   } as NodeJS.ProcessEnv;
 }
@@ -225,5 +227,37 @@ describe("formatEnvReport", () => {
   it("é vazio quando não há nada a dizer", () => {
     const text = formatEnvReport({ fatal: [], warnings: [] });
     expect(text).toBe("");
+  });
+});
+
+describe("envio de email", () => {
+  const producao = (extra: Record<string, string | undefined>) =>
+    checkEnvironment({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://suvka:pw@localhost:5432/suvka",
+      AUTH_SECRET: "x".repeat(44),
+      APP_URL: "https://suvka.com",
+      PEXELS_API_KEY: "pexels-abc",
+      RESEND_API_KEY: "re_abc",
+      MAIL_FROM: "ola@suvka.com",
+      ...extra,
+    } as NodeJS.ProcessEnv);
+
+  // Metade da configuração de envio é o mesmo que nenhuma, e é pior porque parece feita.
+  it("recusa uma chave sem remetente", () => {
+    expect(producao({ MAIL_FROM: undefined }).fatal.map((p) => p.name)).toContain("MAIL_FROM");
+  });
+
+  it("recusa um remetente sem chave", () => {
+    expect(producao({ RESEND_API_KEY: undefined }).fatal.map((p) => p.name)).toContain("RESEND_API_KEY");
+  });
+
+  // Sem nada configurado o site funciona todo - só quem estiver fechado fora da conta é que
+  // fica sem saída. Por isso avisa e não mata.
+  it("sem envio nenhum, avisa mas deixa arrancar", () => {
+    const report = producao({ RESEND_API_KEY: undefined, MAIL_FROM: undefined });
+
+    expect(report.fatal.map((p) => p.name)).not.toContain("RESEND_API_KEY");
+    expect(report.warnings.map((p) => p.name)).toContain("RESEND_API_KEY");
   });
 });

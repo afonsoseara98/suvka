@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
 
 // Signing in is no longer the front door - see app/page.tsx. This page exists for the two
@@ -143,6 +144,17 @@ function SignInForm({ publishing }: { publishing: boolean }) {
         >
           {mode === "signin" ? "Ainda não tem conta? Criar conta" : "Já tem conta? Entrar"}
         </button>
+
+        {/* Só no modo de entrar. Quem está a criar conta não se pode ter esquecido de uma
+            password que ainda não escolheu, e a ligação ali só semeava a dúvida. */}
+        {mode === "signin" && (
+          <Link
+            href="/recuperar"
+            className="mt-3 block w-full text-center text-sm text-zinc-500 hover:text-zinc-300"
+          >
+            Esqueceu-se da palavra-passe?
+          </Link>
+        )}
       </div>
     </main>
   );
