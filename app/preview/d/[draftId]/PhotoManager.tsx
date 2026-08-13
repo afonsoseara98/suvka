@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClasses } from "@/app/ui/Button";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MAX_PHOTOS, isOwnPhoto } from "@/app/lib/restaurant/photoLimits";
@@ -93,7 +94,7 @@ export default function PhotoManager({ draftId, gallery }: Props) {
             type="button"
             onClick={() => input.current?.click()}
             disabled={busy || full}
-            className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-40"
+            className={buttonClasses("secondary", "md")}
           >
             {busy ? "A enviar…" : full ? `Máximo ${MAX_PHOTOS}` : "Adicionar fotos"}
           </button>

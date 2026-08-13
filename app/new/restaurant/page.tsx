@@ -18,6 +18,7 @@ import { LANGUAGES, DEFAULT_LANGUAGE, cuisineName, styleName, styleHint, type Si
 import ScheduleReadback from "./ScheduleReadback";
 import { fieldClasses } from "@/app/ui/Field";
 import { buttonClasses } from "@/app/ui/Button";
+import Notice from "@/app/ui/Notice";
 
 // A ordem é a da decisão de quem lê o site, não a do formulário: primeiro o que decide se a
 // pessoa PODE ir, depois o que torna a ida melhor. O texto aqui é a pergunta como o dono a
@@ -472,9 +473,7 @@ function RestaurantForm() {
           </details>
 
           {failure && (
-            <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {failure}
-            </p>
+            <Notice>{failure}</Notice>
           )}
 
           <button

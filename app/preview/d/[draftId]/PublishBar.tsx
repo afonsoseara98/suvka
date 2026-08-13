@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClasses } from "@/app/ui/Button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -81,7 +82,7 @@ export default function PublishBar({ draftId, name, tools, contentKey, children 
         <button
           onClick={start}
           disabled={publishing}
-          className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+          className={buttonClasses("primary", "md")}
         >
           {publishing ? "A publicar…" : "Publicar este site"}
         </button>

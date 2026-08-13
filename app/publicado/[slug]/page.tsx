@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/app/components/RequireAuth";
-import Button from "@/app/ui/Button";
+import Button, { buttonClasses } from "@/app/ui/Button";
 import ShareSite from "./ShareSite";
 
 // THE MOMENT SOMETHING BECAME REAL
@@ -51,7 +51,7 @@ function PublishedContent({ slug }: { slug: string }) {
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 transition-colors hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className={buttonClasses("secondary", "lg")}
           >
             Ver o meu site
           </a>

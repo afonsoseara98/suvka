@@ -1,6 +1,7 @@
 "use client";
 
 import { buttonClasses } from "@/app/ui/Button";
+import Notice from "@/app/ui/Notice";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -292,7 +293,7 @@ function EditorContent() {
               <button
                 onClick={publish}
                 disabled={publishing}
-                className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+                className={buttonClasses("primary", "md")}
               >
                 {publishing ? "Um momento…" : "Publicar"}
               </button>
@@ -301,9 +302,9 @@ function EditorContent() {
         </div>
 
         {publishError && (
-          <p role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {publishError}
-          </p>
+          <div className="mb-4">
+            <Notice>{publishError}</Notice>
+          </div>
         )}
 
         {/* The moment the whole product exists for: a real, copyable address the owner
@@ -325,7 +326,7 @@ function EditorContent() {
                 navigator.clipboard?.writeText(liveUrl);
                 setJustCopied(true);
               }}
-              className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/20"
+              className={buttonClasses("success", "sm")}
             >
               {justCopied ? "Copiado" : "Copiar link"}
             </button>
