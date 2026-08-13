@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import type { HeroData } from "@/app/types/landing";
 import { notFound } from "next/navigation";
@@ -22,13 +23,28 @@ import SiteEvents from "./SiteEvents";
 // Serving costs one row read: the published snapshot is materialized at publish time
 // (see app/lib/publishService.ts), never replayed from the operation log.
 
+// UMA CONSULTA POR VISITA, EM VEZ DE DUAS
+//
+// O `generateMetadata` e o componente precisam do mesmo site, e cada um pedia o seu: duas
+// idas ao Postgres por cada visita à superfície mais pública do produto, que é a única que
+// é servida a estranhos e a que tem de ser mais rápida.
+//
+// O `cache` do React desduplica dentro do MESMO pedido - a segunda chamada devolve o que a
+// primeira trouxe, sem tocar na base de dados. Não é uma cache entre visitas: dois
+// visitantes continuam a ser duas consultas, e uma edição publicada aparece à visita
+// seguinte, que é o comportamento que já existia.
+//
+// Vive aqui e não dentro do `loadPublishedSite` de propósito: o serviço fica puro e
+// testável sem um contexto de React à volta, e a memoização fica onde o pedido existe.
+const siteFor = cache((slug: string) => loadPublishedSite(repos, slug));
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const site = await loadPublishedSite(repos, slug);
+  const site = await siteFor(slug);
 
   if (!site) {
     return { title: "Not found" };
@@ -97,7 +113,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublishedSitePage({ params }: Props) {
   const { slug } = await params;
-  const site = await loadPublishedSite(repos, slug);
+  const site = await siteFor(slug);
 
   // One 404 for "no such slug", "not published" and "published then taken down" alike -
   // a visitor must not be able to tell an unpublished project apart from one that never

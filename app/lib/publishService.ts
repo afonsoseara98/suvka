@@ -20,6 +20,36 @@ import { applyOperation } from "@/app/editor/operations";
 const MAX_SLUG_LENGTH = 60;
 const MAX_SLUG_ATTEMPTS = 50;
 
+// A FORMA DE UM SLUG, NUM SÍTIO SÓ
+//
+// Definida aqui, ao lado do `slugify` que a produz, para nunca poder divergir dele. Quem
+// valida noutro sítio acaba, mais tarde ou mais cedo, a validar outra coisa.
+//
+// O TETO NÃO É 60, E ISSO IMPORTA
+//
+// O `slugify` corta a 60, mas o `resolveAvailableSlug` pode acrescentar por cima: `-2` até
+// `-50` quando o nome está ocupado, e `-<6 hex>` quando as cinquenta tentativas se esgotam.
+// O comprimento máximo REAL é 60 + 1 + 6 = 67. Um limite de 60 aqui rejeitaria o site de um
+// restaurante com nome comprido cujo endereço já estava ocupado - e rejeitá-lo-ia com um
+// 404, ou seja, o site dele desaparecia do mapa.
+const MAX_STORED_SLUG_LENGTH = MAX_SLUG_LENGTH + 1 + 6;
+const SLUG_PATTERN = new RegExp(`^[a-z0-9-]{1,${MAX_STORED_SLUG_LENGTH}}$`);
+
+// UM SLUG QUE NÃO TEM ESTA FORMA NÃO PODE EXISTIR NA TABELA
+//
+// Portanto perguntá-lo à base de dados é sempre uma consulta inútil - e foi essa consulta
+// inútil que produziu o erro 22021 em produção: um varrimento pediu um caminho com um byte
+// nulo, o Next entregou-o como `params.slug` já descodificado, e o Postgres recusou o
+// parâmetro antes sequer de o comparar com alguma coisa.
+//
+// Desde que os sites passaram para a raiz do domínio, `app/[slug]` apanha TUDO o que não
+// corresponde a uma rota estática. Sem isto, cada 404 da internet inteira custava uma ida
+// ao Postgres, num endpoint público, sem sessão e sem limite de pedidos. O byte nulo era o
+// único sintoma que dava erro; a carga não dava nenhum.
+export function isValidSlug(slug: string): boolean {
+  return SLUG_PATTERN.test(slug);
+}
+
 // Lowercase, ASCII-ish, hyphen-separated. Accents are stripped rather than dropped
 // ("Padaria Céu" -> "padaria-ceu") so a Portuguese business name still produces a
 // readable URL instead of losing characters.
@@ -204,6 +234,11 @@ export async function listPublishedSites(repos: RepositoryBundle): Promise<Publi
 // which projects exist - for an unknown slug, an unpublished project, or a project
 // whose landing page has no snapshot.
 export async function loadPublishedSite(repos: RepositoryBundle, slug: string): Promise<PublishedSite | null> {
+  // Antes da base de dados, e não depois. Ver isValidSlug: um slug com outra forma não pode
+  // estar guardado, portanto a consulta seria sempre inútil - e é aqui, e não na página,
+  // porque assim protege todos os chamadores, incluindo os que ainda não existem.
+  if (!isValidSlug(slug)) return null;
+
   const project = await repos.projects.findBySlug(slug);
   if (!project || !project.settings.publishing.published) {
     return null;
