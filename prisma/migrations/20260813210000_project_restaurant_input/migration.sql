@@ -1,0 +1,18 @@
+-- O FORMULÁRIO QUE O DONO PREENCHEU DEIXA DE SER DEITADO FORA
+--
+-- Até aqui, os nove campos viviam só no Draft - e o Draft é apagado no momento em que alguém
+-- reclama o site. O Project ficava com a página construída e mais nada.
+--
+-- Três consequências, todas descobertas ao tentar construir a camada de cima:
+--
+--   1. O dono não conseguia voltar a editar os dados do restaurante. Mudou o horário, mudou
+--      o telefone, abriu ao domingo - e o formulário onde escreveu isso já não existia.
+--   2. Não havia como saber o que falta no site dele. "Acrescente o WhatsApp" precisa de
+--      saber que não há WhatsApp, e isso lia-se no formulário.
+--   3. Nenhuma memória por restaurante era possível. Comparar a versão de hoje com a de
+--      Março exige ter as duas entradas, e nós tínhamos zero.
+--
+-- Opcional porque todos os projectos criados antes disto não o têm, e porque o produto
+-- também aceita sites que não vieram do formulário de restaurante. Quem o lê tem de tratar
+-- a ausência, e trata.
+ALTER TABLE "Project" ADD COLUMN "restaurantInput" jsonb;

@@ -41,6 +41,17 @@ model Event {
   projectId String?
   userId    String?
 
+  // O QUE FOI DECIDIDO, AO LADO DO QUE ACONTECEU
+  //
+  // Os eventos de visitante contam o resultado; isto guarda a página que o produziu - que
+  // hero, que ordem, que razão distinguia a casa, que versão dos juízos a construiu. Sem
+  // isto, um clique de hoje nunca vai poder responder a "os heros contidos convertem
+  // melhor?", nem daqui a um ano.
+  //
+  // Opcional porque a maioria dos eventos não tem detalhe nenhum para dar, e uma coluna
+  // obrigatória enche-se de objectos vazios. Nada aqui descreve uma pessoa.
+  details Json?
+
   // The funnel is always read as "this event, over this window".
   @@index([name, at])
   @@index([projectId, name])
@@ -175,6 +186,16 @@ model Project {
   businessProfile Json
   brand           Json
   settings        Json
+  // O FORMULÁRIO QUE O DONO PREENCHEU, GUARDADO EM VEZ DE DEITADO FORA
+  //
+  // Vivia só no Draft, que é apagado assim que alguém reclama o site. Sem isto o dono não
+  // conseguia voltar a editar o horário do próprio restaurante, o painel não sabia dizer-lhe
+  // o que lhe falta no site, e nenhuma comparação entre a versão de hoje e a de Março era
+  // possível - porque não havia as duas entradas, havia zero.
+  //
+  // Opcional: os projectos criados antes disto não o têm, e o produto também aceita sites que
+  // não vieram deste formulário.
+  restaurantInput Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

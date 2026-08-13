@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { ProjectRepository, ProjectRecord, NewProjectInput, ProjectPatch, PublishedSiteRef } from "../types";
 import type { BusinessProfile } from "@/app/ai/types";
 import type { BrandingData } from "@/app/types/landing";
+import type { RestaurantInput } from "@/app/lib/restaurant/input";
 import type { ProjectSettings } from "@/app/editor/project";
 
 interface ProjectRow {
@@ -11,6 +12,7 @@ interface ProjectRow {
   slug: string | null;
   businessProfile: unknown;
   brand: unknown;
+  restaurantInput: unknown;
   settings: unknown;
   createdAt: Date;
   updatedAt: Date;
@@ -25,6 +27,7 @@ function toRecord(row: ProjectRow): ProjectRecord {
     businessProfile: row.businessProfile as BusinessProfile,
     brand: row.brand as BrandingData,
     settings: row.settings as ProjectSettings,
+    restaurantInput: (row.restaurantInput as RestaurantInput | null) ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -41,6 +44,7 @@ export class PrismaProjectRepository implements ProjectRepository {
         businessProfile: input.businessProfile as object,
         brand: input.brand as object,
         settings: input.settings as object,
+        restaurantInput: (input.restaurantInput as object) ?? undefined,
       },
     });
     return toRecord(row);

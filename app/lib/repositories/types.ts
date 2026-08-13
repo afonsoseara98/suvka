@@ -3,6 +3,7 @@ import type { BrandingData } from "@/app/types/landing";
 import type { SectionInstance, PageState } from "@/app/editor/pageState";
 import type { Operation } from "@/app/editor/operations";
 import type { ProjectSettings, Asset } from "@/app/editor/project";
+import type { RestaurantInput } from "@/app/lib/restaurant/input";
 
 // REPOSITORY INTERFACES
 //
@@ -28,6 +29,9 @@ export interface ProjectRecord {
   businessProfile: BusinessProfile;
   brand: BrandingData;
   settings: ProjectSettings;
+  // Os nove campos do formulário, quando o site veio de lá. null para tudo o que foi criado
+  // antes de isto existir e para os sites que não são restaurantes - ver schema.prisma.
+  restaurantInput: RestaurantInput | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +42,7 @@ export interface NewProjectInput {
   businessProfile: BusinessProfile;
   brand: BrandingData;
   settings: ProjectSettings;
+  restaurantInput?: RestaurantInput | null;
 }
 
 export interface ProjectPatch {

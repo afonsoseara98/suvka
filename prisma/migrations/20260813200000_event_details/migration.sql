@@ -1,0 +1,19 @@
+-- O QUE FOI DECIDIDO, AO LADO DO QUE ACONTECEU
+--
+-- A tabela Event já conta o que os visitantes fazem: phone_clicked, reservation_clicked,
+-- order_clicked, tudo ligado a um projectId. Faltava saber QUE PÁGINA era aquela quando
+-- aconteceu - que hero, que ordem, que razão, que versão das regras.
+--
+-- Sem isso, os cliques que estamos a acumular hoje nunca vão poder responder a "os heros
+-- contidos convertem melhor?". Não por falta de volume: por falta de com o que cruzar.
+--
+-- Nullable e sem valor por omissão de propósito. A esmagadora maioria dos eventos não tem
+-- detalhe nenhum para dar - um toque num número de telefone é um toque num número de telefone
+-- - e uma coluna que obriga toda a gente a inventar um objecto vazio é uma coluna que se
+-- enche de {}.
+--
+-- jsonb e não json: é indexável, e a primeira pergunta a sério vai ser um GROUP BY sobre uma
+-- chave lá dentro.
+--
+-- Nada aqui é sobre pessoas. É sobre a página.
+ALTER TABLE "Event" ADD COLUMN "details" jsonb;

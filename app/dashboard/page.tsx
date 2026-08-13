@@ -16,6 +16,10 @@ interface ProjectSummary {
   updatedAt: string;
   published: boolean;
   slug: string | null;
+  // null quando não há nada a apontar, e aí o painel não desenha bloco nenhum. Ver
+  // app/lib/restaurant/nextAction.ts.
+  nextAction: { titulo: string; porque: string; campo: string } | null;
+  remaining: number;
 }
 
 function relativeTime(iso: string): string {
@@ -197,6 +201,30 @@ function DashboardContent() {
             {/* Por baixo do endereço e dos botões, não por cima: o que ele veio cá buscar é o
                 endereço. Isto é o que o faz voltar no mês seguinte. */}
             <SiteActivity projectId={project.id} />
+
+            {/* "O QUE FAÇO HOJE PARA ENCHER MAIS MESAS?"
+
+                A pergunta que ele tem ao abrir isto, e a que este ecrã não respondia: via
+                quantas pessoas ligaram e ficava sem saber o que fazer a seguir. "Onde clico?"
+                não devia ser uma pergunta que ele tenha de fazer.
+
+                UMA, e não uma lista. Ele está numa cozinha e tem quatro minutos; um plano de
+                trabalho com dez pontos é um painel que se fecha. A seguinte só aparece quando
+                esta estiver feita.
+
+                E não há aqui uma percentagem de impacto. Não temos nenhuma medida, e um
+                número inventado tem a autoridade de uma medição: um dono que faz o que lhe
+                dissemos e não vê o resultado prometido não volta a acreditar em mais nada que
+                este painel lhe diga. */}
+            {project.nextAction && (
+              <div className="mt-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-400">
+                  A seguir{project.remaining > 1 && ` · faltam ${project.remaining}`}
+                </p>
+                <p className="mt-2 font-semibold text-white">{project.nextAction.titulo}</p>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-300">{project.nextAction.porque}</p>
+              </div>
+            )}
           </div>
         ))}
 

@@ -98,7 +98,7 @@ export interface ComposeInput {
 // Nos outros, duas ou três leituras são todas boas — e é aí que o nome escolhe. Sem isto,
 // duas tascas portuguesas rústicas com quatro fotografias cada recebiam a MESMA página, que
 // é precisamente o que o SUVKA_NORTH_STAR.md promete que não acontece.
-function heroVariant({ input, direction, galleryCount }: ComposeInput): string {
+export function heroVariant({ input, direction, galleryCount }: ComposeInput): string {
   // Contenção não é uma preferência: é o produto que a casa vende. Fixo.
   if (contido(direction)) return "minimal";
 
@@ -127,7 +127,7 @@ function contido(direction: CreativeDirection): boolean {
 // O QUE ABRE A PÁGINA A SEGUIR AO NOME
 //
 // A pergunta é: o que é que esta casa vende primeiro? A resposta está no que o dono deu.
-function leadsWithGallery({ input, direction, galleryCount }: ComposeInput): boolean {
+export function leadsWithGallery({ input, direction, galleryCount }: ComposeInput): boolean {
   // Quatro fotografias ou mais é uma casa que investiu em mostrar-se. A sala é o argumento.
   if (galleryCount >= 4) return true;
   // Poucos pratos e alguma fotografia: a lista não sustenta a página sozinha.

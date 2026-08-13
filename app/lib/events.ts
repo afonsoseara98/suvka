@@ -52,6 +52,21 @@ export interface EventContext {
   draftId?: string | null;
   projectId?: string | null;
   userId?: string | null;
+  // O QUE FOI DECIDIDO, PARA UM DIA SE PODER CRUZAR COM O QUE ACONTECEU
+  //
+  // Hoje só o `publish_completed` traz isto, e traz o `PageDecisions` - que hero, que ordem,
+  // que razão distinguia a casa, que versão dos juízos. Os eventos de visitante não trazem
+  // nada e está certo: um toque num número de telefone é um toque num número de telefone, e
+  // o que era a página nesse momento vem do publish mais recente do mesmo projecto.
+  //
+  // Nada aqui descreve uma pessoa, e essa é a linha que não se atravessa: no dia em que este
+  // campo levar seja o que for sobre quem visitou, deixa de ser defensável no site de um
+  // cliente - que é a razão pela qual todo este módulo não põe um cookie.
+  //
+  // Valores simples e nada aninhado. Não é uma limitação técnica - é o que impede esta coluna
+  // de se tornar a gaveta onde se despeja um objecto inteiro "por precaução", que é como uma
+  // tabela de eventos deixa de caber em memória e as perguntas passam a demorar minutos.
+  details?: Record<string, string | number | boolean | null> | null;
 }
 
 // Fire and forget, and never throws.
@@ -75,6 +90,7 @@ export function track(name: EventName, context: EventContext = {}): void {
           draftId: context.draftId ?? null,
           projectId: context.projectId ?? null,
           userId: context.userId ?? null,
+          details: context.details ?? undefined,
         },
       })
       .catch((error) => {

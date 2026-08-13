@@ -1,4 +1,5 @@
 import type { LandingPage } from "@/app/types/landing";
+import type { RestaurantInput } from "@/app/lib/restaurant/input";
 import type { BusinessProfile } from "@/app/ai/types";
 import type { RepositoryBundle, OperationRecordRow } from "./repositories/types";
 import { fromLandingPage, type PageState } from "@/app/editor/pageState";
@@ -88,7 +89,7 @@ export async function createProjectFromGeneration(
   ownerId: string,
   landing: LandingPage,
   businessProfile: BusinessProfile,
-  meta: { name: string; pageName?: string; pageSlug?: string }
+  meta: { name: string; pageName?: string; pageSlug?: string; restaurantInput?: RestaurantInput | null }
 ): Promise<Project> {
   const pageState = fromLandingPage(landing);
 
@@ -102,6 +103,10 @@ export async function createProjectFromGeneration(
     businessProfile,
     brand: landing.site.branding,
     settings: { publishing: { published: false } },
+    // Os nove campos, guardados com o projecto. Ficavam no Draft, que e apagado no momento
+    // em que alguem reclama o site - e a partir dai ninguem, nem o dono nem nos, voltava a
+    // ter o que ele escreveu.
+    restaurantInput: meta.restaurantInput ?? null,
   });
 
   // Bug found while building the Dashboard's multi-project flow: this used to be the

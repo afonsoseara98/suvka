@@ -7,6 +7,7 @@ import { createProjectFromGeneration } from "@/app/lib/projectService";
 import { publishProject } from "@/app/lib/publishService";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import { track } from "@/app/lib/events";
+import { decisionsFor } from "@/app/lib/restaurant/decisions";
 import type { BusinessProfile } from "@/app/ai/types";
 
 // The moment a draft becomes someone's site.
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
 
     const project = await createProjectFromGeneration(repos, session.user.id, landing, businessProfile, {
       name: draft.input.name,
+      restaurantInput: draft.input,
     });
 
     // The address the owner chose, if they came through the address step. Still resolved
@@ -80,7 +82,22 @@ export async function POST(request: Request) {
     // that now has an owner.
     await draftStore.delete(draftId);
 
-    track("publish_completed", { draftId, projectId: project.id, userId: session.user.id });
+    // O CARIMBO SEM O QUAL O TRÁFEGO DE HOJE NÃO ENSINA NADA AMANHÃ
+    //
+    // Os eventos de visitante deste projecto - quem ligou, quem foi reservar - passam a ter
+    // com o que ser cruzados: que hero era, se abria com a galeria, qual era a razão que
+    // distinguia a casa, e que versão dos juízos a construiu.
+    //
+    // Aqui e não na geração, porque um rascunho que nunca foi publicado não tem visitantes e
+    // não entra em comparação nenhuma. E a cada publicação nova, o que fica é a data - dois
+    // carimbos do mesmo projecto são duas páginas diferentes, e é assim que se sabe qual
+    // estava no ar quando o clique aconteceu.
+    track("publish_completed", {
+      draftId,
+      projectId: project.id,
+      userId: session.user.id,
+      details: decisionsFor(draft.input, draft.landing.gallery?.length ?? 0),
+    });
 
     return NextResponse.json({ id: project.id, slug: published.slug }, { status: 201 });
   } catch (error) {

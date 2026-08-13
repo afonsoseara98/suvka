@@ -33,6 +33,7 @@ export class InMemoryProjectRepository implements ProjectRepository {
       businessProfile: input.businessProfile,
       brand: input.brand,
       settings: input.settings,
+      restaurantInput: input.restaurantInput ?? null,
       createdAt: now,
       updatedAt: now,
     };
