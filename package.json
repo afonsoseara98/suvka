@@ -12,7 +12,8 @@
     "audit:signal": "tsx scripts/audit-signal.ts",
     "audit:ordering": "tsx scripts/audit-ordering.ts",
     "audit:archetypes": "tsx scripts/audit-archetypes.ts",
-    "preflight": "tsx scripts/preflight.ts"
+    "preflight": "tsx scripts/preflight.ts",
+    "migration-state": "tsx scripts/migration-state.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
