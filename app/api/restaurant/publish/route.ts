@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportFailure } from "@/app/lib/alerts";
 import { auth } from "@/auth";
 import { repos } from "@/app/lib/repos";
 import { prisma } from "@/app/lib/prisma";
@@ -83,7 +84,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ id: project.id, slug: published.slug }, { status: 201 });
   } catch (error) {
-    console.error("Publishing a draft failed:", error);
+    // Alguém carregou em Publicar e o site não ficou no ar. É o momento em que um
+    // restaurante fecha o separador e não volta.
+    reportFailure({ kind: "publish", summary: "Publicação de um site falhou", error });
     return NextResponse.json({ success: false, message: "Algo correu mal ao publicar. Tente novamente." }, { status: 500 });
   }
 }

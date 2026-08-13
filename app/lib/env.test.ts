@@ -12,6 +12,7 @@ function production(extra: Record<string, string | undefined> = {}): NodeJS.Proc
     PEXELS_API_KEY: "pexels-abc",
     RESEND_API_KEY: "re_abc",
     MAIL_FROM: "ola@suvka.com",
+    ALERT_EMAIL: "operador@suvka.com",
     ...extra,
   } as NodeJS.ProcessEnv;
 }
@@ -259,5 +260,34 @@ describe("envio de email", () => {
 
     expect(report.fatal.map((p) => p.name)).not.toContain("RESEND_API_KEY");
     expect(report.warnings.map((p) => p.name)).toContain("RESEND_API_KEY");
+  });
+});
+
+describe("alertas", () => {
+  // O produto funciona todo sem alertas - por isso avisa e não mata. Mas numa beta de dez
+  // restaurantes, três desistências silenciosas são trinta por cento do produto a falhar
+  // sem deixar rasto.
+  it("sem destinatário de alertas, avisa mas deixa arrancar", () => {
+    const report = checkEnvironment({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://suvka:pw@localhost:5432/suvka",
+      AUTH_SECRET: "x".repeat(44),
+      APP_URL: "https://suvka.com",
+      PEXELS_API_KEY: "pexels-abc",
+      RESEND_API_KEY: "re_abc",
+      MAIL_FROM: "ola@suvka.com",
+    } as NodeJS.ProcessEnv);
+
+    expect(names(report.fatal)).not.toContain("ALERT_EMAIL");
+    expect(names(report.warnings)).toContain("ALERT_EMAIL");
+  });
+
+  it("fora de produção não avisa de nada disto", () => {
+    const report = checkEnvironment({
+      NODE_ENV: "development",
+      DATABASE_URL: "postgresql://localhost/suvka",
+    } as NodeJS.ProcessEnv);
+
+    expect(names(report.warnings)).not.toContain("ALERT_EMAIL");
   });
 });

@@ -175,6 +175,18 @@ export function checkEnvironment(env: NodeJS.ProcessEnv): EnvReport {
     }
   }
 
+  // --- Alertas ---------------------------------------------------------------------------
+  //
+  // Sem isto, um erro em produção vai para o journal e fica lá. Um restaurante que não
+  // consegue publicar às nove da noite fecha o separador e não volta, e nós só damos por
+  // isso se ele nos disser - e a maior parte não diz.
+  //
+  // Avisa e não mata, porque o produto funciona todo sem alertas. Mas numa beta de dez
+  // restaurantes, tres desistencias silenciosas sao trinta por cento do produto a falhar.
+  if (production && !value(env, "ALERT_EMAIL")) {
+    warn("ALERT_EMAIL", "sem alertas - uma falha em producao nao chega a ninguem");
+  }
+
   // --- Fotografias de banco ------------------------------------------------------------
   // Ausência é uma configuração suportada (ver createImageProvider: o herói passa a
   // editorial em vez de falso), por isso avisa e não mata. Mas em produção um site de

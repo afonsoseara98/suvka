@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportFailure } from "@/app/lib/alerts";
 import { auth } from "@/auth";
 import { prisma } from "@/app/lib/prisma";
 import { stripeClient, stripePriceId, trialEndFor } from "@/app/lib/stripe";
@@ -61,7 +62,9 @@ export async function POST() {
 
     return NextResponse.json({ url: checkout.url });
   } catch (error) {
-    console.error("Stripe checkout failed:", error);
+    // O cliente carregou em pagar e não chegou ao checkout. Não perdemos dinheiro dele -
+    // perdemos a subscrição inteira, e ele não volta a tentar.
+    reportFailure({ kind: "stripe_checkout", summary: "Não foi possível abrir o checkout do Stripe", error });
     return NextResponse.json({ success: false, message: "Não foi possível abrir o pagamento. Tente novamente." }, { status: 500 });
   }
 }

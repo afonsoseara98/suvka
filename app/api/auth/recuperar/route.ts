@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportFailure } from "@/app/lib/alerts";
 import { prisma } from "@/app/lib/prisma";
 import { appUrl } from "@/app/lib/appUrl";
 import { createMailer } from "@/app/lib/mailer";
@@ -92,7 +93,13 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       // Registamos que falhou, e para quem. Nunca o corpo, que leva o código lá dentro.
-      console.error("Falha ao enviar email de recuperação:", error instanceof Error ? error.message : error);
+      // Nunca o corpo, que leva o código lá dentro - só o facto e para quem.
+      reportFailure({
+        kind: "email",
+        summary: "Falha ao enviar email de recuperação de palavra-passe",
+        error,
+        context: { destinatario: email },
+      });
       // E mesmo assim sai a mesma resposta. É o custo desta decisão, e é real: um dono cujo
       // email falhou fica a olhar para uma mensagem a dizer que está tudo bem. A alternativa
       // - dizer que falhou - responde de maneira diferente consoante a conta exista, que é

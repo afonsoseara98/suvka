@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { reportFailure } from "@/app/lib/alerts";
 import { prisma } from "@/app/lib/prisma";
 import { stripeClient } from "@/app/lib/stripe";
 
@@ -41,7 +42,18 @@ export async function POST(request: Request) {
     await handle(stripe, event);
   } catch (error) {
     // A 500 makes Stripe retry, which is what we want for a transient database failure.
-    console.error(`Stripe webhook "${event.type}" failed:`, error);
+    //
+    // E é o alerta que mais interessa deste produto inteiro: este é o único sítio que
+    // escreve o estado da subscrição. Se isto falhar, o cliente foi cobrado pelo Stripe e o
+    // produto não ficou a saber - cobrado e sem reconhecimento, que é a pior combinação
+    // possível e a que acaba em chargeback. O Stripe repete, mas se as repetições também
+    // falharem ninguém dá por nada durante dias.
+    reportFailure({
+      kind: "stripe_webhook",
+      summary: `Webhook do Stripe falhou: ${event.type}`,
+      error,
+      context: { evento: event.id, tipo: event.type },
+    });
     return NextResponse.json({ received: false }, { status: 500 });
   }
 

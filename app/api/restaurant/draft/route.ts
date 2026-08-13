@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportFailure } from "@/app/lib/alerts";
 import { createImageProvider, resolveImageSafely } from "@/app/lib/images";
 import { getRateLimiter, DRAFT_LIMIT, DRAFT_WINDOW_MS } from "@/app/lib/rateLimit";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
@@ -78,7 +79,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ id: draft.id }, { status: 201 });
   } catch (error) {
-    console.error("Draft creation failed:", error);
+    // O primeiro contacto com o produto. Quem falha aqui nunca chega a ver um site.
+    reportFailure({ kind: "generation", summary: "Geração de um site falhou", error });
     return NextResponse.json({ success: false, message: "Algo correu mal ao criar o site. Tente novamente." }, { status: 500 });
   }
 }
