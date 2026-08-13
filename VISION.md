@@ -214,6 +214,53 @@ O último é o mais valioso e é o único que ainda não existe em lado nenhum d
 
 ---
 
+## A linguagem interna
+
+Deixámos de dizer "website para restaurantes". Deixámos de dizer "plataforma".
+
+> **Sistema operativo para restaurantes independentes.**
+
+Não porque o marketing o vá dizer — porque obriga cada decisão de engenharia a responder a
+uma pergunta que "website" não faz: *isto aproxima-nos de ser o sítio onde a operação
+digital deste restaurante acontece?*
+
+E tem uma consequência técnica imediata que "plataforma" não tinha: **um sistema operativo
+é julgado pelas suas interfaces, não pelas suas funcionalidades.** Se o Suvka é a fonte da
+verdade, o artefacto mais importante deixa de ser um ecrã e passa a ser uma representação
+estável do que é verdade sobre este restaurante — nome, morada, horário, ementa, canais,
+serviços — que outras coisas possam ler.
+
+Hoje essa verdade está espalhada por quatro sítios no código (`RestaurantInput`,
+`PageState`, `OpeningHours`, o retrato publicado) e não existe como uma coisa só. Enquanto
+não existir, não há nada com que sincronizar o Google.
+
+## Gravity
+
+*Se um restaurante usar isto durante um ano, porque é que mudar lhe vai doer?*
+
+O flywheel faz crescer. A gravity impede sair. E a resposta *"porque o site é bonito"* não
+chega — um site bonito refaz-se num fim-de-semana.
+
+**Mas há duas gravidades, e só uma delas queremos.**
+
+A **gravity de valor** é a do Figma e a do Notion: sair dói porque se deixa para trás o que
+se construiu. A **gravity de cativeiro** é a de quem torna a saída tecnicamente difícil —
+sem exportação, sem acesso aos dados, com o domínio no nome deles.
+
+As duas retêm clientes. Só a primeira sobrevive a alguém perguntar *"e se eu quiser sair?"*
+na conversa de venda — e essa pergunta faz-se sempre, porque um dono de restaurante já foi
+preso por um fornecedor antes.
+
+Este documento já tinha escrito, nas coisas que nunca faremos: *"não prender o trabalho
+dele. O site é do restaurante."* Isso não contradiz a gravity — **define de que tipo tem de
+ser a nossa**. A regra prática:
+
+> A gravity do Suvka tem de sobreviver a existir um botão de exportar. Se só funciona
+> enquanto for difícil sair, não é gravity — é um refém.
+
+O que acumula e não se leva num ficheiro: o histórico do que o site fez, a consistência
+entre os sítios onde o restaurante aparece, e o hábito de mudar o horário num sítio só.
+
 ## O fosso
 
 Se aparecer amanhã um concorrente com 50 milhões, o que não consegue comprar:
