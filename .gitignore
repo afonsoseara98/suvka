@@ -49,3 +49,8 @@ public/uploads/
 # Os ficheiros de exemplo são a documentação do deploy e têm de ir para o git. Nunca contêm
 # um valor real - a regra .env* acima continua a apanhar tudo o resto.
 !deploy/.env.production.example
+
+# Clone do próprio repositório feito à mão dentro da pasta de trabalho. Não é um
+# submódulo e não deve entrar no índice: um `git add -A` distraído grava aqui um
+# ponteiro para um commit que mais ninguém consegue resolver.
+/suvka/
