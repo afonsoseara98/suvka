@@ -75,6 +75,15 @@ model User {
   // inventing a parallel set that has to be mapped back.
   subscriptionStatus String?
   subscriptionEndsAt DateTime?
+  // O RELÓGIO DO STRIPE, NÃO O NOSSO
+  //
+  // O Stripe não garante a ordem de entrega. Um "subscription.updated" que diz `active` pode
+  // chegar DEPOIS de um "subscription.deleted" que o cancelou - e sem isto o último a chegar
+  // ganhava, deixando o estado a reflectir o evento mais antigo.
+  //
+  // Guarda o `created` do evento que escreveu estas colunas. Um evento mais velho do que
+  // este é ignorado. Ver app/lib/stripeOrdering.ts.
+  lastStripeEventAt  DateTime?
   trialStartedAt     DateTime?
 
   createdAt DateTime @default(now())

@@ -1,0 +1,17 @@
+-- O relógio do Stripe, não o nosso.
+--
+-- O Stripe não garante a ordem de entrega. Um "subscription.updated" que diz `active` pode
+-- chegar DEPOIS de um "subscription.deleted" que o cancelou, e sem isto o último a chegar
+-- ganhava - deixando o estado a reflectir o evento mais antigo.
+--
+-- Nenhum dos dois casos dá erro nem aparece num registo. Um descobre-se quando alguém deixar
+-- de pagar e continuar a ter serviço; o outro quando um cliente pagante telefonar a dizer
+-- que foi cortado.
+--
+-- Guarda o `created` do evento que escreveu as colunas de subscrição. A guarda vive no
+-- `where` da escrita (ver app/api/stripe/webhook/route.ts), e não numa leitura antes dela:
+-- dois webhooks em paralelo é o caso normal, não o raro.
+--
+-- NULL para todas as linhas existentes, de propósito: quem nunca recebeu um evento não tem
+-- nada com que comparar, e o primeiro a chegar passa sempre.
+ALTER TABLE "User" ADD COLUMN "lastStripeEventAt" TIMESTAMP(3);
