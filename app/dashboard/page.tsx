@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/app/components/RequireAuth";
 import BillingPanel from "./BillingPanel";
+import SiteActivity from "./SiteActivity";
 
 interface ProjectSummary {
   id: string;
@@ -189,6 +190,10 @@ function DashboardContent() {
                 Ver site
               </a>
             </div>
+
+            {/* Por baixo do endereço e dos botões, não por cima: o que ele veio cá buscar é o
+                endereço. Isto é o que o faz voltar no mês seguinte. */}
+            <SiteActivity projectId={project.id} />
           </div>
         ))}
 
