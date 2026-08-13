@@ -66,9 +66,14 @@ Caseira**, feita com o **Eatbu**, que é um construtor de sites para restaurante
 | Preços | ❌ | ❌ | ✅ |
 | Fotografias da comida | ❌ | ✅ | ✅ |
 | Take-away / entregas | ❌ | ❌ | ✅ |
-| **Formas de pagamento** | ❌ | ✅ | ❌ |
-| **Avaliações** | ❌ | ✅ | ❌ |
-| **Esplanada / estacionamento / animais** | ❌ | ❌ | ❌ |
+| **Formas de pagamento** | ❌ | ✅ | ✅ *(F-3)* |
+| **Avaliações** | ❌ | ✅ | ✅ *(F-5)* |
+| **Esplanada / estacionamento / animais** | ❌ | ❌ | ✅ *(F-3)* |
+
+**Nota de 13/08.** As três últimas linhas eram os três ❌ do Suvka quando esta tabela foi
+feita. Fecharam nesta ronda, e com elas o produto passa a responder a **todas** as perguntas
+que qualquer um dos dois responde, mais quatro que nenhum deles responde. A comparação
+deixou de ter uma coluna onde perdemos.
 
 **O que isto diz.** O concorrente ganha-nos em duas coisas concretas — **formas de
 pagamento** e **avaliações** — e nós ganhamos-lhe em quatro: reservar, WhatsApp, ementa
@@ -113,16 +118,6 @@ coisas diferentes, é categoria A e ninguém dá por ela.
 
 ## Aberto
 
-### F-5 · **A** · Não há resposta a "vale a pena?"
-
-- **Problema.** O produto não mostra prova social nenhuma. Por decisão — não inventamos
-  avaliações — e concordo com a decisão.
-- **Impacto.** Mas "não inventar" e "não ter" são coisas diferentes. O dono tem avaliações
-  verdadeiras no Google, e o site dele não as mostra. O Eatbu mostra o TripAdvisor.
-- **Solução mais simples.** As avaliações **dele**, com ligação para a ficha do Google.
-  Nunca um número que nós escrevamos.
-- **Prioridade.** P1.
-
 ### F-6 · **B** · Três pratos são nove campos
 
 - **Problema.** É a parte mais pesada do formulário.
@@ -135,6 +130,26 @@ coisas diferentes, é categoria A e ninguém dá por ela.
 ---
 
 ## Corrigido
+
+### F-5 · **A** · "Vale a pena?" não tinha resposta — `be6b0ba`
+
+A última pergunta do cliente que o produto não sabia responder, e a única em que o
+concorrente medido nos ganhava.
+
+**A regra não mudou — mudou perceber que ela não proibia isto.** O produto não inventa
+avaliações, e isso não se toca. Mas *não inventar* e *não ter* são coisas diferentes: o
+restaurante tem avaliações verdadeiras na ficha do Google dele, e o site que lhe fizemos era
+o único sítio onde não apareciam.
+
+Guarda-se a ligação e mais nada. Nunca uma nota, nunca uma contagem — nem sequer copiadas de
+lá: uma nota copiada hoje está errada daqui a um mês, e uma nota errada no site do próprio
+restaurante é pior do que nenhuma. **Há um teste que serializa a página inteira e exige que
+não apareça lá nenhuma estrela e nenhum número.** É a linha que este produto não atravessa, e
+agora está fixada.
+
+É a única ligação cujo anfitrião é verificado, porque é a única cujo rótulo faz uma
+afirmação. Verificação por anfitrião e não por "contém google" — `google-avaliacoes.com`
+passava num teste de substring.
 
 ### F-3 · **A** · Cinco perguntas sem sítio para responder — `83e2e03`
 
