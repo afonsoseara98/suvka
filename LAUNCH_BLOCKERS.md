@@ -9,6 +9,7 @@ contra um build de produção real (`NODE_ENV=production`, `next start`), não c
 | Auditoria | `0286bb8` | READY FOR BETA: **NO** — #1 e #2 |
 | Correção de #1 e #2 | `7072def` | READY FOR BETA: **YES**, com três condições |
 | SEO, #3 e revisão | `47d2f3b` | READY FOR BETA: **YES**, com as mesmas três condições menos uma |
+| #7 fechado | `3227172` | READY FOR BETA: **YES**, com duas condições |
 
 **O que mudou desde a última ronda, e não foi por código:** o site está no ar. O
 `https://suvka.com` responde, com Caddy e certificado válido. Duas frases deste documento
@@ -348,10 +349,22 @@ website, definitivamente, e não tem como o dizer a ninguém.
 
 **Como reproduzir.** Esquecer a password.
 
-**Correção.** Um fluxo por email. Numa beta privada, o contorno é você repor à mão na base de
-dados — mas isso só funciona porque conhece as pessoas todas pelo nome.
+**Correção aplicada** (`3227172`). Fluxo completo: /recuperar pede o email, /recuperar/<código>
+define a nova password. O que fica guardado é o SHA-256 do código e nunca o código — uma
+cópia da base de dados que vaze não dá para entrar em conta nenhuma. Uma hora, uma
+utilização, e ao redefinir todos os outros pedidos da conta morrem na mesma transacção.
 
-**Estado.** 🔴 Aberto — bloqueia o lançamento público. Não bloqueia a beta.
+A resposta é a mesma haja conta ou não — verificado, letra por letra —, senão o formulário
+passava a ser um verificador de contas.
+
+**O primeiro email que este produto envia.** Sem dependência nova: é um POST com JSON.
+Exige `RESEND_API_KEY` e `MAIL_FROM` em produção; sem elas o /recuperar responde 503 e diz
+para contactar, em vez de fingir que enviou. O arranque avisa alto.
+
+**Verificado de ponta a ponta** com uma conta a sério: password nova entra, antiga não, o
+mesmo link uma segunda vez é recusado, e não sobrou nenhum pedido por usar.
+
+**Estado.** ✅ Fechado — falta só configurar o fornecedor de email no `.env.production`.
 
 ---
 
@@ -424,9 +437,9 @@ O YES vem com três condições, e valem por serem ditas em voz alta antes e nã
    pagamento.
 2. **Ninguém é cobrado nem cortado automaticamente.** O fim do período gratuito não faz nada,
    por desenho, até a política do #6 estar implementada.
-3. **Uma password esquecida é um telefonema para si**, e você repõe-na à mão na base de
-   dados. Isto só funciona enquanto conhecer as pessoas todas pelo nome — é o número de
-   restaurantes que define quando deixa de funcionar, não o calendário.
+3. ~~**Uma password esquecida é um telefonema para si.**~~ **Deixou de ser**, com o #7
+   fechado — desde que `RESEND_API_KEY` e `MAIL_FROM` estejam no `.env.production`. Sem
+   elas, volta a ser um telefonema, e o arranque avisa-o disso.
 
 **Nesta ronda, a condição 1 fica mais barata e as outras duas não mudaram.** O #3 estava a
 mandar o cliente de volta para um endereço reconstruído do pedido; agora vem da
@@ -441,7 +454,7 @@ E acrescento uma quarta, que é nova e é do deploy, não do produto:
 
 **READY FOR PUBLIC LAUNCH: NO**
 
-Faltam **#5, #6, #7, #8 e #9**, e nenhum é uma questão de horas.
+Faltam **#5, #6, #8 e #9**, e nenhum é uma questão de horas. O #7 fechou.
 
 O que separa a beta do lançamento público não é código: é que na beta você conhece as dez
 pessoas e compensa à mão tudo o que falta. Num lançamento público não pode, e o produto
