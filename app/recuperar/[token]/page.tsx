@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Button from "@/app/ui/Button";
+import { Field } from "@/app/ui/Field";
+import Notice from "@/app/ui/Notice";
 
 // DEFINIR A NOVA PALAVRA-PASSE
 //
@@ -60,50 +63,47 @@ export default function RedefinirPage() {
 
         {pronto ? (
           <>
-            <p className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
-              Palavra-passe alterada. Já pode entrar.
-            </p>
+            <div className="mt-4">
+              <Notice tone="success">Palavra-passe alterada. Já pode entrar.</Notice>
+            </div>
             <Link href="/entrar" className="mt-6 block text-sm text-zinc-400 hover:text-white">
               Entrar agora →
             </Link>
           </>
         ) : (
           <form onSubmit={submeter}>
-            <label htmlFor="password" className="mt-6 block text-sm font-medium">
-              Escreva a nova palavra-passe
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoFocus
-              required
-              minLength={MIN}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
-              placeholder="Pelo menos 8 caracteres"
-            />
-            <p className="mt-2 text-sm text-zinc-500">
-              É com esta que volta ao seu site. Escolha uma de que se lembre.
-            </p>
+            <div className="mt-6">
+              <Field
+                id="password"
+                label="Escreva a nova palavra-passe"
+                hint="É com esta que volta ao seu site. Escolha uma de que se lembre."
+                type="password"
+                autoFocus
+                required
+                minLength={MIN}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Pelo menos 8 caracteres"
+              />
+            </div>
 
             {erro && (
-              <div role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="mt-4">
+                <Notice>
                 <p>{erro}</p>
                 {/* Um link morto sem saída é onde a pessoa desiste. */}
                 <Link href="/recuperar" className="mt-2 block underline">
                   Pedir um link novo
                 </Link>
+                </Notice>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={enviando || password.length < MIN}
-              className="mt-6 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
-            >
-              {enviando ? "Um momento…" : "Guardar e entrar"}
-            </button>
+            <div className="mt-6">
+              <Button type="submit" block size="lg" loading={enviando} disabled={password.length < MIN}>
+                {enviando ? "Um momento…" : "Guardar e entrar"}
+              </Button>
+            </div>
           </form>
         )}
       </div>

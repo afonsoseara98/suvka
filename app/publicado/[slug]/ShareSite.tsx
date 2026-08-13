@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Button from "@/app/ui/Button";
 
 // O ÚNICO MOMENTO EM QUE UM DONO PARTILHA UMA COISA NOSSA
 //
@@ -66,11 +67,8 @@ export default function ShareSite({ url }: { url: string }) {
   }
 
   return (
-    <button
-      onClick={partilhar}
-      className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-zinc-200"
-    >
+    <Button onClick={partilhar} size="lg">
       {enviado ? "Enviar a mais alguém" : "Enviar por mensagem"}
-    </button>
+    </Button>
   );
 }

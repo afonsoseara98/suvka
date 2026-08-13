@@ -4,6 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
+import Button from "@/app/ui/Button";
+import { Field } from "@/app/ui/Field";
+import Notice from "@/app/ui/Notice";
 
 // Signing in is no longer the front door - see app/page.tsx. This page exists for the two
 // moments an account genuinely buys something: coming back to a site you already made, and
@@ -83,30 +86,34 @@ function SignInForm({ publishing }: { publishing: boolean }) {
           {/* Asked for only when someone is deliberately creating an account rather than
               finishing a publish. Every field between pressing Publish and the site being
               live is a field somebody abandons at. */}
+          {/* Rótulos a sério, e não um placeholder a fazer de rótulo: o placeholder
+              desaparece assim que se escreve, e quem volta ao formulário a meio deixa de
+              saber o que aquela caixa queria. */}
           {mode === "signup" && !publishing && (
-            <input
+            <Field
+              id="nome"
+              label="Nome (opcional)"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nome (opcional)"
-              className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
+              placeholder="Como lhe chamamos"
             />
           )}
-          <input
+          <Field
+            id="email"
+            label="Email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            aria-label="Email"
-            className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
+            placeholder="geral@orestaurante.pt"
           />
-          <input
+          <Field
+            id="password"
+            label="Palavra-passe"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            aria-label="Password"
-            className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
+            placeholder="Pelo menos 8 caracteres"
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();
             }}
@@ -114,16 +121,13 @@ function SignInForm({ publishing }: { publishing: boolean }) {
         </div>
 
         {error && (
-          <p role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-            {error}
-          </p>
+          <div className="mt-4">
+            <Notice>{error}</Notice>
+          </div>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || !email || !password}
-          className="mt-6 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
-        >
+        <div className="mt-6">
+          <Button onClick={handleSubmit} block size="lg" loading={submitting} disabled={!email || !password}>
           {submitting
             ? "Um momento…"
             : publishing
@@ -133,7 +137,8 @@ function SignInForm({ publishing }: { publishing: boolean }) {
               : mode === "signin"
                 ? "Entrar"
                 : "Criar conta"}
-        </button>
+          </Button>
+        </div>
 
         <button
           onClick={() => {

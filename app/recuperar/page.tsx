@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Button from "@/app/ui/Button";
+import { Field } from "@/app/ui/Field";
+import Notice from "@/app/ui/Notice";
 
 // PEDIR UM LINK PARA VOLTAR A ENTRAR
 //
@@ -63,33 +66,30 @@ export default function RecuperarPage() {
               palavra-passe. O seu site continua no ar entretanto.
             </p>
 
-            <label htmlFor="email" className="mt-6 block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoFocus
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-sm outline-none placeholder:text-zinc-500"
-              placeholder="geral@orestaurante.pt"
-            />
+            <div className="mt-6">
+              <Field
+                id="email"
+                label="Email"
+                type="email"
+                autoFocus
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="geral@orestaurante.pt"
+              />
+            </div>
 
             {erro && (
-              <p role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-                {erro}
-              </p>
+              <div className="mt-4">
+                <Notice>{erro}</Notice>
+              </div>
             )}
 
-            <button
-              type="submit"
-              disabled={enviando || !email}
-              className="mt-6 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
-            >
-              {enviando ? "Um momento…" : "Enviar link"}
-            </button>
+            <div className="mt-6">
+              <Button type="submit" block size="lg" loading={enviando} disabled={!email}>
+                {enviando ? "Um momento…" : "Enviar link"}
+              </Button>
+            </div>
 
             <Link href="/entrar" className="mt-4 block text-center text-sm text-zinc-400 hover:text-white">
               Lembrei-me. Voltar a entrar

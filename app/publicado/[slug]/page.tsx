@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/app/components/RequireAuth";
+import Button from "@/app/ui/Button";
 import ShareSite from "./ShareSite";
 
 // THE MOMENT SOMETHING BECAME REAL
@@ -50,19 +51,20 @@ function PublishedContent({ slug }: { slug: string }) {
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 transition hover:bg-zinc-900"
+            className="inline-flex items-center justify-center rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 transition-colors hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             Ver o meu site
           </a>
-          <button
+          <Button
+            variant="secondary"
+            size="lg"
             onClick={() => {
               navigator.clipboard?.writeText(url);
               setCopied(true);
             }}
-            className="rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 transition hover:bg-zinc-900"
           >
             {copied ? "Link copiado" : "Copiar link"}
-          </button>
+          </Button>
         </div>
 
         {/* A site nobody visits is not worth 19 € a month, and the owner is never more
