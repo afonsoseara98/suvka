@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { readAttribution } from "@/app/lib/attribution";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -181,7 +182,10 @@ function RestaurantForm() {
       const response = await fetch("/api/restaurant/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        // A origem lida na chegada viaja com o rascunho. E o rascunho ja atravessa o funil
+        // todo ate a publicacao, portanto os eventos seguintes herdam-na por juncao - sem
+        // cookie e sem nada que siga uma pessoa.
+        body: JSON.stringify({ ...input, origem: readAttribution(window.sessionStorage) }),
       });
       const data = await response.json();
 

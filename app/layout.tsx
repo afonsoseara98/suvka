@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CaptureAttribution from "@/app/components/CaptureAttribution";
 import { Geist, Geist_Mono } from "next/font/google";
 import { appUrl } from "@/app/lib/appUrl";
 import { SessionProvider } from "next-auth/react";
@@ -50,6 +51,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <CaptureAttribution />
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

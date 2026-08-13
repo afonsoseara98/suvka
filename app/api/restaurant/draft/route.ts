@@ -5,6 +5,7 @@ import { getRateLimiter, DRAFT_LIMIT, DRAFT_WINDOW_MS } from "@/app/lib/rateLimi
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import { validateRestaurantInput, isValid, normaliseRestaurantInput, type RestaurantInput } from "@/app/lib/restaurant/input";
 import { track } from "@/app/lib/events";
+import { attributionDetails } from "@/app/lib/attribution";
 import { buildRestaurantPage, imageQueriesFor } from "@/app/lib/restaurant/buildPage";
 import type { ResolvedImage, VisualIntent } from "@/app/ai/types/visual";
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as Partial<RestaurantInput>;
+    const body = (await request.json()) as Partial<RestaurantInput> & { origem?: unknown };
 
     // The public form does not ask for an email; it comes from the account at publish time.
     const errors = validateRestaurantInput(body, { requireEmail: false });
@@ -75,7 +76,14 @@ export async function POST(request: Request) {
 
     const draft = await draftStore.create(input, landing);
     // The top of the funnel. Everything downstream is measured as a fraction of this.
-    track("preview_created", { draftId: draft.id });
+    // DE ONDE VEIO, GRAVADO ONDE O FUNIL COMECA
+    //
+    // Sem isto, tres canais de aquisicao produzem exactamente o mesmo dado - nenhum - e
+    // comparar publicidade com pesquisa com parcerias e impossivel por construcao. O
+    // `draftId` leva a origem ate a publicacao, portanto basta grava-la aqui uma vez.
+    //
+    // Validado no servidor e nao aceite como veio: isto atravessou um navegador.
+    track("preview_created", { draftId: draft.id, details: attributionDetails(body.origem) });
 
     return NextResponse.json({ id: draft.id }, { status: 201 });
   } catch (error) {
