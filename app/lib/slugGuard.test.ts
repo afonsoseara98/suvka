@@ -45,6 +45,20 @@ describe("isValidSlug", () => {
     }
   });
 
+  // A ÂNCORA `$` É UMA SUBTILEZA QUE NINGUÉM VERIFICA AO LER
+  //
+  // Em Perl, Python e Ruby, `$` aceita uma quebra de linha final — `"taberna\n"` passaria, e
+  // um slug com um newline seria pedido à base de dados. Em JavaScript, sem a flag `m`, não
+  // passa. Verificado, não assumido.
+  //
+  // Este teste existe para o caso de alguém acrescentar `m` ao padrão um dia, ou de o portar
+  // para outra linguagem. É a diferença entre uma garantia e uma coincidência.
+  it("recusa uma quebra de linha final, que noutras linguagens passaria", () => {
+    expect(isValidSlug("taberna\n")).toBe(false);
+    expect(isValidSlug("taberna\r")).toBe(false);
+    expect(isValidSlug("taberna\nvermelha")).toBe(false);
+  });
+
   it("aceita o que o slugify produz", () => {
     for (const real of ["taberna-do-goncalo", "a", "adega-2", "padaria-ceu-azul"]) {
       expect(isValidSlug(real), real).toBe(true);

@@ -23,11 +23,22 @@ import SiteEvents from "./SiteEvents";
 // Serving costs one row read: the published snapshot is materialized at publish time
 // (see app/lib/publishService.ts), never replayed from the operation log.
 
-// UMA CONSULTA POR VISITA, EM VEZ DE DUAS
+// MEDIDO, NÃO DEDUZIDO: 4,8 → 2,6 VARRIMENTOS POR VISITA
 //
-// O `generateMetadata` e o componente precisam do mesmo site, e cada um pedia o seu: duas
-// idas ao Postgres por cada visita à superfície mais pública do produto, que é a única que
-// é servida a estranhos e a que tem de ser mais rápida.
+// O `generateMetadata` e o componente precisam do mesmo site, e cada um pedia o seu.
+//
+// Eu tinha escrito que isso eram "duas idas ao Postgres". Estava errado, e a medição
+// apanhou-me. Contado com `pg_stat_user_tables`, cinco visitas de cada vez:
+//
+//                     chamadas    Project    Page     total por visita
+//   sem memoização      2/visita    1/visita  3,8       4,8
+//   com memoização      1/visita    1/visita  1,6       2,6
+//
+// A tabela `Project` NUNCA fez duas consultas: o `findUnique` do Prisma tem um dataloader
+// que junta chamadas idênticas no mesmo tick numa só. O desperdício real estava no `Page` —
+// o `listPages` é um `findMany`, que o dataloader não junta, e esse corria mesmo duas vezes.
+//
+// Portanto o ganho é real e é 46%, mas não pela razão que eu tinha escrito.
 //
 // O `cache` do React desduplica dentro do MESMO pedido - a segunda chamada devolve o que a
 // primeira trouxe, sem tocar na base de dados. Não é uma cache entre visitas: dois
