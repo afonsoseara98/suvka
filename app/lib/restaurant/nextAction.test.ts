@@ -98,3 +98,38 @@ describe("nada aqui finge ser uma medição", () => {
     }
   });
 });
+
+// UMA CONTRADIÇÃO VALE MAIS DO QUE UM CAMPO EM FALTA
+//
+// Que lhe falta o WhatsApp, ele sabe - é um campo vazio que ele viu quando preencheu. Que o
+// site que lhe fizemos parece caro e a casa dele é barata, não sabe.
+describe("o que ele não consegue ver sozinho vem primeiro", () => {
+  const contradicao = {
+    eixo: "estiloAcimaDoPreco",
+    viu: 'Escolheu o estilo "Elegante" e os pratos estão a 9 €.',
+    custa: "O site vai parecer mais caro do que a casa é.",
+    decide: "O estilo está mal escolhido, ou os preços estão desactualizados?",
+    gravidade: 0.9,
+  };
+
+  it("ganha a um campo em falta", () => {
+    const accao = nextActionFor(site({ temWhatsapp: false, fotografias: 0 }), [contradicao]);
+    expect(accao?.campo).toBe("estiloAcimaDoPreco");
+    expect(accao?.titulo).toMatch(/\?$/);
+  });
+
+  // O único caso em que a página está NESTE MOMENTO a calar-se sobre uma coisa que sabe.
+  it("mas não ganha ao horário que não conseguimos ler", () => {
+    expect(nextActionFor(site({ horarioLegivel: false }), [contradicao])?.campo).toBe("schedule");
+  });
+
+  it("uma contradição leve não interrompe o trabalho normal", () => {
+    const leve = { ...contradicao, gravidade: 0.5 };
+    expect(nextActionFor(site({ temWhatsapp: false }), [leve])?.campo).toBe("whatsapp");
+  });
+
+  it("um site completo com uma contradição continua a ter o que dizer", () => {
+    expect(nextActionFor(site(), [])).toBeNull();
+    expect(nextActionFor(site(), [contradicao])?.campo).toBe("estiloAcimaDoPreco");
+  });
+});

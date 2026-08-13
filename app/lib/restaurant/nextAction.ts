@@ -1,5 +1,6 @@
 import type { RestaurantInput } from "./input";
 import { readSchedule } from "./openNow";
+import type { Contradicao } from "./contradictions";
 
 // O QUE FAÇO HOJE PARA ENCHER MAIS MESAS?
 //
@@ -140,18 +141,38 @@ const ACCOES: Array<{ falta: (estado: SiteState) => boolean; accao: NextAction }
   },
 ];
 
-// null quando não há nada a apontar. Deliberado: um painel que inventa uma tarefa para ter o
-// que dizer ensina o dono a ignorá-lo, e a partir daí a recomendação que importava também é
-// ignorada.
-export function nextActionFor(estado: SiteState): NextAction | null {
-  return ACCOES.find((candidata) => candidata.falta(estado))?.accao ?? null;
+// UMA CONTRADIÇÃO VALE MAIS DO QUE UM CAMPO EM FALTA
+//
+// Que lhe falta o WhatsApp, ele sabe — é um campo vazio que ele viu quando preencheu. Que o
+// site que lhe fizemos parece caro e a casa dele é barata, não sabe, e é a única coisa aqui
+// que ele não consegue ver sozinho.
+//
+// Fica logo a seguir ao horário ilegível, que é o único caso em que a página está neste
+// momento a calar-se sobre uma coisa que sabe.
+//
+// E entra como pergunta, não como tarefa: nós não sabemos qual dos dois lados está errado —
+// se escolheu mal a palavra ou se está a cobrar a menos pelo que faz. Ele sabe.
+export function nextActionFor(estado: SiteState, contradicoes: Contradicao[] = []): NextAction | null {
+  const primeira = ACCOES.find((candidata) => candidata.falta(estado));
+  if (primeira?.accao.campo === "schedule") return primeira.accao;
+
+  const grave = contradicoes.find((c) => c.gravidade >= 0.7);
+  if (grave) {
+    return {
+      titulo: grave.decide,
+      porque: `${grave.viu} ${grave.custa}`,
+      campo: grave.eixo,
+    };
+  }
+
+  return primeira?.accao ?? null;
 }
 
 // Quantas das acções já estão feitas. Não é uma nota nem uma percentagem de "qualidade do
 // site" — é uma contagem do que está preenchido, e serve só para o painel poder dizer "faltam
 // duas" em vez de deixar o dono sem saber se está perto do fim.
-export function remainingActions(estado: SiteState): number {
-  return ACCOES.filter((candidata) => candidata.falta(estado)).length;
+export function remainingActions(estado: SiteState, contradicoes: Contradicao[] = []): number {
+  return ACCOES.filter((candidata) => candidata.falta(estado)).length + contradicoes.filter((c) => c.gravidade >= 0.7).length;
 }
 
 // O ESTADO DO SITE, LIDO DO FORMULÁRIO QUE ELE PREENCHEU

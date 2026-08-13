@@ -4,6 +4,7 @@ import { repos } from "@/app/lib/repos";
 import { prisma } from "@/app/lib/prisma";
 import { isOwnPhoto } from "@/app/lib/restaurant/photoLimits";
 import { nextActionFor, remainingActions, siteStateFrom } from "@/app/lib/restaurant/nextAction";
+import { contradicoesDe } from "@/app/lib/restaurant/contradictions";
 import type { GalleryImage } from "@/app/types/landing";
 import { createProjectFromGeneration } from "@/app/lib/projectService";
 import type { LandingPage } from "@/app/types/landing";
@@ -67,7 +68,8 @@ export async function GET() {
 function nextActionSummary(input: Parameters<typeof siteStateFrom>[0] | null, fotografiasProprias: number) {
   if (!input) return { nextAction: null, remaining: 0 };
   const estado = siteStateFrom(input, fotografiasProprias);
-  return { nextAction: nextActionFor(estado), remaining: remainingActions(estado) };
+  const contradicoes = contradicoesDe(input, fotografiasProprias);
+  return { nextAction: nextActionFor(estado, contradicoes), remaining: remainingActions(estado, contradicoes) };
 }
 
 // Persists a Project from a just-generated LandingPage - the seam between /api/generate
