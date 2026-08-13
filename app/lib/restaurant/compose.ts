@@ -1,5 +1,6 @@
 import type { Section } from "@/app/types/landing";
 import type { RestaurantInput } from "./input";
+import type { CreativeDirection } from "./direction";
 
 // O QUE ISTO CORRIGE, E É UMA PROMESSA POR CUMPRIR
 //
@@ -57,8 +58,23 @@ function pick<T>(options: readonly T[], seed: number): T {
   return options[seed % options.length];
 }
 
+// ESTE FICHEIRO LÊ FACTOS, NUNCA GOSTOS
+//
+// Antes lia `input.cuisine` e `input.style` directamente, e isso era uma violação de camada
+// com uma consequência prática: existiam dois sítios a decidir o que é uma casa contida - um
+// aqui e outro em direction.ts - e no dia em que discordassem, o layout dizia uma coisa e as
+// fotografias diziam outra sobre o mesmo restaurante.
+//
+// Agora a divisão é limpa. Da `direction` vem tudo o que é juízo sobre a casa: luxo, energia,
+// rusticidade, o que a página tem de conseguir, qual é a primeira pergunta de quem chega. Do
+// `input` vem só o que é contagem - quantos pratos, quantas fotografias - que não é gosto
+// nenhum e não tem interpretação possível.
+//
+// A regra, para quem alterar isto a seguir: se a linha precisa de saber que tipo de casa é,
+// a resposta está na `direction`. Se precisa de saber quanta coisa há, está no `input`.
 export interface ComposeInput {
   input: RestaurantInput;
+  direction: CreativeDirection;
   galleryCount: number;
   orderCount: number;
 }
@@ -82,42 +98,58 @@ export interface ComposeInput {
 // Nos outros, duas ou três leituras são todas boas — e é aí que o nome escolhe. Sem isto,
 // duas tascas portuguesas rústicas com quatro fotografias cada recebiam a MESMA página, que
 // é precisamente o que o SUVKA_NORTH_STAR.md promete que não acontece.
-function heroVariant({ input, galleryCount }: ComposeInput): string {
+function heroVariant({ input, direction, galleryCount }: ComposeInput): string {
   // Contenção não é uma preferência: é o produto que a casa vende. Fixo.
-  if (input.style === "Minimal" || input.cuisine === "Fine dining" || input.style === "Elegant") {
-    return "minimal";
-  }
+  if (contido(direction)) return "minimal";
 
   const seed = seedOf(input.name);
 
   // Com fotografias a sério, "split" é a leitura mais forte — mas "centered" continua a ser
   // boa, e uma rua com duas tascas não pode ter duas páginas iguais.
-  if (galleryCount >= 2 && (input.style === "Rustic" || input.style === "Classic")) {
+  if (galleryCount >= 2 && direction.rusticidade > 0.55) {
     return pick(["split", "split", "centered"] as const, seed);
   }
 
   return pick(["centered", "split"] as const, seed);
 }
 
+// Uma casa que se vende pela contenção não leva a página cheia de ar entre tudo: leva MENOS
+// secções a competir e mais espaço em volta das que ficam.
+//
+// Repare-se em quem NÃO entra aqui: uma casa que escolheu "Elegant" na caixa e cobra 12 € por
+// prato. Antes entrava, porque a regra lia a caixa. Agora não, porque a energia e o luxo saem
+// do que ela cobra - e uma casa a 12 € que se veste de contida está a esconder a única coisa
+// que tem para dizer.
+function contido(direction: CreativeDirection): boolean {
+  return direction.energia === "baixa" || direction.luxo > 0.65;
+}
+
 // O QUE ABRE A PÁGINA A SEGUIR AO NOME
 //
 // A pergunta é: o que é que esta casa vende primeiro? A resposta está no que o dono deu.
-function leadsWithGallery({ input, galleryCount }: ComposeInput): boolean {
+function leadsWithGallery({ input, direction, galleryCount }: ComposeInput): boolean {
   // Quatro fotografias ou mais é uma casa que investiu em mostrar-se. A sala é o argumento.
   if (galleryCount >= 4) return true;
   // Poucos pratos e alguma fotografia: a lista não sustenta a página sozinha.
   if (galleryCount >= 2 && input.dishes.length <= 3) return true;
+  // A RAZÃO PELA QUAL ALGUÉM ESCOLHE ESTA CASA É UMA IMAGEM, E ENTÃO A GALERIA ABRE
+  //
+  // Quando o que distingue esta casa da do lado é a esplanada, o cão debaixo da mesa ou a
+  // sala com crianças, o argumento vê-se — e o sítio de um argumento que se vê é em cima.
+  //
+  // Quem decide se a razão se vê é a direcção criativa, que é quem monta a galeria. Abrir à
+  // segunda é uma razão excelente e não se fotografa: aí `razao` é null e a página não abre
+  // com uma galeria que não tem o argumento lá dentro.
+  if (galleryCount >= 2 && direction.fotografia.razao !== null) return true;
   return false;
 }
 
 export function composeSections(args: ComposeInput): Section[] {
-  const { input, galleryCount, orderCount } = args;
+  const { input, direction, galleryCount, orderCount } = args;
   const seed = seedOf(input.name);
 
-  const contido = input.cuisine === "Fine dining" || input.style === "Minimal" || input.style === "Elegant";
-  // Uma casa que se vende pela contenção não leva a página cheia de ar entre tudo: leva
-  // MENOS secções a competir e mais espaço em volta das que ficam.
-  const respiro = contido ? "breather" : "standard";
+  const contida = contido(direction);
+  const respiro = contida ? "breather" : "standard";
 
   const sections: Section[] = [
     { type: "hero", variant: heroVariant(args), prominence: "primary", rhythm: respiro },
@@ -145,7 +177,7 @@ export function composeSections(args: ComposeInput): Section[] {
     // carta de restaurante, e nenhuma das duas está errada.
     //
     // Numa casa contida o respiro é o argumento e fica fixo. Nas outras, vota o nome.
-    rhythm: contido ? "breather" : pick(["breather", "standard"] as const, seed),
+    rhythm: contida ? "breather" : pick(["breather", "standard"] as const, seed),
   };
 
   if (galleryCount > 0 && leadsWithGallery(args)) {
@@ -161,11 +193,12 @@ export function composeSections(args: ComposeInput): Section[] {
     sections.push({ type: "orders", variant: "buttons", prominence: "primary", rhythm: "standard" });
   }
 
-  // O HORÁRIO SOBE NUM CAFÉ E NUMA CASA DE REFEIÇÕES RÁPIDAS
+  // O HORÁRIO SOBE QUANDO A PRIMEIRA PERGUNTA É "ESTÁ ABERTO?"
   //
-  // A pergunta de quem procura um café é "está aberto agora", e não "o que é que servem".
-  // Num restaurante de jantar a pergunta é outra, e o horário pode ficar onde sempre esteve.
-  const horarioPrimeiro = input.cuisine === "Café" || input.cuisine === "Fast-casual";
+  // Quem procura um café está na rua e decide em dez segundos; o horário É a resposta. Num
+  // restaurante de jantar a primeira pergunta é outra, e o horário fica onde sempre esteve.
+  // Qual das perguntas é a primeira decide-se na direcção criativa, não aqui.
+  const horarioPrimeiro = direction.primeiraPergunta === "aberto";
   const horario: Section = {
     type: "hours",
     variant: pick(["columns", "stacked"] as const, seed),

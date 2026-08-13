@@ -142,7 +142,12 @@ export function buildRestaurantPage(
       branding: { primaryColor: "", secondaryColor: "", accentColor: "", fontHeading: "", fontBody: "", logoPrompt: "" },
       images: { heroPrompt: "", ogImagePrompt: "" },
     },
-    sections: composeSections({ input, galleryCount: gallery.length, orderCount: orders.links.length }),
+    sections: composeSections({
+      input,
+      direction: directionFor(input),
+      galleryCount: gallery.length,
+      orderCount: orders.links.length,
+    }),
     hero: {
       badge: cuisine,
       title: input.name,

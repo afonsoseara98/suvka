@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { composeSections, seedOf } from "./compose";
+import { directionFor } from "./direction";
 import type { RestaurantInput } from "./input";
 
 function casa(o: Partial<RestaurantInput> & { pratos?: number } = {}): RestaurantInput {
@@ -26,8 +27,13 @@ function casa(o: Partial<RestaurantInput> & { pratos?: number } = {}): Restauran
   } as RestaurantInput;
 }
 
+// A composicao ja nao le o formulario: le a direccao criativa, que e quem interpreta o
+// formulario. Este atalho monta a camada de cima uma vez, como o buildPage faz.
+const compor = (input: RestaurantInput, galleryCount = 0, orderCount = 0) =>
+  composeSections({ input, direction: directionFor(input), galleryCount, orderCount });
+
 const assinatura = (input: RestaurantInput, galleryCount = 0, orderCount = 0) =>
-  composeSections({ input, galleryCount, orderCount })
+  compor(input, galleryCount, orderCount)
     .map((s) => `${s.type}:${s.variant}:${s.rhythm}`)
     .join(" ");
 
@@ -78,27 +84,27 @@ describe("estabilidade", () => {
 // AS REGRAS SÃO JUÍZOS SOBRE RESTAURANTES, NÃO SOBRE LAYOUTS
 describe("a composição segue o que a casa vende", () => {
   it("com muitas fotografias, a sala abre a página", () => {
-    const seccoes = composeSections({ input: casa({ pratos: 3 }), galleryCount: 6, orderCount: 0 });
+    const seccoes = compor(casa({ pratos: 3 }), 6, 0);
     const tipos = seccoes.map((s) => s.type);
     expect(tipos.indexOf("gallery")).toBeLessThan(tipos.indexOf("menu"));
   });
 
   it("com muitos pratos e poucas fotografias, a comida abre a página", () => {
-    const seccoes = composeSections({ input: casa({ pratos: 12 }), galleryCount: 1, orderCount: 0 });
+    const seccoes = compor(casa({ pratos: 12 }), 1, 0);
     const tipos = seccoes.map((s) => s.type);
     expect(tipos.indexOf("menu")).toBeLessThan(tipos.indexOf("gallery"));
   });
 
   // A pergunta de quem procura um café é "está aberto agora", e não "o que é que servem".
   it("num café o horário sobe para junto do topo", () => {
-    const seccoes = composeSections({ input: casa({ cuisine: "Café", style: "Casual" }), galleryCount: 2, orderCount: 0 });
+    const seccoes = compor(casa({ cuisine: "Café", style: "Casual" }), 2, 0);
     const tipos = seccoes.map((s) => s.type);
     expect(tipos.indexOf("hours")).toBe(1);
     expect(seccoes.find((s) => s.type === "hours")?.prominence).toBe("primary");
   });
 
   it("num restaurante de jantar o horário fica onde sempre esteve", () => {
-    const seccoes = composeSections({ input: casa({ cuisine: "Portuguese" }), galleryCount: 2, orderCount: 0 });
+    const seccoes = compor(casa({ cuisine: "Portuguese" }), 2, 0);
     const tipos = seccoes.map((s) => s.type);
     expect(tipos.indexOf("hours")).toBeGreaterThan(tipos.indexOf("menu"));
   });
@@ -106,18 +112,14 @@ describe("a composição segue o que a casa vende", () => {
   // A contenção é o produto que uma casa destas vende. Não é uma preferência do nome.
   it("na alta cozinha o hero é sempre contido, venha o nome que vier", () => {
     for (const nome of ["O Fogão", "Belcanto", "Ocean", "Alma", "Feitoria"]) {
-      const seccoes = composeSections({
-        input: casa({ name: nome, cuisine: "Fine dining", style: "Elegant" }),
-        galleryCount: 5,
-        orderCount: 0,
-      });
+      const seccoes = compor(casa({ name: nome, cuisine: "Fine dining", style: "Elegant" }), 5, 0);
       expect(seccoes[0].variant, nome).toBe("minimal");
     }
   });
 
   it("uma ementa longa lê-se em colunas, uma curta em lista", () => {
-    const longa = composeSections({ input: casa({ pratos: 12 }), galleryCount: 0, orderCount: 0 });
-    const curta = composeSections({ input: casa({ pratos: 3 }), galleryCount: 0, orderCount: 0 });
+    const longa = compor(casa({ pratos: 12 }), 0, 0);
+    const curta = compor(casa({ pratos: 3 }), 0, 0);
 
     expect(longa.find((s) => s.type === "menu")?.variant).toBe("columns");
     expect(curta.find((s) => s.type === "menu")?.variant).toBe("list");
@@ -126,14 +128,14 @@ describe("a composição segue o que a casa vende", () => {
   // Nada é acolchoado para a página parecer comprida: uma secção existe porque o dono deu
   // conteúdo para ela.
   it("sem fotografias não há galeria, sem pratos não há ementa", () => {
-    const tipos = composeSections({ input: casa({ pratos: 0 }), galleryCount: 0, orderCount: 0 }).map((s) => s.type);
+    const tipos = compor(casa({ pratos: 0 }), 0, 0).map((s) => s.type);
     expect(tipos).not.toContain("gallery");
     expect(tipos).not.toContain("menu");
     expect(tipos).toEqual(["hero", "hours", "footer"]);
   });
 
   it("as encomendas vêm logo a seguir à ementa, que é quando dá vontade", () => {
-    const tipos = composeSections({ input: casa({ pratos: 5 }), galleryCount: 0, orderCount: 2 }).map((s) => s.type);
+    const tipos = compor(casa({ pratos: 5 }), 0, 2).map((s) => s.type);
     expect(tipos.indexOf("orders")).toBe(tipos.indexOf("menu") + 1);
   });
 });

@@ -1,4 +1,5 @@
 import type { RestaurantInput } from "./input";
+import { positioningFor, precoMedio, luxoDoPreco, type Positioning } from "./positioning";
 
 // DIRECÇÃO CRIATIVA
 //
@@ -41,6 +42,21 @@ export type Energy = "baixa" | "media" | "alta";
 export type Voice = "calma" | "quente" | "directa";
 export type Conversion = "reserva" | "encomenda" | "chamada";
 
+// A PRIMEIRA PERGUNTA DE QUEM ABRE A PÁGINA
+//
+// Não é a mesma para toda a gente, e é ela que decide o que fica no topo.
+//
+//   aberto   "está aberto agora?" - o café e o sítio de refeições rápidas. A pessoa está na
+//            rua, decide em dez segundos, e o horário é a resposta.
+//   ementa   "o que é que servem?" - o almoço e o jantar comuns.
+//   vale     "vale a pena?" - a casa cara. Ninguém gasta 45 € numa lista de pratos; gasta
+//            numa sala e numa ideia, e por isso aqui a página abre com espaço e não com
+//            informação.
+//
+// Existe aqui em cima, e não no compose, precisamente porque é uma pergunta sobre o
+// restaurante e não sobre a página. O layout limita-se a obedecer-lhe.
+export type Duvida = "aberto" | "ementa" | "vale";
+
 export interface CreativeDirection {
   // O que a casa vende, por palavras. Alimenta as fotografias e mais nada — nunca é texto
   // que alguém leia.
@@ -54,6 +70,7 @@ export interface CreativeDirection {
 
   energia: Energy;
   voz: Voice;
+  primeiraPergunta: Duvida;
 
   // O que a página tem de conseguir que aconteça. Decidido pelo canal que o dono tem, e não
   // pelo que gostaríamos que ele tivesse.
@@ -61,7 +78,18 @@ export interface CreativeDirection {
 
   // As perguntas que vão às fotografias. É aqui que dois restaurantes portugueses deixam de
   // receber a mesma imagem.
-  fotografia: { hero: string; galeria: string[] };
+  //
+  // `razao` é o eixo do diferenciador que ESTÁ na galeria, ou null quando a razão desta casa
+  // não se fotografa. Fica exposto para o layout não ter de calcular a mesma coisa outra vez:
+  // duas listas dos mesmos três eixos discordariam à primeira alteração, e o resultado seria
+  // uma página que abre com a galeria sem ter lá a fotografia que justificava abri-la.
+  fotografia: { hero: string; galeria: string[]; razao: string | null };
+
+  // A camada de cima: para quem é esta casa, e porque é que alguém a escolhe em vez da do
+  // lado. Fica exposta em vez de consumida em silêncio, porque é o que o resto do sistema -
+  // emails, SEO, anúncios - vai precisar de ler, e porque sem isto guardado não há como
+  // perguntar daqui a um ano se as decisões que tomámos estavam certas.
+  posicionamento: Positioning;
 }
 
 // O QUE CADA COZINHA VENDE
@@ -79,35 +107,8 @@ const VENDE: Record<string, string[]> = {
   "Fast-casual": ["rapidez", "balcão", "cores", "movimento", "dia", "simples"],
 };
 
-// A ESCALA DE PREÇOS DA RESTAURAÇÃO PORTUGUESA
-//
-// Não é arbitrária e não é global: um prato a 12 € num restaurante de Lisboa é uma casa de
-// bairro; a 30 € é uma casa de jantar; a 45 € é outra coisa. Estes limiares são para o
-// mercado onde este produto vive, e mudam se o mercado mudar.
-function precoMedio(input: RestaurantInput): number | null {
-  const valores = input.dishes
-    .map((prato) => {
-      // O preço é texto livre — "18,50 €", "18€", "22". Só conta o que é mesmo um número.
-      const limpo = (prato.price ?? "").replace(/[^\d,.]/g, "").replace(",", ".");
-      const numero = Number.parseFloat(limpo);
-      return Number.isFinite(numero) && numero > 0 && numero < 500 ? numero : null;
-    })
-    .filter((valor): valor is number => valor !== null);
-
-  if (valores.length === 0) return null;
-  return valores.reduce((total, valor) => total + valor, 0) / valores.length;
-}
-
-// 0 quando não há preços — a ausência não é um sinal de casa barata, é ausência. Uma
-// marisqueira que vende a peso não deve ser lida como uma tasca.
-function luxoDoPreco(medio: number | null): number | null {
-  if (medio === null) return null;
-  if (medio >= 40) return 0.95;
-  if (medio >= 28) return 0.75;
-  if (medio >= 18) return 0.5;
-  if (medio >= 12) return 0.3;
-  return 0.15;
-}
+// O preço e a escala que o lê vivem em positioning.ts, que é a camada de cima: são uma
+// afirmação sobre onde esta casa está no mercado, e não sobre o aspecto que deve ter.
 
 const LUXO_ESTILO: Record<string, number> = {
   Elegant: 0.8,
@@ -129,6 +130,7 @@ const RUSTICIDADE_ESTILO: Record<string, number> = {
 
 export function directionFor(input: RestaurantInput): CreativeDirection {
   const vende = VENDE[input.cuisine] ?? ["mesa", "comida", "sala"];
+  const posicionamento = positioningFor(input);
 
   // O QUE ELE COBRA GANHA AO QUE ELE DIZ QUE É
   //
@@ -144,7 +146,14 @@ export function directionFor(input: RestaurantInput): CreativeDirection {
   // Intimidade é o oposto de movimento. Uma casa de jantar com poucos pratos e sem entregas
   // é íntima; um sítio com take-away e três plataformas de encomenda não é, nem quer ser.
   const movimento = (input.hasDelivery ? 0.3 : 0) + (input.uberEats || input.glovo || input.boltFood ? 0.3 : 0);
-  const intimidade = Math.max(0, Math.min(1, 0.4 + luxo * 0.5 - movimento));
+  // UMA CASA QUE RECEBE FAMÍLIAS NÃO É UMA CASA ÍNTIMA, POR MAIS CARA QUE SEJA
+  //
+  // O preço sozinho dizia que sim, e estava errado: uma sala com mesas de oito e carrinhos de
+  // bebé é uma sala com barulho. Quando o dono declara que é bom para crianças, isso é um
+  // facto sobre a sala que o preço não sabe - e o público entra aqui como correcção.
+  const familia = posicionamento.publico.familia;
+  const correccaoDePublico = familia.base === "afirmado" ? -0.25 : 0;
+  const intimidade = Math.max(0, Math.min(1, 0.4 + luxo * 0.5 - movimento + correccaoDePublico));
 
   const energia: Energy =
     input.cuisine === "Fine dining" || input.style === "Minimal" || luxo > 0.7
@@ -154,6 +163,11 @@ export function directionFor(input: RestaurantInput): CreativeDirection {
         : "media";
 
   const voz: Voice = luxo > 0.7 ? "calma" : rusticidade > 0.55 ? "quente" : "directa";
+
+  // O café e o sítio de refeições rápidas ganham à casa cara nesta ordem de propósito: quem
+  // está na rua a decidir em dez segundos precisa do horário mesmo que a casa seja boa.
+  const primeiraPergunta: Duvida =
+    input.cuisine === "Café" || input.cuisine === "Fast-casual" ? "aberto" : luxo > 0.65 ? "vale" : "ementa";
 
   // O QUE A PÁGINA TEM DE CONSEGUIR
   //
@@ -174,8 +188,10 @@ export function directionFor(input: RestaurantInput): CreativeDirection {
     intimidade,
     energia,
     voz,
+    primeiraPergunta,
     conversao,
-    fotografia: fotografiaPara(input, luxo),
+    fotografia: fotografiaPara(input, luxo, posicionamento),
+    posicionamento,
   };
 }
 
@@ -283,7 +299,18 @@ const TEMA_NEUTRO = {
   ],
 };
 
-function fotografiaPara(input: RestaurantInput, luxo: number): CreativeDirection["fotografia"] {
+// A FOTOGRAFIA DA RAZÃO
+//
+// Nem toda a razão para escolher uma casa se fotografa. "Abre à segunda" e "aceita MB Way"
+// são verdadeiros e decisivos e não têm imagem - forçar uma seria inventar. Só estes três
+// entram, e só quando o dono os afirmou.
+const FOTO_DO_DIFERENCIADOR: Record<string, string> = {
+  esplanada: "restaurant terrace outdoor seating",
+  animais: "dog lying under restaurant table",
+  criancas: "family with children eating at restaurant table",
+};
+
+function fotografiaPara(input: RestaurantInput, luxo: number, posicionamento: Positioning): CreativeDirection["fotografia"] {
   const base = TEMAS[input.cuisine] ?? TEMA_NEUTRO;
 
   // O LUXO MUDA O TRATAMENTO, NÃO O TEMA
@@ -293,8 +320,26 @@ function fotografiaPara(input: RestaurantInput, luxo: number): CreativeDirection
   // Trocar o tema faria a casa cara deixar de parecer o que é.
   const tratamento = luxo > 0.7 ? " low light elegant" : luxo < 0.3 ? " natural daylight candid" : "";
 
+  // A RAZÃO PELA QUAL ALGUÉM ESCOLHE ESTA CASA É A PRIMEIRA COISA DA GALERIA
+  //
+  // As oito listas acima distinguem cozinhas, e é o mais longe que se chega a olhar só para a
+  // casa: duas tascas portuguesas continuavam a receber as mesmas quatro fotografias. Isto é
+  // o que as separa, e não é um efeito - é a única imagem da galeria que existe por causa de
+  // um facto daquele restaurante e de mais nenhum.
+  //
+  // Entra à frente e não no fim porque é a razão, e a razão não se põe em último. E empurra
+  // a última para fora em vez de acrescentar: o número de fotografias que pedimos é o mesmo,
+  // e a que sai é a mais genérica da lista.
+  // A mais forte de entre as que se vêem — que não é necessariamente a mais forte de todas.
+  // Uma casa cuja melhor razão é abrir à segunda e cuja segunda melhor é a esplanada mostra a
+  // esplanada, porque é essa que tem imagem.
+  const razao = posicionamento.diferenciadores.find((d) => d.base === "afirmado" && FOTO_DO_DIFERENCIADOR[d.eixo]);
+
   return {
     hero: `${base.hero}${tratamento}`,
-    galeria: base.galeria,
+    galeria: razao
+      ? [FOTO_DO_DIFERENCIADOR[razao.eixo], ...base.galeria].slice(0, base.galeria.length)
+      : base.galeria,
+    razao: razao?.eixo ?? null,
   };
 }
