@@ -25,6 +25,18 @@ echo "==> Dependências"
 # never quietly gets a different version of something than the machine it was built on.
 npm ci
 
+echo "==> Ambiente"
+# ANTES DA PRIMEIRA COISA IRREVERSÍVEL
+#
+# Isto corria implicitamente no build, que é o passo mais longo e o último. Um APP_URL em
+# falta parava o deploy DEPOIS das migrações já terem corrido, e ficava um servidor a correr
+# código antigo contra um esquema novo com alguém a olhar para um erro sem saber se era grave.
+#
+# Aqui - a seguir ao git pull e ao npm ci, que são reversíveis, e antes de migrar, que não é.
+# As regras não estão copiadas para aqui: isto chama o mesmo app/lib/env.ts que decide se o
+# servidor arranca, porque um preflight que discorde do arranque é pior do que nenhum.
+npx tsx scripts/preflight.ts .env.production
+
 echo "==> Base de dados"
 # `migrate deploy` only applies migrations that already exist. It never generates one and
 # never prompts, which is what makes it safe to run unattended against production data.
