@@ -88,7 +88,27 @@ export default function PublishBar({ draftId, name, tools, contentKey, children 
         </button>
       </div>
 
-      {tools}
+      {/* O SEGUNDO QUE DECIDE TUDO
+
+          A ordem nesta página estava ao contrário. Debaixo da barra vinha o pedido de
+          fotografias - uma zona de arrastar vazia, a pedir trabalho - e só depois o site.
+          A primeira coisa que o dono via, no momento em que devia ficar espantado, era uma
+          tarefa por fazer.
+
+          Ninguém diz "foda-se, isto fez isto em dois minutos" a olhar para um pedido. Diz-o
+          a olhar para o restaurante dele.
+
+          Uma frase, e não um cabeçalho de produto: o nome DELE, e o que aconteceu. Sem
+          exclamação e sem confetes - o que impressiona aqui é o facto, e o facto é que
+          aquilo existe e tem o nome dele em cima. */}
+      <div className="mx-auto max-w-5xl px-5 pt-8 text-center">
+        <h1 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
+          {name} já tem site.
+        </h1>
+        <p className="mt-2 text-sm text-zinc-400">
+          Ainda não está online. Veja-o abaixo e publique quando quiser.
+        </p>
+      </div>
 
       {/* The phone is an iframe because only an iframe has its own viewport.
 
@@ -101,18 +121,29 @@ export default function PublishBar({ draftId, name, tools, contentKey, children 
           iframe there would need its height synced back out - a blank-page failure mode for
           no gain. */}
       {viewport === "mobile" ? (
-        <div className="flex justify-center bg-zinc-900 py-6">
-          <iframe
-            key={contentKey}
-            src={`/preview/d/${draftId}/frame`}
-            title={`${name} — como aparece num telemóvel`}
-            // 375x812 is an iPhone. It scrolls inside the frame, the way a phone does.
-            className="h-[812px] w-[375px] rounded-2xl border border-zinc-700 bg-black"
-          />
+        <div className="flex justify-center py-8">
+          {/* A moldura é um telemóvel e não uma caixa. Custa duas classes - cantos maiores e
+              uma sombra - e é a diferença entre "aqui está o teu HTML" e "aqui está o teu
+              restaurante no telemóvel de um cliente". É a mesma coisa lá dentro; muda o que
+              a pessoa acha que está a ver. */}
+          <div className="rounded-[2.25rem] border-[6px] border-zinc-800 bg-zinc-800 shadow-2xl shadow-black/60">
+            <iframe
+              key={contentKey}
+              src={`/preview/d/${draftId}/frame`}
+              title={`${name} — como aparece num telemóvel`}
+              // 375x812 is an iPhone. It scrolls inside the frame, the way a phone does.
+              className="h-[812px] w-[375px] rounded-[1.75rem] bg-black"
+            />
+          </div>
         </div>
       ) : (
         children
       )}
+
+      {/* AS FOTOGRAFIAS VÊM DEPOIS DE ELE VER O QUE JÁ TEM
+          Antes do site, isto era uma portagem. Depois do site, é uma melhoria óbvia a uma
+          coisa que já é dele - e a diferença entre as duas leituras é só a ordem. */}
+      {tools}
     </div>
   );
 }

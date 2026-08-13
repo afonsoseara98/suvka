@@ -82,10 +82,17 @@ export default function PhotoManager({ draftId, gallery }: Props) {
       <div className="mx-auto max-w-5xl px-5 py-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-white">As suas fotografias</p>
+            {/* DEPOIS DO SITE, ISTO DEIXA DE SER UM PEDIDO E PASSA A SER UMA MELHORIA
+                Este painel vivia ACIMA do site, e era a primeira coisa que o dono via: uma
+                caixa vazia a pedir-lhe trabalho antes de ele ter visto o que ganhou. Mudou
+                de sítio, e o texto muda com ele — deixa de descrever o que falta e passa a
+                dizer o que melhora. */}
+            <p className="text-sm font-medium text-white">
+              {owned.length === 0 ? "Quer pôr as suas próprias fotografias?" : "As suas fotografias"}
+            </p>
             <p className="text-xs text-zinc-500">
               {owned.length === 0
-                ? "As fotos atuais são de banco de imagens. Adicione as do seu restaurante."
+                ? "As de agora são de banco de imagens e ficam bem. As suas ficam melhor."
                 : `${owned.length} de ${MAX_PHOTOS} fotografias suas.`}
             </p>
           </div>
