@@ -102,12 +102,40 @@ async function main() {
         `SELECT migration_name, finished_at FROM "_prisma_migrations" ORDER BY started_at`
       );
       console.log("\n  _prisma_migrations EXISTE. Não há baseline a fazer, e o P3005 não pode acontecer.\n");
+
+      // AS QUE FALTAM TAMBÉM SÃO RESPOSTA
+      //
+      // A primeira versão imprimia só as linhas da tabela de histórico. Quem lesse o output não
+      // tinha como saber se estavam TODAS lá: uma migração na pasta e ausente do histórico
+      // simplesmente não aparecia em lado nenhum. Descoberto a correr isto contra a base de
+      // desenvolvimento, onde faltavam duas e o relatório dizia-se completo.
+      const registadas = new Set(rows.map((r) => r.migration_name));
+      const naPasta = impressoesDas("prisma/migrations").map((m) => m.nome);
+
       for (const linha of rows) {
-        console.log(`    ${linha.finished_at ? "aplicada  " : "POR ACABAR"} ${linha.migration_name}`);
+        console.log(`    ${linha.finished_at ? "aplicada    " : "POR ACABAR  "}${linha.migration_name}`);
       }
-      console.log("\n  Uma migração 'POR ACABAR' é uma que falhou a meio — essa sim precisa de");
-      console.log("  atenção, e a resposta NÃO é marcá-la como aplicada.\n");
-      console.log("  Se estiverem todas aplicadas, o que falta é só correr ./deploy/deploy.sh\n");
+      for (const nome of naPasta.filter((n) => !registadas.has(n))) {
+        console.log(`    por aplicar ${nome}`);
+      }
+
+      // Uma migração no histórico e ausente da pasta é o contrário: alguém apagou ou renomeou
+      // um ficheiro que já correu, e o `migrate deploy` recusa-se a avançar por causa disso.
+      const orfas = rows.map((r) => r.migration_name).filter((n) => !naPasta.includes(n));
+      if (orfas.length > 0) {
+        console.error("\n  ATENÇÃO: estão no histórico e já não existem na pasta:\n");
+        for (const nome of orfas) console.error(`    ${nome}`);
+        console.error("\n  Alguém apagou ou renomeou uma migração que já tinha corrido.\n");
+      }
+
+      const porAcabar = rows.filter((r) => r.finished_at === null);
+      if (porAcabar.length > 0) {
+        console.error("\n  Há migrações POR ACABAR — falharam a meio. A resposta NÃO é marcá-las");
+        console.error("  como aplicadas: é ver o que ficou feito antes de a base ir mais longe.\n");
+        process.exit(2);
+      }
+
+      console.log("\n  Nada a corrigir no histórico. O que falta é correr ./deploy/deploy.sh\n");
       return;
     }
 
