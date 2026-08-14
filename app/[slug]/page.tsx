@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import type { HeroData } from "@/app/types/landing";
 import { notFound } from "next/navigation";
 import Landing from "@/app/components/Landing";
-import { repos } from "@/app/lib/repos";
-import { loadPublishedSite } from "@/app/lib/publishService";
+import { cachedPublishedSite } from "@/app/lib/siteCache";
 import { appUrl } from "@/app/lib/appUrl";
 import RestaurantSchema from "./RestaurantSchema";
 import SiteEvents from "./SiteEvents";
@@ -47,7 +46,10 @@ import SiteEvents from "./SiteEvents";
 //
 // Vive aqui e não dentro do `loadPublishedSite` de propósito: o serviço fica puro e
 // testável sem um contexto de React à volta, e a memoização fica onde o pedido existe.
-const siteFor = cache((slug: string) => loadPublishedSite(repos, slug));
+// As duas camadas fazem coisas diferentes e ambas fazem falta: o `cache` do React desduplica
+// dentro do MESMO pedido (o generateMetadata e o componente pedem o mesmo site), e a cache do
+// Next guarda entre pedidos, invalidada por etiqueta ao publicar. Ver app/lib/siteCache.ts.
+const siteFor = cache((slug: string) => cachedPublishedSite(slug));
 
 interface Props {
   params: Promise<{ slug: string }>;

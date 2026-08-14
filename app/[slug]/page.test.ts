@@ -6,7 +6,11 @@ const mockLoad = vi.fn();
 // O repositório real importa o PrismaClient no momento do import, que precisa de uma
 // DATABASE_URL. O que este ficheiro testa é o que sai em <head>, não de onde vieram os dados.
 vi.mock("@/app/lib/repos", () => ({ repos: {} }));
-vi.mock("@/app/lib/publishService", () => ({ loadPublishedSite: () => mockLoad() }));
+// A pagina passou a ler pela cache entre pedidos (app/lib/siteCache.ts), portanto e essa a
+// costura a substituir. O unstable_cache do Next exige um contexto de pedido que num teste
+// unitario nao existe - e nao vale a pena faze-lo degradar em silencio, porque esse silencio
+// esconderia uma cache desligada em producao.
+vi.mock("@/app/lib/siteCache", () => ({ cachedPublishedSite: () => mockLoad() }));
 
 const { generateMetadata } = await import("./page");
 

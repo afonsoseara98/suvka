@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { repos } from "@/app/lib/repos";
 import { publishProject, unpublishProject } from "@/app/lib/publishService";
+import { invalidateSite } from "@/app/lib/siteCache";
 
 // Publishing is the one action that makes a project visible to people who are not its
 // owner, so ownership is checked exactly the way every other project route checks it:
@@ -27,6 +28,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   try {
     const { slug, publishedAt } = await publishProject(repos, id);
+    invalidateSite(slug);
     return NextResponse.json({ slug, url: `/${slug}`, publishedAt: publishedAt.toISOString() });
   } catch (error: unknown) {
     console.error(error);
@@ -48,7 +50,10 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (denied) return denied;
 
   try {
-    await unpublishProject(repos, id);
+    // Um site retirado do ar tem de sair da cache imediatamente. Sem isto continuaria a ser
+    // servido a estranhos depois de o dono o desligar.
+    const { slug } = await unpublishProject(repos, id);
+    if (slug) invalidateSite(slug);
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     console.error(error);

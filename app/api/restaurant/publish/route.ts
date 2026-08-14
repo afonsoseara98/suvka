@@ -5,6 +5,7 @@ import { repos } from "@/app/lib/repos";
 import { prisma } from "@/app/lib/prisma";
 import { createProjectFromGeneration } from "@/app/lib/projectService";
 import { publishProject } from "@/app/lib/publishService";
+import { invalidateSite } from "@/app/lib/siteCache";
 import { draftStore } from "@/app/lib/restaurant/draftStore";
 import { track } from "@/app/lib/events";
 import { decisionsFor } from "@/app/lib/restaurant/decisions";
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
     // against what is actually free - the check on that screen is a moment old, and two
     // people can be choosing the same name at once.
     const published = await publishProject(repos, project.id, new Date(), desiredSlug);
+
+    // O site entra em cache entre pedidos; publicar tem de a limpar, senão o dono publica e
+    // continua a ver o que lá estava antes. Ver app/lib/siteCache.ts.
+    invalidateSite(published.slug);
 
     // The free month starts here, at the moment the restaurant is actually online - not at
     // sign-up, which can happen minutes earlier and for nothing. `updateMany` with the null

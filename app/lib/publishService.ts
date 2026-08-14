@@ -192,8 +192,17 @@ export async function publishProject(
 // Takes the site offline without discarding the slug: the URL stays reserved for this
 // project, so re-publishing later restores the same address rather than handing it to
 // whoever asked next.
-export async function unpublishProject(repos: RepositoryBundle, projectId: string): Promise<void> {
-  await repos.transaction(async (tx) => {
+//
+// DEVOLVE O SLUG, E ISSO É DE PROPÓSITO
+//
+// Devolvia `void`. A partir do momento em que existe uma cache entre pedidos, quem retira um
+// site do ar TEM de a invalidar — senão continua a ser servido a estranhos depois de o dono o
+// ter desligado, que é a pior versão possível deste defeito.
+//
+// Devolver o slug não é conveniência: é o que faz o compilador dizer a quem chamar isto que há
+// aqui uma coisa por tratar. Um comentário a pedir para não esquecer seria esquecido.
+export async function unpublishProject(repos: RepositoryBundle, projectId: string): Promise<{ slug: string | null }> {
+  return repos.transaction(async (tx) => {
     const project = await tx.projects.findById(projectId);
     if (!project) {
       throw new Error(`Project "${projectId}" not found`);
@@ -207,6 +216,8 @@ export async function unpublishProject(repos: RepositoryBundle, projectId: strin
     await tx.projects.update(projectId, {
       settings: { ...project.settings, publishing: { ...project.settings.publishing, published: false } },
     });
+
+    return { slug: project.slug };
   });
 }
 
