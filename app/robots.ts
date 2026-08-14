@@ -31,6 +31,19 @@ const PRIVATE_PATHS = [
   "/preview$",
   "/preview/",
   "/entrar$",
+  // O painel do funil e a recuperação de palavra-passe exigem sessão, mas o invólucro é
+  // renderizado no servidor: um rastreador recebe HTML com "A carregar…" e indexa uma página
+  // vazia com o nosso domínio. Nenhuma das duas tem nada a dizer a quem chega pela pesquisa.
+  //
+  // O /funil foi acrescentado por mim e ficou de fora desta lista - a mesma classe de erro que
+  // o teste dos RESERVED_SLUGS apanha para os endereços dos clientes e que aqui não tem guarda.
+  "/funil$",
+  "/funil/",
+  "/recuperar$",
+  "/recuperar/",
+  // O benchmark é ferramenta interna e faz chamadas pagas a modelos.
+  "/benchmark$",
+  "/benchmark/",
 ];
 
 // Pela mesma razão que o app/sitemap.ts: por omissão isto corre durante o `next build`, e
