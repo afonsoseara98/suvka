@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { isAdmin } from "@/app/lib/admin";
 import { prisma } from "@/app/lib/prisma";
 import { EVENT_NAMES } from "@/app/lib/events";
 import { funnelByOrigin } from "@/app/lib/funnel";
@@ -13,12 +14,21 @@ import { funnelByOrigin } from "@/app/lib/funnel";
 // decide onde gastar dinheiro — QUAL DELES veio de onde. Um canal que traz cem curiosos e um
 // que traz dez restaurantes a sério davam o mesmo número, e o segundo parecia dez vezes pior.
 //
-// Behind sign-in, because these numbers are the product's own vitals. Not per-user though -
-// they are the whole funnel across every restaurant. Per-restaurant numbers are a different
-// screen for a different reader, and that reader is the owner.
+// ATRÁS DA LISTA DE ADMINISTRADORES, E NÃO ATRÁS DE "TEM SESSÃO"
+//
+// Estes números são os sinais vitais do produto — o funil inteiro, de todos os restaurantes,
+// e quanto converte cada canal. Não são dados de um cliente: são a leitura de negócio da
+// Suvka. Verificar só que existe sessão deixava-os à vista de qualquer pessoa que criasse uma
+// conta, e o registo é aberto.
+//
+// É a mesma classe de omissão que o app/lib/admin.ts já tinha fechado nas quatro rotas do
+// /api/benchmark, e que o /funil voltou a abrir por ter sido escrito depois. A guarda existia;
+// faltava aplicá-la. Falha fechado: sem ADMIN_EMAILS configurado não há administradores.
+//
+// Os números POR restaurante são outro ecrã, para outro leitor, e esse leitor é o dono.
 export async function GET(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!isAdmin(session?.user?.email)) {
     return NextResponse.json({ success: false, message: "Inicie sessão." }, { status: 401 });
   }
 
