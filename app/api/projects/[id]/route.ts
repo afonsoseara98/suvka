@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { repos } from "@/app/lib/repos";
 import { loadProject, deleteProject } from "@/app/lib/projectService";
+import { invalidateSite } from "@/app/lib/siteCache";
 import type { ProjectRecord } from "@/app/lib/repositories/types";
 
 // Shared by every handler below - the same ownership check (never a bare 403, always a
@@ -88,6 +89,25 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const record = await requireOwnedProject(id, session.user.id);
   if (record instanceof NextResponse) return record;
 
+  // APAGAR TAMBÉM TEM DE LIMPAR A CACHE, E NÃO LIMPAVA
+  //
+  // Publicar e despublicar já chamavam o invalidateSite. Apagar não - e o site continuava a
+  // ser servido da cache depois de o registo desaparecer da base de dados.
+  //
+  // Só se via com a cache QUENTE: uma entrada com menos de cinco minutos continuava a ser
+  // devolvida, enquanto um site sem visitas recentes revalidava contra a base e dava 404 na
+  // hora. Ou seja, o defeito aparecia exactamente nos sites que têm visitantes.
+  //
+  // O SLUG É LIDO ANTES DE APAGAR, porque depois do deleteProject não há registo de onde o ir
+  // buscar. Pode ser null: um projecto nunca publicado não tem endereço nem entrada em cache.
+  const slug = record.slug;
+
   await deleteProject(repos, id);
+
+  // DEPOIS do delete, e não antes. Invalidar primeiro abre uma janela em que um pedido em voo
+  // relê a linha que ainda existe e volta a encher a cache com o site que estamos a apagar.
+  // Com a linha já fora da base, qualquer releitura encontra o que passou a ser verdade.
+  if (slug) invalidateSite(slug);
+
   return NextResponse.json({ success: true });
 }
