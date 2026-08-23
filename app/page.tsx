@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SuvkaSchema from "@/app/components/SuvkaSchema";
 
 // THE FRONT DOOR
 //
@@ -25,6 +26,31 @@ export const metadata: Metadata = {
   // traz um valor diferente. Sem isto, o Google vê uma página nova de cada vez que alguém
   // partilha, e reparte por todas elas a autoridade que devia ser de uma só.
   alternates: { canonical: "/" },
+  // O CARTÃO DA PARTILHA, QUE NÃO EXISTIA
+  //
+  // Cada site de restaurante saía com og:title, og:description, og:image e twitter:card
+  // completos. Esta página - a que se manda a um dono por WhatsApp, a que se cola num
+  // anúncio - saía como uma linha cinzenta com o domínio.
+  //
+  // A imagem não está aqui: vem do app/opengraph-image.tsx, que o Next liga sozinho ao
+  // openGraph E ao twitter, com as dimensões e o texto alternativo já preenchidos.
+  openGraph: {
+    title: "O restaurante já existe. Falta o website.",
+    description:
+      "Criamos o site do seu restaurante em minutos. Sem designer, sem código. Menu, fotos, horário e contacto. Primeiro mês gratuito.",
+    url: "/",
+    siteName: "Suvka",
+    locale: "pt_PT",
+    type: "website",
+  },
+  twitter: {
+    // summary_large_image e não summary: a diferença é entre uma miniatura ao lado do texto
+    // e uma imagem que ocupa a largura do cartão. É a mesma escolha dos sites dos clientes.
+    card: "summary_large_image",
+    title: "O restaurante já existe. Falta o website.",
+    description:
+      "Criamos o site do seu restaurante em minutos. Menu, fotos, horário e contacto. Primeiro mês gratuito.",
+  },
 };
 
 // Terracotta rather than a tech blue. A restaurant is warmth, food and company, and the
@@ -128,6 +154,7 @@ function PrimaryCta({ note, fullWidth = false }: { note: string; fullWidth?: boo
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
+      <SuvkaSchema />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="text-lg font-bold">Suvka</span>
         {/* "Entrar" sat top-right, where a first-time visitor looks for the way in - and it

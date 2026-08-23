@@ -102,6 +102,24 @@ export function cuisineName(cuisine: string, language: SiteLanguage): string {
   return CUISINE_NAMES[language]?.[cuisine] ?? cuisine;
 }
 
+// O CAMINHO DE VOLTA, E PORQUE É UM CONJUNTO FECHADO
+//
+// O `servesCuisine` do schema.org precisa do tipo de cozinha, e o estado publicado não o
+// guarda num campo próprio: guarda-o no `hero.badge`, que é genérico e nas páginas do
+// gerador antigo pode conter qualquer frase.
+//
+// Emitir o badge tal e qual seria inferir - exactamente o que o RestaurantSchema.tsx existe
+// para não fazer. Isto verifica se o texto é um dos nomes que nós próprios escrevemos, nas
+// duas línguas. É reconhecer, não adivinhar: falha fechado, e um badge que não esteja nesta
+// lista simplesmente não produz `servesCuisine`.
+const NOMES_DE_COZINHA: ReadonlySet<string> = new Set(
+  Object.values(CUISINE_NAMES).flatMap((porLingua) => Object.values(porLingua))
+);
+
+export function isCuisineLabel(valor: string | undefined | null): boolean {
+  return !!valor && NOMES_DE_COZINHA.has(valor.trim());
+}
+
 // Only ever shown in the form. The site never prints the style - it is expressed as the
 // design - so this exists purely so the owner is choosing between words they recognise.
 const STYLE_NAMES_PT: Record<string, string> = {

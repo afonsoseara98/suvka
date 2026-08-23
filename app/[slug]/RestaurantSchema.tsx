@@ -1,5 +1,7 @@
 import type { PageState } from "@/app/editor/pageState";
 import type { MenuItem, OpeningHours, HeroData } from "@/app/types/landing";
+import { isCuisineLabel } from "@/app/lib/restaurant/labels";
+import { normalisePrice } from "@/app/lib/restaurant/price";
 
 type Props = {
   state: PageState;
@@ -69,6 +71,14 @@ export default function RestaurantSchema({ state, siteUrl }: Props) {
 
   if (hours?.phone?.trim()) schema.telephone = hours.phone.trim();
 
+  // O tipo de cozinha é o que separa "um restaurante" de "onde se come bacalhau", e é dos
+  // poucos campos que o Google usa para decidir a QUE pesquisa esta casa responde.
+  //
+  // Vem do badge do hero, que é onde o buildRestaurantPage o escreve - mas só depois de o
+  // reconhecer como um dos nomes que nós próprios produzimos. Um badge escrito à mão, ou
+  // vindo do gerador antigo, não produz nada. Ver isCuisineLabel.
+  if (isCuisineLabel(hero?.badge)) schema.servesCuisine = hero!.badge.trim();
+
   if (hours?.address?.trim()) {
     // PostalAddress with the street line as written. Parsing a Portuguese address into
     // street/city/postcode reliably is its own problem, and guessing the split wrong puts a
@@ -97,7 +107,12 @@ export default function RestaurantSchema({ state, siteUrl }: Props) {
         hasMenuItem: dishes.map((dish) => {
           const item: Record<string, unknown> = { "@type": "MenuItem", name: dish.name };
           if (dish.description?.trim()) item.description = dish.description.trim();
-          if (dish.price?.trim()) item.offers = { "@type": "Offer", price: dish.price.trim() };
+          // O preço vai como número e a moeda à parte, que é o que o schema.org define. Um
+          // "3,00 €" colado no campo `price` fazia o Google descartar a Offer inteira, em
+          // silêncio - a mesma armadilha que a imagem relativa acima. Ver price.ts, que
+          // devolve null a tudo o que não consiga converter com certeza.
+          const preco = normalisePrice(dish.price);
+          if (preco) item.offers = { "@type": "Offer", ...preco };
           return item;
         }),
       },
